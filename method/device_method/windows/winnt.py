@@ -8,7 +8,15 @@ import ctypes
 import platform
 from ctypes import *
 from .sdkddkver import *
+from .public_dll import *
 from .win_cbasictypes import *
+
+DBG = False     # Choose true or false
+
+if DBG:
+    from sdkddkver import *
+    from public_dll import *
+    from win_cbasictypes import *
 
 memcmp = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)
 memcpy = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)
@@ -304,7 +312,7 @@ class _LUID(ctypes.Structure):
     ]
 
 LUID = _LUID
-PLUID = ctypes.POINTER(LUID)
+PLUID = POINTER(LUID)
 
 
 def Int32x32To64(a, b):
@@ -329,6 +337,7 @@ def Int64ShraMod32(a, b):
 
 def Int64ShrlMod32(a, b):
     return ULONGLONG(a).value << b
+
 
 # ......
 
@@ -8574,13 +8583,22 @@ class IMAGE_COR20_HEADER(Structure):
 
 PIMAGE_COR20_HEADER = POINTER(IMAGE_COR20_HEADER)
 
-RtlCaptureStackBackTrace = NTAPI(WORD, DWORD, DWORD, PVOID, PDWORD)
 
-RtlCaptureContext = NTAPI(VOID, PCONTEXT)
-RtlCompareMemory = NTAPI(SIZE_T, VOID, VOID, SIZE_T)
+def RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTraceHash = PDWORD()):
+    res = {}
+    ntdll.RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTraceHash)
+    res['FramesToSkip'] = FramesToSkip
+    res['FramesToCapture'] = FramesToCapture
+    return res
+
 
 if WIN32_WINNT >= 0x0602:
-    RtlAddGrowableFunctionTable = NTAPI(DWORD, PVOID, PRUNTIME_FUNCTION, DWORD, DWORD, ULONG_PTR, ULONG_PTR)
+    def RtlAddGrowableFunctionTable(FunctionTable, MaximumEntryCount, RangeBase, RangeEnd):
+        DynamicTable = POINTER(PVOID())
+        ntdll.RtlAddGrowableFunctionTable(byref(DynamicTable), FunctionTable, MaximumEntryCount, RangeBase, RangeEnd)
+        return DynamicTable
+        
+
     RtlGrowFunctionTable = NTAPI(VOID, PVOID, DWORD)
     RtlDeleteGrowableFunctionTable = NTAPI(VOID, PVOID)
 

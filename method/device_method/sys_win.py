@@ -254,6 +254,8 @@ USERDOMAIN_ROAMINGPROFILE: str = _Volatile_Environment_res['USERDOMAIN_ROAMINGPR
 USERNAME: str = _Volatile_Environment_res['USERNAME']
 USERPROFILE: str = _Volatile_Environment_res['USERPROFILE']
 HOME: str = HOMEDRIVE + HOMEPATH
+TEMP: str = os.environ['TEMP']
+TMP: str = TEMP
 
 
 def _get_user_folders() -> dict:

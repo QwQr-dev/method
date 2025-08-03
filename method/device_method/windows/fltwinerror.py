@@ -1,11 +1,13 @@
 # coding = 'utf-8'
 
-try:
+from .win_cbasictypes import HRESULT
+from .sdkddkver import NTDDI_VERSION, NTDDI_VISTA
+
+DBG = False     # Choose true or false
+
+if DBG:
     from win_cbasictypes import HRESULT
     from sdkddkver import NTDDI_VERSION, NTDDI_VISTA
-except ImportError:
-    from .win_cbasictypes import HRESULT
-    from .sdkddkver import NTDDI_VERSION, NTDDI_VISTA
 
 __IN__WINERROR_ = False  # Choose true or false
 

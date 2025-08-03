@@ -105,7 +105,6 @@ def OpenProcess(dwDesiredAccess: int,
 
 def CloseHandle(hObject: int) -> None:
     result = Kernel32.CloseHandle(hObject)
-
     if result == NULL:
         raise ctypes.WinError(GetLastError(result))
 

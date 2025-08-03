@@ -12,9 +12,13 @@ if sys.version_info < (3, 13):
 if _system() != 'Windows':
     raise TypeError('Sorry, no other operating systems other than Windows.')
 
-try:
-    from . import test
+DBG = False        # Choose true or false
+
+if DBG:
     from .device_method import *
-except ImportError:
-    self_dir = os.path.dirname(os.path.abspath(__file__))
-    raise ImportError(f'Missing necessary modules, please run: "{sys.executable}" "{self_dir}\\p_install.py"')
+else:
+    try:
+        from .device_method import *
+    except ImportError:
+        self_dir = os.path.dirname(os.path.abspath(__file__))
+        raise ImportError(f'Missing necessary modules, please run: "{sys.executable}" "{self_dir}\\p_install.py"')

@@ -7,11 +7,7 @@ Some ways had the messagebox of tkinter in common.
 
 import ctypes
 from typing import Any
-
-try:
-    from windows import *
-except ImportError:
-    from .windows import *
+from .windows import *
 
 
 def MessageBox(hwnd: int = HWND(), 
@@ -66,7 +62,10 @@ def MessageBoxEx(hwnd: int = HWND(),
     
 
 def MessageBeep(uType: int) -> bool:
-    return bool(User32.MessageBeep(uType))
+    result = User32.MessageBeep(uType)
+    if result == 0:
+        raise ctypes.WinError(GetLastError(result))
+    return bool(result)
 
 
 def showinfo(lpCaption: str = '', 
@@ -220,20 +219,4 @@ def MessageBoxIndirect(hwndOwner: int = HWND(),
     if result == NULL:
         raise ctypes.WinError(Kernel32.GetLastError(result))
     return result
-
-
-if __name__ == '__main__':
-    # test
-
-    print(MessageBox(HWND(), 'abc', 'abc', MB_ICONINFORMATION)) 
-    print(MessageBoxEx(HWND(), 'hello world', 'News', MB_ICONINFORMATION))
-    print("info", showinfo("Spam", "Egg Information"))
-    print("warning", showwarning("Spam", "Egg Warning"))
-    print("error", showerror("Spam", "Egg Alert"))
-    print("question", askquestion("Spam", "Question?"))
-    print("proceed", askokcancel("Spam", "Proceed?"))
-    print("yes/no", askyesno("Spam", "Got it?"))
-    print("yes/no/cancel", askyesnocancel("Spam", "Want it?"))
-    print("try again", askretrycancel("Spam", "Try again?"))
-    print(MessageBoxIndirect(lpCaption='News', lpszText='Hello World!', dwStyle=MB_OKCANCEL | MB_ICONINFORMATION))
 

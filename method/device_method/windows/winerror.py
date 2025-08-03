@@ -1,15 +1,16 @@
 # coding = utf-8'
 
 import sys
+from .fltwinerror import *
+from .win_cbasictypes import HRESULT, LONG, INT
+from .winnt import APPLICATION_ERROR_MASK, ERROR_SEVERITY_ERROR
 
-try:
+DBG = False
+
+if DBG:
     from fltwinerror import *
     from win_cbasictypes import HRESULT, LONG, INT
     from winnt import APPLICATION_ERROR_MASK, ERROR_SEVERITY_ERROR
-except ImportError:
-    from .fltwinerror import *
-    from .win_cbasictypes import HRESULT, LONG, INT
-    from .winnt import APPLICATION_ERROR_MASK, ERROR_SEVERITY_ERROR
 
 SCODE = LONG
 

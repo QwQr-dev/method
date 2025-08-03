@@ -148,21 +148,21 @@ def SUBVER(Version: int) -> int:
     return (Version & SUBVERSION_MASK)
 
 
-def NTDDI_VERSION_FROMWIN32_WINNT2(Version: int) -> int:
+def NTDDI_VERSION_FROMWIN32_WINNT2(Version: int | float) -> (int | float):
     if isinstance(Version, float):
         return Version
     
     if not isinstance(Version, int):
-        raise TypeError()
+        raise TypeError(f"The object should be of int or float, not '{type(Version).__name__}'")
     
     return Version << 16
 
 
-def NTDDI_VERSION_FROMWIN32_WINNT(Version: int) -> int:
+def NTDDI_VERSION_FROMWIN32_WINNT(Version: int | float) -> (int | float):
     return NTDDI_VERSION_FROMWIN32_WINNT2(Version)
 
 
-NTDDI_VERSION = NTDDI_VERSION_FROMWIN32_WINNT(WIN32_WINNT)
+NTDDI_VERSION: int = NTDDI_VERSION_FROMWIN32_WINNT(WIN32_WINNT)
 
 WINVER = WIN32_WINNT
 
@@ -189,3 +189,4 @@ if (((OSVER(NTDDI_VERSION) == NTDDI_WIN2K) and (WIN32_WINNT != WIN32_WINNT_WIN2K
     ((OSVER(NTDDI_VERSION) == NTDDI_WINXP) and (WIN32_WINNT != WIN32_WINNT_WINXP))):
 
     raise OSError('NTDDI_VERSION and WIN32_WINNT mismatch!')
+

@@ -4,17 +4,18 @@ import sys
 import enum
 import platform
 from ctypes import *
+from .windef import *
+from .winuser import *
+from .sdkddkver import *
+from .win_cbasictypes import *
 
-try:
+DBG = False       # Choose true or false
+
+if DBG:
     from windef import *
     from winuser import *
     from sdkddkver import *
     from win_cbasictypes import *
-except ImportError:
-    from .windef import *
-    from .winuser import *
-    from .sdkddkver import *
-    from .win_cbasictypes import *
 
 WINBOOL = BOOL
 UNICODE = True      # Choose true or false

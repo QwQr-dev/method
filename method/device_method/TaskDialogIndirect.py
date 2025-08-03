@@ -4,13 +4,8 @@
 
 import ctypes
 from typing import Any
+from .windows import *
 
-try:
-    from .windows import *
-except ImportError:
-    from windows import *
-    
-    
 GetLastError = Kernel32.GetLastError
 
 
@@ -118,24 +113,4 @@ def TaskDialogIndirect(hwndParent: int = HWND(),
     result['pfVerificationFlagChecked'] = pfVerificationFlagChecked.value
     return result
 
-
-if __name__ == '__main__':
-    # test
-
-    print(TaskDialog(pszWindowTitle='News', 
-                     pszMainInstruction='Hello World!', 
-                     pszContent='Welcome to Python!', 
-                     pszIcon=TD_INFORMATION_ICON, 
-                     dwCommonButtons=TDCBF_OK_BUTTON)
-    )
-    
-    print(TaskDialogIndirect(pszWindowTitle= 'News', 
-                             pszMainInstruction='Hello World!', 
-                             pszContent='Welcome to Python!', 
-                             pszMainIcon=TD_INFORMATION_ICON, 
-                             Buttons=[TASKDIALOG_BUTTON(100, '确定'), TASKDIALOG_BUTTON(101, '取消')],      
-                             dwCommonButtons=TDCBF_RETRY_BUTTON,      
-                             RadioButtons=[TASKDIALOG_BUTTON(2000, '选项1'), TASKDIALOG_BUTTON(2001, '选项2')], 
-                             pszVerificationText='I agree.')
-    )
 

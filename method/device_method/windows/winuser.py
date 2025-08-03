@@ -3,15 +3,16 @@
 import sys
 import platform
 from ctypes import *
+from .win_cbasictypes import *
+from .sdkddkver import WINVER, WIN32_WINNT
+from .windef import RECT, POINT, TRUE, LPRECT
 
-try:
+DBG = False     # Choose true or false
+
+if DBG:
     from win_cbasictypes import *
     from sdkddkver import WINVER, WIN32_WINNT
     from windef import RECT, POINT, TRUE, LPRECT
-except ImportError:
-    from .win_cbasictypes import *
-    from .sdkddkver import WINVER, WIN32_WINNT
-    from .windef import RECT, POINT, TRUE, LPRECT
 
 QWORD = ULONGLONG
 
