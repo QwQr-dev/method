@@ -4,21 +4,25 @@ import os
 import sys
 from platform import system as _system
 
-__version__ = ['Beta 0.8.0']
+__version__ = ['Beta 0.8.10']
+major = 3
+minor = 13
 
-if sys.version_info < (3, 13):
-    raise ImportError('Your Python interpreter version is less than 3.13, please change the interpreter.')
+if sys.version_info < (major, minor):
+    raise ImportError(f'Your Python interpreter version is less than {major}.{minor}, please change the interpreter.')
 
-if _system() != 'Windows':
-    raise TypeError('Sorry, no other operating systems other than Windows.')
+if _system() != 'Windows' and os.name != 'nt':
+    raise TypeError('Do not supported system')
 
-DBG = False        # Choose true or false
+__DBG__ = True        # Choose true or false
 
-if DBG:
-    from .device_method import *
+if __DBG__:
+    from .core import *
+    from .killer import *
 else:
     try:
-        from .device_method import *
+        from .core import *
+        from .killer import *
     except ImportError:
         self_dir = os.path.dirname(os.path.abspath(__file__))
         raise ImportError(f'Missing necessary modules, please run: "{sys.executable}" "{self_dir}\\p_install.py"')

@@ -1,0 +1,3933 @@
+# coding = 'utf-8'
+
+import sys
+import enum
+import platform
+from ctypes import *
+
+try:
+    from windef import *
+    from winuser import *
+    from sdkddkver import *
+    from win_cbasictypes import *
+    from win_structure import GUID
+except ImportError:
+    from .windef import *
+    from .winuser import *
+    from .sdkddkver import *
+    from .win_cbasictypes import *
+    from .win_structure import GUID
+
+_WIN32_IE = WIN32_IE
+
+WINBOOL = BOOL
+UNICODE = True      # Choose true or false
+
+class tagINITCOMMONCONTROLSEX(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('dwICC', DWORD)
+    ]
+
+INITCOMMONCONTROLSEX = tagINITCOMMONCONTROLSEX
+LPINITCOMMONCONTROLSEX = POINTER(INITCOMMONCONTROLSEX)
+
+ICC_LISTVIEW_CLASSES = 0x1
+ICC_TREEVIEW_CLASSES = 0x2
+ICC_BAR_CLASSES = 0x4
+ICC_TAB_CLASSES = 0x8
+ICC_UPDOWN_CLASS = 0x10
+ICC_PROGRESS_CLASS = 0x20
+ICC_HOTKEY_CLASS = 0x40
+ICC_ANIMATE_CLASS = 0x80
+ICC_WIN95_CLASSES = 0xff
+ICC_DATE_CLASSES = 0x100
+ICC_USEREX_CLASSES = 0x200
+ICC_COOL_CLASSES = 0x400
+ICC_INTERNET_CLASSES = 0x800
+ICC_PAGESCROLLER_CLASS = 0x1000
+ICC_NATIVEFNTCTL_CLASS = 0x2000
+ICC_STANDARD_CLASSES = 0x4000
+ICC_LINK_CLASS = 0x8000
+
+LVM_FIRST = 0x1000
+TV_FIRST = 0x1100
+HDM_FIRST = 0x1200
+TCM_FIRST = 0x1300
+PGM_FIRST = 0x1400
+ECM_FIRST = 0x1500
+BCM_FIRST = 0x1600
+CBM_FIRST = 0x1700
+
+CCM_FIRST = 0x2000
+CCM_LAST = (CCM_FIRST+0x200)
+CCM_SETBKCOLOR = (CCM_FIRST+1)
+CCM_SETCOLORSCHEME = (CCM_FIRST+2)
+CCM_GETCOLORSCHEME = (CCM_FIRST+3)
+CCM_GETDROPTARGET = (CCM_FIRST+4)
+CCM_SETUNICODEFORMAT = (CCM_FIRST+5)
+CCM_GETUNICODEFORMAT = (CCM_FIRST+6)
+CCM_SETVERSION = (CCM_FIRST+0x7)
+CCM_GETVERSION = (CCM_FIRST+0x8)
+CCM_SETNOTIFYWINDOW = (CCM_FIRST+0x9)
+CCM_SETWINDOWTHEME = (CCM_FIRST+0xb)
+CCM_DPISCALE = (CCM_FIRST+0xc)
+
+COMCTL32_VERSION = 6
+
+class tagCOLORSCHEME(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('clrBtnHighlight', COLORREF),
+                ('clrBtnShadow', COLORREF)
+    ]
+
+COLORSCHEME = tagCOLORSCHEME
+LPCOLORSCHEME = POINTER(COLORSCHEME)
+
+INFOTIPSIZE = 1024
+
+
+def HANDLE_WM_NOTIFY(hwnd, wParam, lParam, fn):
+    return fn((hwnd), INT(wParam).value, NMHDR(lParam))
+
+
+def FORWARD_WM_NOTIFY(hwnd, idFrom, pnmhdr, fn):
+    return LRESULT(fn(hwnd, WM_NOTIFY, WPARAM(INT(idFrom).value).value, LPARAM(NMHDR(pnmhdr)).value))
+
+
+NM_FIRST = (0-0)
+NM_LAST = (0-99)
+
+LVN_FIRST = (0-100)
+LVN_LAST = (0-199)
+
+HDN_FIRST = (0-300)
+HDN_LAST = (0-399)
+
+TVN_FIRST = (0-400)
+TVN_LAST = (0-499)
+
+TTN_FIRST = (0-520)
+TTN_LAST = (0-549)
+
+TCN_FIRST = (0-550)
+TCN_LAST = (0-580)
+
+CDN_FIRST = (0-601)
+CDN_LAST = (0-699)
+
+TBN_FIRST = (0-700)
+TBN_LAST = (0-720)
+
+UDN_FIRST = (0-72)
+UDN_LAST = (0-729)
+DTN_FIRST = (0-740)
+DTN_LAST = (0-745)
+
+MCN_FIRST = (0-746)
+MCN_LAST = (0-752)
+
+DTN_FIRST2 = (0-753)
+DTN_LAST2 = (0-799)
+
+CBEN_FIRST = (0-800)
+CBEN_LAST = (0-830)
+RBN_FIRST = (0-831)
+RBN_LAST = (0-859)
+
+IPN_FIRST = (0-860)
+IPN_LAST = (0-879)
+SBN_FIRST = (0-880)
+SBN_LAST = (0-899)
+PGN_FIRST = (0-900)
+PGN_LAST = (0-950)
+
+WMN_FIRST = (0-1000)
+WMN_LAST = (0-1200)
+
+BCN_FIRST = (0-1250)
+BCN_LAST = (0-1350)
+
+if NTDDI_VERSION >= 0x06000000:
+    TRBN_FIRST = (0-1501)
+    TRBN_LAST = (0-1519)
+
+NM_OUTOFMEMORY = (NM_FIRST-1)
+NM_CLICK = (NM_FIRST-2)
+NM_DBLCLK = (NM_FIRST-3)
+NM_RETURN = (NM_FIRST-4)
+NM_RCLICK = (NM_FIRST-5)
+NM_RDBLCLK = (NM_FIRST-6)
+NM_SETFOCUS = (NM_FIRST-7)
+NM_KILLFOCUS = (NM_FIRST-8)
+NM_CUSTOMDRAW = (NM_FIRST-12)
+NM_HOVER = (NM_FIRST-13)
+NM_NCHITTEST = (NM_FIRST-14)
+NM_KEYDOWN = (NM_FIRST-15)
+NM_RELEASEDCAPTURE = (NM_FIRST-16)
+NM_SETCURSOR = (NM_FIRST-17)
+NM_CHAR = (NM_FIRST-18)
+NM_TOOLTIPSCREATED = (NM_FIRST-19)
+NM_LDOWN = (NM_FIRST-20)
+NM_RDOWN = (NM_FIRST-21)
+NM_THEMECHANGED = (NM_FIRST-22)
+if NTDDI_VERSION >= 0x06000000:
+    NM_FONTCHANGED = (NM_FIRST-23)
+    NM_CUSTOMTEXT = (NM_FIRST-24)
+    NM_TVSTATEIMAGECHANGING = (NM_FIRST-24)
+
+
+class tagNMTOOLTIPSCREATED(Structure):
+    _fields_ = [('hdr', NMHDR), 
+                ('hwndToolTips', HWND)
+    ]
+
+NMTOOLTIPSCREATED = tagNMTOOLTIPSCREATED
+LPNMTOOLTIPSCREATED = POINTER(NMTOOLTIPSCREATED)
+
+class tagNMMOUSE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwItemSpec', DWORD_PTR),
+                ('dwItemData', DWORD_PTR),
+                ('pt', POINT),
+                ('dwHitInfo', LPARAM),
+    ]
+
+NMMOUSE = tagNMMOUSE
+LPNMMOUSE = POINTER(NMMOUSE)
+
+NMCLICK = NMMOUSE
+LPNMCLICK = LPNMMOUSE
+
+__IID_DEFINED__ = False
+IID = GUID  # from guiddef.h
+
+class tagNMOBJECTNOTIFY(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('pObject', POINTER(VOID)),
+                ('hResult', HRESULT),
+                ('dwFlags', DWORD)
+    ]
+
+    if __IID_DEFINED__:
+        _fields_.append(('piid', POINTER(IID)))
+    else:
+        _fields_.append(('piid', POINTER(VOID)))
+
+NMOBJECTNOTIFY = tagNMOBJECTNOTIFY
+LPNMOBJECTNOTIFY = POINTER(NMOBJECTNOTIFY)
+
+class tagNMKEY(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('nVKey', UINT),
+                ('uFlags', UINT),
+    ]
+
+NMKEY = tagNMKEY
+LPNMKEY = POINTER(NMKEY)
+
+class tagNMCHAR(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('ch', UINT),
+                ('dwItemPrev', DWORD),
+                ('dwItemNext', DWORD)
+    ]
+
+NMCHAR = tagNMCHAR
+LPNMCHAR = POINTER(NMCHAR)
+
+if WIN32_IE >= 0x0600:
+    class tagNMCUSTOMTEXT(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('hDC', HDC),
+                    ('lpString', LPCWSTR),
+                    ('nCount', INT),
+                    ('lpRect', LPRECT),
+                    ('uFormat', UINT),
+                    ('fLink', WINBOOL),
+        ]
+    
+    NMCUSTOMTEXT = tagNMCUSTOMTEXT
+    LPNMCUSTOMTEXT = POINTER(NMCUSTOMTEXT)
+
+MSGF_COMMCTRL_BEGINDRAG = 0x4200
+MSGF_COMMCTRL_SIZEHEADER = 0x4201
+MSGF_COMMCTRL_DRAGSELECT = 0x4202
+MSGF_COMMCTRL_TOOLBARCUST = 0x4203
+
+CDRF_DODEFAULT = 0x0
+CDRF_NEWFONT = 0x2
+CDRF_SKIPDEFAULT = 0x4
+CDRF_DOERASE = 0x8
+CDRF_SKIPPOSTPAINT = 0x100
+
+CDRF_NOTIFYPOSTPAINT = 0x10
+CDRF_NOTIFYITEMDRAW = 0x20
+CDRF_NOTIFYSUBITEMDRAW = 0x20
+CDRF_NOTIFYPOSTERASE = 0x40
+
+CDDS_PREPAINT = 0x1
+CDDS_POSTPAINT = 0x2
+CDDS_PREERASE = 0x3
+CDDS_POSTERASE = 0x4
+CDDS_ITEM = 0x10000
+CDDS_ITEMPREPAINT = (CDDS_ITEM | CDDS_PREPAINT)
+CDDS_ITEMPOSTPAINT = (CDDS_ITEM | CDDS_POSTPAINT)
+CDDS_ITEMPREERASE = (CDDS_ITEM | CDDS_PREERASE)
+CDDS_ITEMPOSTERASE = (CDDS_ITEM | CDDS_POSTERASE)
+CDDS_SUBITEM = 0x20000
+
+CDIS_SELECTED = 0x1
+CDIS_GRAYED = 0x2
+CDIS_DISABLED = 0x4
+CDIS_CHECKED = 0x8
+CDIS_FOCUS = 0x10
+CDIS_DEFAULT = 0x20
+CDIS_HOT = 0x40
+CDIS_MARKED = 0x80
+CDIS_INDETERMINATE = 0x100
+CDIS_SHOWKEYBOARDCUES = 0x200
+if NTDDI_VERSION >= 0x06000000:
+    CDIS_NEARHOT = 0x0400
+    CDIS_OTHERSIDEHOT = 0x0800
+    CDIS_DROPHILITED = 0x1000
+
+class tagNMCUSTOMDRAWINFO(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwDrawStage', DWORD),
+                ('hdc', HDC),
+                ('rc', RECT),
+                ('dwItemSpec', DWORD_PTR),
+                ('uItemState', UINT),
+                ('lItemlParam', LPARAM),
+    ]
+
+NMCUSTOMDRAW = tagNMCUSTOMDRAWINFO
+LPNMCUSTOMDRAW = POINTER(NMCUSTOMDRAW)
+
+class tagNMTTCUSTOMDRAW(Structure):
+    _fields_ = [('nmcd', NMCUSTOMDRAW),
+                ('uDrawFlags', UINT),
+    ]
+
+NMTTCUSTOMDRAW = tagNMTTCUSTOMDRAW
+LPNMTTCUSTOMDRAW = POINTER(NMTTCUSTOMDRAW)
+
+class tagNMCUSTOMSPLITRECTINFO(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('rcClient', RECT),
+                ('rcButton', RECT),
+                ('rcSplit', RECT),
+    ]
+
+NMCUSTOMSPLITRECTINFO = tagNMCUSTOMSPLITRECTINFO
+LPNMCUSTOMSPLITRECTINFO = POINTER(NMCUSTOMSPLITRECTINFO)
+
+NM_GETCUSTOMSPLITRECT = BCN_FIRST + 0x0003
+
+CLR_NONE = 0xffffffff
+CLR_DEFAULT = 0xff000000
+
+class _IMAGELIST(Structure):
+    pass
+
+HIMAGELIST = POINTER(_IMAGELIST)
+
+class _IMAGELISTDRAWPARAMS(Structure):
+    _fields_ = [('bSize', DWORD),
+                ('himl', HIMAGELIST),
+                ('i', INT),
+                ('hdcDst', HDC),
+                ('x', INT),
+                ('y', INT),
+                ('cx', INT),
+                ('cy', INT),
+                ('xBitmap', INT),
+                ('yBitmap', INT),
+                ('rgbBk', COLORREF),
+                ('rgbFg', COLORREF),
+                ('fStyle', UINT),
+                ('dwRop', DWORD),
+                ('fState', DWORD),
+                ('Frame', DWORD),
+                ('crEffect', COLORREF)
+    ]
+
+IMAGELISTDRAWPARAMS = _IMAGELISTDRAWPARAMS
+LPIMAGELISTDRAWPARAMS = POINTER(IMAGELISTDRAWPARAMS)
+
+ILC_MASK = 0x1
+ILC_COLOR = 0x0
+ILC_COLORDDB = 0xfe
+ILC_COLOR4 = 0x4
+ILC_COLOR8 = 0x8
+ILC_COLOR16 = 0x10
+ILC_COLOR24 = 0x18
+ILC_COLOR32 = 0x20
+ILC_PALETTE = 0x800
+ILC_MIRROR = 0x2000
+ILC_PERITEMMIRROR = 0x8000
+if NTDDI_VERSION >= 0x06000000:
+    ILC_ORIGINALSIZE = 0x00010000
+    ILC_HIGHQUALITYSCALE = 0x00020000
+
+'''
+ImageList_Create = WINAPI(HIMAGELIST, INT, INT, UINT, INT, INT)
+ImageList_Destroy = WINAPI(WINBOOL, HIMAGELIST)
+ImageList_GetImageCount = WINAPI(INT, HIMAGELIST)
+ImageList_SetImageCount = WINAPI(WINBOOL, HIMAGELIST, UINT)
+ImageList_Add = WINAPI(INT, HIMAGELIST, HBITMAP, HBITMAP)
+ImageList_ReplaceIcon = WINAPI(INT, HIMAGELIST, INT, HICON)
+ImageList_SetBkColor = WINAPI(COLORREF, HIMAGELIST, COLORREF)
+ImageList_GetBkColor = WINAPI(COLORREF, HIMAGELIST)
+ImageList_SetOverlayImage = WINAPI(WINBOOL, HIMAGELIST, INT, INT)
+
+def ImageList_AddIcon(himl,hicon):
+    return ImageList_ReplaceIcon(himl, -1, hicon)
+'''
+
+
+ILD_NORMAL =  0x0
+ILD_TRANSPARENT = 0x1
+ILD_MASK =  0x10
+ILD_IMAGE =  0x20
+ILD_ROP =  0x40
+ILD_BLEND25 =  0x2
+ILD_BLEND50 =  0x4
+ILD_OVERLAYMASK =  0xf00
+
+
+def INDEXTOOVERLAYMASK(i):
+    return i << 8
+
+
+ILD_PRESERVEALPHA =  0x1000
+ILD_SCALE =  0x2000
+ILD_DPISCALE =  0x4000
+if NTDDI_VERSION >= 0x06000000:
+    ILD_ASYNC =  0x8000
+
+ILD_SELECTED = ILD_BLEND50
+ILD_FOCUS = ILD_BLEND25
+ILD_BLEND = ILD_BLEND50
+CLR_HILIGHT = CLR_DEFAULT
+
+ILS_NORMAL = 0x0
+ILS_GLOW = 0x1
+ILS_SHADOW = 0x2
+ILS_SATURATE = 0x4
+ILS_ALPHA = 0x8
+
+if NTDDI_VERSION >= 0x06000000:
+    ILGT_NORMAL = 0x0
+    ILGT_ASYNC = 0x1
+
+    HBITMAP_CALLBACK = HBITMAP(-1).value
+
+'''
+ImageList_Draw = WINAPI(WINBOOL, HIMAGELIST, INT, HDC, INT, INT, UINT)
+ImageList_Replace = WINAPI(WINBOOL, HIMAGELIST ,INT ,HBITMAP ,HBITMAP )
+ImageList_AddMasked = WINAPI(INT, HIMAGELIST ,HBITMAP ,COLORREF)
+ImageList_DrawEx = WINAPI(WINBOOL, HIMAGELIST ,INT ,HDC ,INT ,INT ,INT ,INT ,COLORREF ,COLORREF ,UINT)
+ImageList_DrawIndirect = WINAPI(WINBOOL, POINTER(IMAGELISTDRAWPARAMS))
+ImageList_Remove = WINAPI(WINBOOL, HIMAGELIST,INT)
+ImageList_GetIcon = WINAPI(HICON, HIMAGELIST,INT,UINT)
+ImageList_LoadImageA = WINAPI(HIMAGELIST, HINSTANCE,LPCSTR,INT,INT,COLORREF,UINT,UINT)
+ImageList_LoadImageW = WINAPI(HIMAGELIST, HINSTANCE,LPCWSTR,INT,INT,COLORREF,UINT,UINT)
+'''
+
+ILCF_MOVE = 0x0
+ILCF_SWAP = 0x1
+
+'''
+ImageList_Copy = WINAPI(WINBOOL, HIMAGELIST,INT,HIMAGELIST,INT,UINT)
+ImageList_BeginDrag = WINAPI(WINBOOL, HIMAGELIST,INT,INT,INT)
+ImageList_EndDrag = WINAPI(VOID, VOID)
+ImageList_DragEnter = WINAPI(WINBOOL, HWND,INT,INT)
+ImageList_DragLeave = WINAPI(WINBOOL, HWND)
+ImageList_DragMove = WINAPI(WINBOOL, INT,INT)
+ImageList_SetDragCursorImage = WINAPI(WINBOOL, HIMAGELIST,INT,INT,INT)
+ImageList_DragShowNolock = WINAPI(WINBOOL, WINBOOL)
+ImageList_GetDragImage = WINAPI(HIMAGELIST, POINTER(POINT),POINTER(POINT))
+
+ImageList_LoadImage = ImageList_LoadImageW if UNICODE else ImageList_LoadImageA
+
+def ImageList_RemoveAll(himl):
+    return ImageList_Remove(himl,-1)
+
+
+def ImageList_ExtractIcon(hi,himl,i):
+    return ImageList_GetIcon(himl,i,0)
+
+
+def ImageList_LoadBitmap(hi,lpbmp,cx,cGrow,crMask):
+    return ImageList_LoadImage(hi,lpbmp,cx,cGrow,crMask,IMAGE_BITMAP,0)
+'''
+
+
+__IStream_INTERFACE_DEFINED__ = False
+
+IStream = Structure     # from objidlbase.h
+LPSTREAM = IStream      # from objidlbase.h
+REFIID = IID            # from guiddef.h
+
+'''
+if __IStream_INTERFACE_DEFINED__:
+    ImageList_Read = WINAPI(HIMAGELIST,LPSTREAM)
+    ImageList_Write = WINAPI(WINBOOL,HIMAGELIST,LPSTREAM)
+
+    ILP_NORMAL = 0
+    ILP_DOWNLEVEL = 1
+
+    ImageList_ReadEx = WINAPI(HRESULT,DWORD,LPSTREAM,REFIID,POINTER(PVOID))
+    ImageList_WriteEx = WINAPI(HRESULT,HIMAGELIST,DWORD,LPSTREAM)
+'''
+
+class _IMAGEINFO(Structure):
+    _fields_ = [('hbmImage', HBITMAP),
+                ('hbmMask', HBITMAP),
+                ('Unused1', INT),
+                ('Unused2', INT),
+                ('rcImage', RECT),
+    ]
+
+IMAGEINFO = _IMAGEINFO
+LPIMAGEINFO = POINTER(IMAGEINFO)
+
+'''
+ImageList_GetIconSize = WINAPI(WINBOOL, HIMAGELIST,POINTER(INT),INT)
+ImageList_SetIconSize = WINAPI(WINBOOL, HIMAGELIST,INT,INT)
+ImageList_GetImageInfo = WINAPI(WINBOOL, HIMAGELIST,INT,IMAGEINFO )
+ImageList_Merge = WINAPI(HIMAGELIST, HIMAGELIST,INT,HIMAGELIST,INT,INT,INT)
+ImageList_Duplicate = WINAPI(HIMAGELIST, HIMAGELIST)
+
+HIMAGELIST_QueryInterface = WINAPI( HRESULT, HIMAGELIST, REFIID, PVOID)
+'''
+
+WC_HEADER = "SysHeader32"
+
+HDS_HORZ = 0x0
+HDS_BUTTONS = 0x2
+HDS_HOTTRACK = 0x4
+HDS_HIDDEN = 0x8
+HDS_DRAGDROP = 0x40
+HDS_FULLDRAG = 0x80
+HDS_FILTERBAR = 0x100
+HDS_FLAT = 0x200
+if WIN32_WINNT >= 0x0600:
+    HDS_CHECKBOXES = 0x400
+    HDS_NOSIZING = 0x800
+    HDS_OVERFLOW = 0x1000
+
+HDFT_ISSTRING = 0x0
+HDFT_ISNUMBER = 0x1
+HDFT_ISDATE = 0x2
+
+HDFT_HASNOVALUE = 0x8000
+
+class _HD_TEXTFILTERA(Structure):
+    _fields_ = [('pszText', LPSTR),
+                ('cchTextMax', INT)
+    ]
+
+HD_TEXTFILTERA = _HD_TEXTFILTERA
+LPHD_TEXTFILTERA = POINTER(HD_TEXTFILTERA)
+
+class _HD_TEXTFILTERW(Structure):
+    _fields_ = [('pszText', LPWSTR),
+                ('cchTextMax', INT)
+    ]
+
+HD_TEXTFILTERW = _HD_TEXTFILTERW
+LPHD_TEXTFILTERW = POINTER(HD_TEXTFILTERW)
+
+class _HD_ITEMA(Structure):
+    _fields_ = [('mask', UINT),
+                ('cxy', INT),
+                ('pszText', LPSTR),
+                ('hbm', HBITMAP),
+                ('cchTextMax', INT),
+                ('fmt', INT),
+                ('lParam', LPARAM),
+                ('iImage', INT),
+                ('iOrder', INT),
+                ('type', UINT),
+                ('pvFilter', PVOID),
+    ]
+
+HDITEMA = _HD_ITEMA
+LPHDITEMA = POINTER(_HD_ITEMA)
+
+class _HD_ITEMW(Structure):
+    _fields_ = [('mask', UINT),
+                ('cxy', INT),
+                ('pszText', LPWSTR),
+                ('hbm', HBITMAP),
+                ('cchTextMax', INT),
+                ('fmt', INT),
+                ('lParam', LPARAM),
+                ('iImage', INT),
+                ('iOrder', INT),
+                ('type', UINT),
+                ('pvFilter', PVOID),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('state', UINT))
+    
+HDITEMW = _HD_ITEMW
+LPHDITEMW = POINTER(_HD_ITEMW)
+
+HD_ITEMA = HDITEMA
+HD_ITEMW = HDITEMW
+HDITEM = HDITEMW if UNICODE else HDITEMA
+HD_ITEM = HDITEM
+
+HDI_WIDTH = 0x1
+HDI_HEIGHT = HDI_WIDTH
+HDI_TEXT = 0x2
+HDI_FORMAT = 0x4
+HDI_LPARAM = 0x8
+HDI_BITMAP = 0x10
+HDI_IMAGE = 0x20
+HDI_DI_SETITEM = 0x40
+HDI_ORDER = 0x80
+HDI_FILTER = 0x100
+
+if NTDDI_VERSION >= 0x06000000:
+    HDI_STATE = 0x0200
+
+HDF_LEFT = 0x0
+HDF_RIGHT = 0x1
+HDF_CENTER = 0x2
+HDF_JUSTIFYMASK = 0x3
+HDF_RTLREADING = 0x4
+
+HDF_OWNERDRAW = 0x8000
+HDF_STRING = 0x4000
+HDF_BITMAP = 0x2000
+HDF_BITMAP_ON_RIGHT = 0x1000
+HDF_IMAGE = 0x800
+HDF_SORTUP = 0x400
+HDF_SORTDOWN = 0x200
+
+if NTDDI_VERSION >= 0x06000000:
+    HDF_CHECKBOX = 0x40
+    HDF_CHECKED = 0x80
+    HDF_FIXEDWIDTH = 0x100
+    HDF_SPLITBUTTON = 0x1000000
+
+    HDIS_FOCUSED = 0x1
+
+HDM_GETITEMCOUNT = (HDM_FIRST+0)
+
+HDM_INSERTITEMA = (HDM_FIRST+1)
+HDM_INSERTITEMW = (HDM_FIRST+10)
+
+HDM_DELETEITEM = (HDM_FIRST+2)
+
+HDM_GETITEMA = (HDM_FIRST+3)
+HDM_GETITEMW = (HDM_FIRST+11)
+
+HDM_SETITEMA = (HDM_FIRST+4)
+HDM_SETITEMW = (HDM_FIRST+12)
+
+class tagWINDOWPOS(Structure):
+    _fields_ = [('hwnd', HWND),
+                ('hwndInsertAfter', HWND),
+                ('x', INT),
+                ('y', INT),
+                ('cx', INT),
+                ('cy', INT),
+                ('flags', UINT),
+    ]
+
+WINDOWPOS = tagWINDOWPOS
+LPWINDOWPOS = POINTER(WINDOWPOS)
+PWINDOWPOS = LPWINDOWPOS
+
+class _HD_LAYOUT(Structure):
+    _fields_ = [('prc', POINTER(RECT)),
+                ('pwpos', POINTER(WINDOWPOS))
+    ]
+
+HDM_LAYOUT = (HDM_FIRST+5)
+
+HHT_NOWHERE = 0x1
+HHT_ONHEADER = 0x2
+HHT_ONDIVIDER = 0x4
+HHT_ONDIVOPEN = 0x8
+HHT_ONFILTER = 0x10
+HHT_ONFILTERBUTTON = 0x20
+HHT_ABOVE = 0x100
+HHT_BELOW = 0x200
+HHT_TORIGHT = 0x400
+HHT_TOLEFT = 0x800
+
+if NTDDI_VERSION >= 0x06000000:
+    HHT_ONITEMSTATEICON = 0x1000
+    HHT_ONDROPDOWN = 0x2000
+    HHT_ONOVERFLOW = 0x4000
+
+class _HD_HITTESTINFO(Structure):
+    _fields_ = [('pt', POINT),
+                ('flags', UINT),
+                ('iItem', INT),
+    ]
+
+HDHITTESTINFO = _HD_HITTESTINFO
+LPHDHITTESTINFO = POINTER(HDHITTESTINFO)
+HD_HITTESTINFO = _HD_HITTESTINFO
+
+HDM_HITTEST = (HDM_FIRST+6)
+
+HDM_GETITEMRECT = (HDM_FIRST+7)
+
+HDM_SETIMAGELIST = (HDM_FIRST+8)
+
+HDM_GETIMAGELIST = (HDM_FIRST+9)
+
+HDM_ORDERTOINDEX = (HDM_FIRST+15)
+
+HDM_CREATEDRAGIMAGE = (HDM_FIRST+16)
+
+HDM_GETORDERARRAY = (HDM_FIRST+17)
+
+HDM_SETORDERARRAY = (HDM_FIRST+18)
+
+HDM_SETHOTDIVIDER = (HDM_FIRST+19)
+
+HDM_SETBITMAPMARGIN = (HDM_FIRST+20)
+
+HDM_GETBITMAPMARGIN = (HDM_FIRST+21)
+
+HDM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+
+HDM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+HDM_SETFILTERCHANGETIMEOUT = (HDM_FIRST+22)
+
+HDM_EDITFILTER = (HDM_FIRST+23)
+
+HDM_CLEARFILTER = (HDM_FIRST+24)
+
+if NTDDI_VERSION >= 0x06000000:
+    HDM_GETITEMDROPDOWNRECT = (HDM_FIRST+25)
+
+    HDM_GETOVERFLOWRECT = (HDM_FIRST+26)
+
+    HDM_GETFOCUSEDITEM = (HDM_FIRST+27)
+
+    HDM_SETFOCUSEDITEM = (HDM_FIRST+28)
+
+HDN_ITEMCHANGINGA = (HDN_FIRST-0)
+HDN_ITEMCHANGINGW = (HDN_FIRST-20)
+HDN_ITEMCHANGEDA = (HDN_FIRST-1)
+HDN_ITEMCHANGEDW = (HDN_FIRST-21)
+HDN_ITEMCLICKA = (HDN_FIRST-2)
+HDN_ITEMCLICKW = (HDN_FIRST-22)
+HDN_ITEMDBLCLICKA = (HDN_FIRST-3)
+HDN_ITEMDBLCLICKW = (HDN_FIRST-23)
+HDN_DIVIDERDBLCLICKA = (HDN_FIRST-5)
+HDN_DIVIDERDBLCLICKW = (HDN_FIRST-25)
+HDN_BEGINTRACKA = (HDN_FIRST-6)
+HDN_BEGINTRACKW = (HDN_FIRST-26)
+HDN_ENDTRACKA = (HDN_FIRST-7)
+HDN_ENDTRACKW = (HDN_FIRST-27)
+HDN_TRACKA = (HDN_FIRST-8)
+HDN_TRACKW = (HDN_FIRST-28)
+HDN_GETDISPINFOA = (HDN_FIRST-9)
+HDN_GETDISPINFOW = (HDN_FIRST-29)
+HDN_BEGINDRAG = (HDN_FIRST-10)
+HDN_ENDDRAG = (HDN_FIRST-11)
+HDN_FILTERCHANGE = (HDN_FIRST-12)
+HDN_FILTERBTNCLICK = (HDN_FIRST-13)
+if WIN32_IE >= 0x0600:
+    HDN_BEGINFILTEREDIT = (HDN_FIRST-14)
+    HDN_ENDFILTEREDIT = (HDN_FIRST-15)
+
+if NTDDI_VERSION >= 0x06000000:
+    HDN_ITEMSTATEICONCLICK = (HDN_FIRST-16)
+    HDN_ITEMKEYDOWN = (HDN_FIRST-17)
+    HDN_DROPDOWN = (HDN_FIRST-18)
+    HDN_OVERFLOWCLICK = (HDN_FIRST-19)
+
+class tagNMHEADERA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('iButton', INT),
+                ('pitem', POINTER(HDITEMA)),
+    ]
+
+NMHEADERA = tagNMHEADERA
+LPNMHEADERA = POINTER(tagNMHEADERA)
+
+class tagNMHEADERW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('iButton', INT),
+                ('pitem', POINTER(HDITEMW)),
+    ]
+
+NMHEADERW = tagNMHEADERW
+LPNMHEADERW = POINTER(tagNMHEADERW)
+
+HD_NOTIFYA = NMHEADERA
+HD_NOTIFYW = NMHEADERW
+NMHEADER = NMHEADERW if UNICODE else NMHEADERA
+HD_NOTIFY = NMHEADER
+
+class tagNMHDDISPINFOW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('mask', UINT),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('lParam', LPARAM),
+    ]
+
+NMHDDISPINFOW = tagNMHDDISPINFOW
+LPNMHDDISPINFOW = POINTER(NMHDDISPINFOW)
+
+class tagNMHDDISPINFOA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('mask', UINT),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('lParam', LPARAM),
+    ]
+
+NMHDDISPINFOA = tagNMHDDISPINFOA
+LPNMHDDISPINFOA = POINTER(NMHDDISPINFOA)
+
+class tagNMHDFILTERBTNCLICK(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('rc', RECT),
+    ]
+
+NMHDFILTERBTNCLICK = tagNMHDFILTERBTNCLICK
+LPNMHDFILTERBTNCLICK = POINTER(NMHDFILTERBTNCLICK)
+
+TOOLBARCLASSNAME = "ToolbarWindow32"
+
+class _TBBUTTON(Structure):
+    _fields_ = [('iBitmap', INT),
+                ('idCommand', INT),
+                ('fsState', BYTE),
+                ('fsStyle', BYTE),
+                ('dwData', DWORD_PTR),
+                ('iString', INT_PTR)
+    ]
+
+    if platform.machine().lower() == 'amd64' and sys.maxsize > 2 ** 32:
+        _fields_.append(('bReserved', BYTE * 6))
+    else:
+        _fields_.append(('bReserved', BYTE * 2))
+
+TBBUTTON = _TBBUTTON
+NEAR = _TBBUTTON
+PTBBUTTON = POINTER(TBBUTTON)
+LPTBBUTTON = PTBBUTTON
+LPCTBBUTTON = LPTBBUTTON
+
+class _COLORMAP(Structure):
+    _fields_ = [('from', COLORREF),
+                ('to', COLORREF)
+    ]
+
+COLORMAP = _COLORMAP
+LPCOLORMAP = POINTER(COLORMAP)
+
+CMB_MASKED = 0x2
+TBSTATE_CHECKED = 0x1
+TBSTATE_PRESSED = 0x2
+TBSTATE_ENABLED = 0x4
+TBSTATE_HIDDEN = 0x8
+TBSTATE_INDETERMINATE = 0x10
+TBSTATE_WRAP = 0x20
+TBSTATE_ELLIPSES = 0x40
+TBSTATE_MARKED = 0x80
+
+TBSTYLE_BUTTON = 0x0
+TBSTYLE_SEP = 0x1
+TBSTYLE_CHECK = 0x2
+TBSTYLE_GROUP = 0x4
+TBSTYLE_CHECKGROUP = (TBSTYLE_GROUP | TBSTYLE_CHECK)
+TBSTYLE_DROPDOWN = 0x8
+TBSTYLE_AUTOSIZE = 0x10
+TBSTYLE_NOPREFIX = 0x20
+TBSTYLE_TOOLTIPS = 0x100
+TBSTYLE_WRAPABLE = 0x200
+TBSTYLE_ALTDRAG = 0x400
+TBSTYLE_FLAT = 0x800
+TBSTYLE_LIST = 0x1000
+TBSTYLE_CUSTOMERASE = 0x2000
+TBSTYLE_REGISTERDROP = 0x4000
+TBSTYLE_TRANSPARENT = 0x8000
+TBSTYLE_EX_DRAWDDARROWS = 0x1
+
+BTNS_BUTTON = TBSTYLE_BUTTON
+BTNS_SEP = TBSTYLE_SEP
+BTNS_CHECK = TBSTYLE_CHECK
+BTNS_GROUP = TBSTYLE_GROUP
+BTNS_CHECKGROUP = TBSTYLE_CHECKGROUP
+BTNS_DROPDOWN = TBSTYLE_DROPDOWN
+BTNS_AUTOSIZE = TBSTYLE_AUTOSIZE
+BTNS_NOPREFIX = TBSTYLE_NOPREFIX
+BTNS_SHOWTEXT = 0x40
+BTNS_WHOLEDROPDOWN = 0x80
+
+TBSTYLE_EX_MULTICOLUMN = 0x2
+TBSTYLE_EX_VERTICAL = 0x4
+TBSTYLE_EX_MIXEDBUTTONS = 0x8
+TBSTYLE_EX_HIDECLIPPEDBUTTONS = 0x10
+TBSTYLE_EX_DOUBLEBUFFER = 0x80
+
+class _NMTBCUSTOMDRAW(Structure):
+    pass
+
+_NMTBCUSTOMDRAW._fields_ = [('nmcd', NMCUSTOMDRAW),
+                            ('hbrMonoDither', HBRUSH),
+                            ('hbrLines', HBRUSH),
+                            ('hpenLines', HPEN),
+                            ('clrText', COLORREF),
+                            ('clrMark', COLORREF),
+                            ('clrTextHighlight', COLORREF),
+                            ('clrBtnFace', COLORREF),
+                            ('clrBtnHighlight', COLORREF),
+                            ('clrHighlightHotTrack', COLORREF),
+                            ('rcText', RECT),
+                            ('nStringBkMode', INT),
+                            ('nHLStringBkMode', INT),
+                            ('iListGap', INT),
+]
+
+NMTBCUSTOMDRAW = _NMTBCUSTOMDRAW
+LPNMTBCUSTOMDRAW = POINTER(NMTBCUSTOMDRAW)
+
+TBCDRF_NOEDGES = 0x10000
+TBCDRF_HILITEHOTTRACK = 0x20000
+TBCDRF_NOOFFSET = 0x40000
+TBCDRF_NOMARK = 0x80000
+TBCDRF_NOETCHEDEFFECT = 0x100000
+
+TBCDRF_BLENDICON = 0x200000
+TBCDRF_NOBACKGROUND = 0x400000
+if NTDDI_VERSION >= 0x06000000:
+    TBCDRF_USECDCOLORS = 0x00800000
+
+TB_ENABLEBUTTON = (WM_USER+1)
+TB_CHECKBUTTON = (WM_USER+2)
+TB_PRESSBUTTON = (WM_USER+3)
+TB_HIDEBUTTON = (WM_USER+4)
+TB_INDETERMINATE = (WM_USER+5)
+TB_MARKBUTTON = (WM_USER+6)
+TB_ISBUTTONENABLED = (WM_USER+9)
+TB_ISBUTTONCHECKED = (WM_USER+10)
+TB_ISBUTTONPRESSED = (WM_USER+11)
+TB_ISBUTTONHIDDEN = (WM_USER+12)
+TB_ISBUTTONINDETERMINATE = (WM_USER+13)
+TB_ISBUTTONHIGHLIGHTED = (WM_USER+14)
+TB_SETSTATE = (WM_USER+17)
+TB_GETSTATE = (WM_USER+18)
+TB_ADDBITMAP = (WM_USER+19)
+
+class tagTBADDBITMAP(Structure):
+    _fields_ = [('hInst', HINSTANCE),
+                ('nID', UINT_PTR),
+    ]
+
+TBADDBITMAP = tagTBADDBITMAP
+LPTBADDBITMAP = POINTER(TBADDBITMAP)
+
+HINST_COMMCTRL = HINSTANCE(-1).value
+IDB_STD_SMALL_COLOR = 0
+IDB_STD_LARGE_COLOR = 1
+IDB_VIEW_SMALL_COLOR = 4
+IDB_VIEW_LARGE_COLOR = 5
+IDB_HIST_SMALL_COLOR = 8
+IDB_HIST_LARGE_COLOR = 9
+if NTDDI_VERSION >= 0x06000000:
+    IDB_HIST_NORMAL = 12
+    IDB_HIST_HOT = 13
+    IDB_HIST_DISABLED = 14
+    IDB_HIST_PRESSED = 15
+
+STD_CUT = 0
+STD_COPY = 1
+STD_PASTE = 2
+STD_UNDO = 3
+STD_REDOW = 4
+STD_DELETE = 5
+STD_FILENEW = 6
+STD_FILEOPEN = 7
+STD_FILESAVE = 8
+STD_PRINTPRE = 9
+STD_PROPERTIES = 10
+STD_HELP = 11
+STD_FIND = 12
+STD_REPLACE = 13
+STD_PRINT = 14
+
+VIEW_LARGEICONS = 0
+VIEW_SMALLICONS = 1
+VIEW_LIST = 2
+VIEW_DETAILS = 3
+VIEW_SORTNAME = 4
+VIEW_SORTSIZE = 5
+VIEW_SORTDATE = 6
+VIEW_SORTTYPE = 7
+VIEW_PARENTFOLDER = 8
+VIEW_NETCONNECT = 9
+VIEW_NETDISCONNECT = 10
+VIEW_NEWFOLDER = 11
+VIEW_VIEWMENU = 12
+HIST_BACK = 0
+HIST_FORWARD = 1
+HIST_FAVORITES = 2
+HIST_ADDTOFAVORITES = 3
+HIST_VIEWTREE = 4
+
+TB_ADDBUTTONSA = (WM_USER+20)
+TB_INSERTBUTTONA = (WM_USER+21)
+TB_DELETEBUTTON = (WM_USER+22)
+TB_GETBUTTON = (WM_USER+23)
+TB_BUTTONCOUNT = (WM_USER+24)
+TB_COMMANDTOINDEX = (WM_USER+25)
+
+class tagTBSAVEPARAMSA(Structure):
+    _fields_ = [('hkr', HKEY),
+                ('pszSubKey', LPCSTR),
+                ('pszValueName', LPCSTR),
+    ]
+
+TBSAVEPARAMSA = tagTBSAVEPARAMSA
+LPTBSAVEPARAMSA = POINTER(TBSAVEPARAMSA)
+
+class tagTBSAVEPARAMSW(Structure):
+    _fields_ = [('hkr', HKEY),
+                ('pszSubKey', LPCWSTR),
+                ('pszValueName', LPCWSTR),
+    ]
+
+TBSAVEPARAMSW = tagTBSAVEPARAMSW
+LPTBSAVEPARAMSW = POINTER(TBSAVEPARAMSW)
+
+TBSAVEPARAMS = TBSAVEPARAMSW if UNICODE else TBSAVEPARAMSA
+LPTBSAVEPARAMS = LPTBSAVEPARAMSW if UNICODE else LPTBSAVEPARAMSA
+
+TB_SAVERESTOREA = (WM_USER+26)
+TB_SAVERESTOREW = (WM_USER+76)
+TB_CUSTOMIZE = (WM_USER+27)
+TB_ADDSTRINGA = (WM_USER+28)
+TB_ADDSTRINGW = (WM_USER+77)
+TB_GETITEMRECT = (WM_USER+29)
+TB_BUTTONSTRUCTSIZE = (WM_USER+30)
+TB_SETBUTTONSIZE = (WM_USER+31)
+TB_SETBITMAPSIZE = (WM_USER+32)
+TB_AUTOSIZE = (WM_USER+33)
+TB_GETTOOLTIPS = (WM_USER+35)
+TB_SETTOOLTIPS = (WM_USER+36)
+TB_SETPARENT = (WM_USER+37)
+TB_SETROWS = (WM_USER+39)
+TB_GETROWS = (WM_USER+40)
+TB_SETCMDID = (WM_USER+42)
+TB_CHANGEBITMAP = (WM_USER+43)
+TB_GETBITMAP = (WM_USER+44)
+TB_GETBUTTONTEXTA = (WM_USER+45)
+TB_GETBUTTONTEXTW = (WM_USER+75)
+TB_REPLACEBITMAP = (WM_USER+46)
+TB_SETINDENT = (WM_USER+47)
+TB_SETIMAGELIST = (WM_USER+48)
+TB_GETIMAGELIST = (WM_USER+49)
+TB_LOADIMAGES = (WM_USER+50)
+TB_GETRECT = (WM_USER+51)
+TB_SETHOTIMAGELIST = (WM_USER+52)
+TB_GETHOTIMAGELIST = (WM_USER+53)
+TB_SETDISABLEDIMAGELIST = (WM_USER+54)
+TB_GETDISABLEDIMAGELIST = (WM_USER+55)
+TB_SETSTYLE = (WM_USER+56)
+TB_GETSTYLE = (WM_USER+57)
+TB_GETBUTTONSIZE = (WM_USER+58)
+TB_SETBUTTONWIDTH = (WM_USER+59)
+TB_SETMAXTEXTROWS = (WM_USER+60)
+TB_GETTEXTROWS = (WM_USER+61)
+
+TB_GETOBJECT = (WM_USER+62)
+TB_GETHOTITEM = (WM_USER+71)
+TB_SETHOTITEM = (WM_USER+72)
+TB_SETANCHORHIGHLIGHT = (WM_USER+73)
+TB_GETANCHORHIGHLIGHT = (WM_USER+74)
+TB_MAPACCELERATORA = (WM_USER+78)
+
+class TBINSERTMARK(Structure):
+    _fields_ = [('iButton', INT),
+                ('dwFlags', DWORD)
+    ]
+
+LPTBINSERTMARK = POINTER(TBINSERTMARK)
+
+TBIMHT_AFTER = 0x1
+TBIMHT_BACKGROUND = 0x2
+
+TB_GETINSERTMARK = (WM_USER+79)
+TB_SETINSERTMARK = (WM_USER+80)
+TB_INSERTMARKHITTEST = (WM_USER+81)
+TB_MOVEBUTTON = (WM_USER+82)
+TB_GETMAXSIZE = (WM_USER+83)
+TB_SETEXTENDEDSTYLE = (WM_USER+84)
+TB_GETEXTENDEDSTYLE = (WM_USER+85)
+TB_GETPADDING = (WM_USER+86)
+TB_SETPADDING = (WM_USER+87)
+TB_SETINSERTMARKCOLOR = (WM_USER+88)
+TB_GETINSERTMARKCOLOR = (WM_USER+89)
+
+TB_SETCOLORSCHEME = CCM_SETCOLORSCHEME
+TB_GETCOLORSCHEME = CCM_GETCOLORSCHEME
+
+TB_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+TB_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+TB_MAPACCELERATORW = (WM_USER+90)
+
+class TBREPLACEBITMAP(Structure):
+    _fields_ = [('hInstOld', HINSTANCE),
+                ('nIDOld', UINT_PTR),
+                ('hInstNew', HINSTANCE),
+                ('nIDNew', UINT_PTR),
+                ('nButtons', INT),
+    ]
+
+LPTBREPLACEBITMAP = POINTER(TBREPLACEBITMAP)
+
+TBBF_LARGE = 0x1
+
+TB_GETBITMAPFLAGS = (WM_USER+41)
+
+TBIF_IMAGE = 0x1
+TBIF_TEXT = 0x2
+TBIF_STATE = 0x4
+TBIF_STYLE = 0x8
+TBIF_LPARAM = 0x10
+TBIF_COMMAND = 0x20
+TBIF_SIZE = 0x40
+TBIF_BYINDEX = 0x80000000
+
+class TBBUTTONINFOA(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('dwMask', DWORD),
+                ('idCommand', INT),
+                ('iImage', INT),
+                ('fsState', BYTE),
+                ('fsStyle', BYTE),
+                ('cx', WORD),
+                ('lParam', DWORD_PTR),
+                ('pszText', LPSTR),
+                ('cchText', INT),
+    ]
+
+LPTBBUTTONINFOA = POINTER(TBBUTTONINFOA)
+
+class TBBUTTONINFOW(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('dwMask', DWORD),
+                ('idCommand', INT),
+                ('iImage', INT),
+                ('fsState', BYTE),
+                ('fsStyle', BYTE),
+                ('cx', WORD),
+                ('lParam', DWORD_PTR),
+                ('pszText', LPWSTR),
+                ('cchText', INT),
+    ]
+
+LPTBBUTTONINFOW = POINTER(TBBUTTONINFOW)
+
+TBBUTTONINFO = TBBUTTONINFOW if UNICODE else TBBUTTONINFOA
+LPTBBUTTONINFO = LPTBBUTTONINFOW if UNICODE else LPTBBUTTONINFOA
+
+TB_GETBUTTONINFOW = (WM_USER+63)
+TB_SETBUTTONINFOW = (WM_USER+64)
+TB_GETBUTTONINFOA = (WM_USER+65)
+TB_SETBUTTONINFOA = (WM_USER+66)
+
+TB_INSERTBUTTONW = (WM_USER+67)
+TB_ADDBUTTONSW = (WM_USER+68)
+TB_HITTEST = (WM_USER+69)
+
+TB_SETDRAWTEXTFLAGS = (WM_USER+70)
+
+TB_GETSTRINGW = (WM_USER+91)
+TB_GETSTRINGA = (WM_USER+92)
+
+TB_SETBOUNDINGSIZE = (WM_USER+93)
+TB_SETHOTITEM2 = (WM_USER+94)
+TB_HASACCELERATOR = (WM_USER+95)
+TB_SETLISTGAP = (WM_USER+96)
+TB_GETIMAGELISTCOUNT = (WM_USER+98)
+TB_GETIDEALSIZE = (WM_USER+99)
+
+TBMF_PAD = 0x1
+TBMF_BARPAD = 0x2
+TBMF_BUTTONSPACING = 0x4
+
+class TBMETRICS(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('dwMask', DWORD),
+                ('cxPad', INT),
+                ('cyPad', INT),
+                ('cxBarPad', INT),
+                ('cyBarPad', INT),
+                ('cxButtonSpacing', INT),
+                ('cyButtonSpacing', INT),
+    ]
+
+LPTBMETRICS = POINTER(TBMETRICS)
+
+TB_GETMETRICS = (WM_USER+101)
+TB_SETMETRICS = (WM_USER+102)
+if NTDDI_VERSION >= 0x0600000:
+    TB_GETITEMDROPDOWNRECT = (WM_USER + 103)
+    TB_SETPRESSEDIMAGELIST = (WM_USER + 104)
+    TB_GETPRESSEDIMAGELIST = (WM_USER + 105)
+
+TB_SETWINDOWTHEME = CCM_SETWINDOWTHEME
+
+TBN_GETBUTTONINFOA = (TBN_FIRST-0)
+TBN_BEGINDRAG = (TBN_FIRST-1)
+TBN_ENDDRAG = (TBN_FIRST-2)
+TBN_BEGINADJUST = (TBN_FIRST-3)
+TBN_ENDADJUST = (TBN_FIRST-4)
+TBN_RESET = (TBN_FIRST-5)
+TBN_QUERYINSERT = (TBN_FIRST-6)
+TBN_QUERYDELETE = (TBN_FIRST-7)
+TBN_TOOLBARCHANGE = (TBN_FIRST-8)
+TBN_CUSTHELP = (TBN_FIRST-9)
+TBN_DROPDOWN = (TBN_FIRST - 10)
+TBN_GETOBJECT = (TBN_FIRST - 12)
+
+class tagNMTBHOTITEM(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('idOld', INT),
+                ('idNew', INT),
+                ('dwFlags', DWORD),
+    ]
+
+NMTBHOTITEM = tagNMTBHOTITEM
+LPNMTBHOTITEM = POINTER(NMTBHOTITEM)
+
+HICF_OTHER = 0x0
+HICF_MOUSE = 0x1
+HICF_ARROWKEYS = 0x2
+HICF_ACCELERATOR = 0x4
+HICF_DUPACCEL = 0x8
+HICF_ENTERING = 0x10
+HICF_LEAVING = 0x20
+HICF_RESELECT = 0x40
+HICF_LMOUSE = 0x80
+HICF_TOGGLEDROPDOWN = 0x100
+
+TBN_HOTITEMCHANGE = (TBN_FIRST - 13)
+TBN_DRAGOUT = (TBN_FIRST - 14)
+TBN_DELETINGBUTTON = (TBN_FIRST - 15)
+TBN_GETDISPINFOA = (TBN_FIRST - 16)
+TBN_GETDISPINFOW = (TBN_FIRST - 17)
+TBN_GETINFOTIPA = (TBN_FIRST - 18)
+TBN_GETINFOTIPW = (TBN_FIRST - 19)
+TBN_GETBUTTONINFOW = (TBN_FIRST - 20)
+TBN_RESTORE = (TBN_FIRST - 21)
+TBN_SAVE = (TBN_FIRST - 22)
+TBN_INITCUSTOMIZE = (TBN_FIRST - 23)
+
+TBNRF_HIDEHELP = 0x1
+TBNRF_ENDCUSTOMIZE = 0x2
+
+TBN_WRAPHOTITEM = (TBN_FIRST - 24)
+TBN_DUPACCELERATOR = (TBN_FIRST - 25)
+TBN_WRAPACCELERATOR = (TBN_FIRST - 26)
+TBN_DRAGOVER = (TBN_FIRST - 27)
+TBN_MAPACCELERATOR = (TBN_FIRST - 28)
+TBNRF_HIDEHELP = 0x1
+TBNRF_ENDCUSTOMIZE = 0x2
+
+class tagNMTBSAVE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('pData', PDWORD),
+                ('pCurrent', PDWORD),
+                ('cbData', UINT),
+                ('iItem', INT),
+                ('cButtons', INT),
+                ('tbButton', TBBUTTON),
+    ]
+
+NMTBSAVE = tagNMTBSAVE
+LPNMTBSAVE = POINTER(NMTBSAVE)
+
+class tagNMTBRESTORE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('pData', PDWORD),
+                ('pCurrent', PDWORD),
+                ('cbData', UINT),
+                ('iItem', INT),
+                ('cButtons', INT),
+                ('cbBytesPerRecord', INT),
+                ('tbButton', TBBUTTON),
+    ]
+
+NMTBRESTORE = tagNMTBRESTORE
+LPNMTBRESTORE = POINTER(NMTBRESTORE)
+
+class tagNMTBGETINFOTIPA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iItem', INT),
+                ('lParam', LPARAM),
+    ]
+
+NMTBGETINFOTIPA = tagNMTBGETINFOTIPA
+LPNMTBGETINFOTIPA = POINTER(NMTBGETINFOTIPA)
+
+class tagNMTBGETINFOTIPW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iItem', INT),
+                ('lParam', LPARAM),
+    ]
+
+NMTBGETINFOTIPW = tagNMTBGETINFOTIPW
+LPNMTBGETINFOTIPW = POINTER(NMTBGETINFOTIPW)
+
+TBN_GETINFOTIP = TBN_GETINFOTIPW if UNICODE else TBN_GETINFOTIPA
+NMTBGETINFOTIP = NMTBGETINFOTIPW if UNICODE else NMTBGETINFOTIPA
+LPNMTBGETINFOTIP = LPNMTBGETINFOTIPW if UNICODE else LPNMTBGETINFOTIPA
+
+TBNF_IMAGE = 0x1
+TBNF_TEXT = 0x2
+TBNF_DI_SETITEM = 0x10000000
+
+class NMTBDISPINFOA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwMask', DWORD),
+                ('idCommand', INT),
+                ('lParam', DWORD_PTR),
+                ('iImage', INT),
+                ('pszText', LPSTR),
+                ('cchText', INT),
+    ]
+
+LPNMTBDISPINFOA = POINTER(NMTBDISPINFOA)
+
+class NMTBDISPINFOW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwMask', DWORD),
+                ('idCommand', INT),
+                ('lParam', DWORD_PTR),
+                ('iImage', INT),
+                ('pszText', LPWSTR),
+                ('cchText', INT),
+    ]
+
+LPNMTBDISPINFOW = POINTER(NMTBDISPINFOW)
+
+TBN_GETDISPINFO = TBN_GETDISPINFOW if UNICODE else TBN_GETDISPINFOA
+NMTBDISPINFO = NMTBDISPINFOW if UNICODE else NMTBDISPINFOA
+LPNMTBDISPINFO = LPNMTBDISPINFOW if UNICODE else LPNMTBDISPINFOA
+
+TBDDRET_DEFAULT = 0
+TBDDRET_NODEFAULT = 1
+TBDDRET_TREATPRESSED = 2
+
+TBN_GETBUTTONINFO = TBN_GETBUTTONINFOW if UNICODE else TBN_GETBUTTONINFOA
+
+class tagNMTOOLBARA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('tbButton', TBBUTTON),
+                ('cchText', INT),
+                ('pszText', LPSTR),
+                ('rcButton', RECT),
+    ]
+
+NMTOOLBARA = tagNMTOOLBARA
+LPNMTOOLBARA = POINTER(NMTOOLBARA)
+
+class tagNMTOOLBARW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('tbButton', TBBUTTON),
+                ('cchText', INT),
+                ('pszText', LPWSTR),
+                ('rcButton', RECT),
+    ]
+
+NMTOOLBARW = tagNMTOOLBARW
+LPNMTOOLBARW = POINTER(NMTOOLBARW)
+
+NMTOOLBAR = NMTOOLBARW if UNICODE else NMTOOLBARA
+LPNMTOOLBAR = LPNMTOOLBARW if UNICODE else LPNMTOOLBARA
+
+TBNOTIFYA = NMTOOLBARA
+TBNOTIFYW = NMTOOLBARW
+LPTBNOTIFYA = LPNMTOOLBARA
+LPTBNOTIFYW = LPNMTOOLBARW
+
+TBNOTIFY = NMTOOLBAR
+LPTBNOTIFY = LPNMTOOLBAR
+
+REBARCLASSNAMEW = "ReBarWindow32"
+
+RBIM_IMAGELIST = 0x1
+
+RBS_TOOLTIPS = 0x100
+RBS_VARHEIGHT = 0x200
+RBS_BANDBORDERS = 0x400
+RBS_FIXEDORDER = 0x800
+RBS_REGISTERDROP = 0x1000
+RBS_AUTOSIZE = 0x2000
+RBS_VERTICALGRIPPER = 0x4000
+RBS_DBLCLKTOGGLE = 0x8000
+
+NOIMAGEAPIS = True
+
+class tagREBARINFO(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('fMask', UINT)
+    ]
+
+    if NOIMAGEAPIS:
+        _fields_.append(('himl', HIMAGELIST))
+    else:
+        _fields_.append(('himl', HANDLE))
+    
+REBARINFO = tagREBARINFO
+LPREBARINFO = POINTER(REBARINFO)
+
+RBBS_BREAK = 0x1
+RBBS_FIXEDSIZE = 0x2
+RBBS_CHILDEDGE = 0x4
+RBBS_HIDDEN = 0x8
+RBBS_NOVERT = 0x10
+RBBS_FIXEDBMP = 0x20
+RBBS_VARIABLEHEIGHT = 0x40
+RBBS_GRIPPERALWAYS = 0x80
+RBBS_NOGRIPPER = 0x100
+RBBS_USECHEVRON = 0x200
+RBBS_HIDETITLE = 0x400
+RBBS_TOPALIGN = 0x800
+
+RBBIM_STYLE = 0x1
+RBBIM_COLORS = 0x2
+RBBIM_TEXT = 0x4
+RBBIM_IMAGE = 0x8
+RBBIM_CHILD = 0x10
+RBBIM_CHILDSIZE = 0x20
+RBBIM_SIZE = 0x40
+RBBIM_BACKGROUND = 0x80
+RBBIM_ID = 0x100
+RBBIM_IDEALSIZE = 0x200
+RBBIM_LPARAM = 0x400
+RBBIM_HEADERSIZE = 0x800
+if NTDDI_VERSION >= 0x06000000:
+    RBBIM_CHEVRONLOCATION = 0x00001000
+    RBBIM_CHEVRONSTATE = 0x00002000
+
+class tagREBARBANDINFOA(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('fMask', UINT),
+                ('fStyle', UINT),
+                ('clrFore', COLORREF),
+                ('clrBack', COLORREF),
+                ('lpText', LPSTR),
+                ('cch', UINT),
+                ('iImage', INT),
+                ('hwndChild', HWND),
+                ('cxMinChild', UINT),
+                ('cyMinChild', UINT),
+                ('cx', UINT),
+                ('hbmBack', HBITMAP),
+                ('wID', UINT),
+                ('cyChild', UINT),
+                ('cyMaxChild', UINT),
+                ('cyIntegral', UINT),
+                ('cxIdeal', UINT),
+                ('lParam', LPARAM),
+                ('cxHeader', UINT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('rcChevronLocation', RECT))
+        _fields_.append(('uChevronState', UINT))
+    
+REBARBANDINFOA = tagREBARBANDINFOA
+LPREBARBANDINFOA = POINTER(REBARBANDINFOA)
+LPCREBARBANDINFOA = LPREBARBANDINFOA
+
+class tagREBARBANDINFOW(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('fMask', UINT),
+                ('fStyle', UINT),
+                ('clrFore', COLORREF),
+                ('clrBack', COLORREF),
+                ('lpText', LPWSTR),
+                ('cch', UINT),
+                ('iImage', INT),
+                ('hwndChild', HWND),
+                ('cxMinChild', UINT),
+                ('cyMinChild', UINT),
+                ('cx', UINT),
+                ('hbmBack', HBITMAP),
+                ('wID', UINT),
+                ('cyChild', UINT),
+                ('cyMaxChild', UINT),
+                ('cyIntegral', UINT),
+                ('cxIdeal', UINT),
+                ('lParam', LPARAM),
+                ('cxHeader', UINT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('rcChevronLocation', RECT))
+        _fields_.append(('uChevronState', UINT))
+
+REBARBANDINFOW = tagREBARBANDINFOW
+LPREBARBANDINFOW = POINTER(REBARBANDINFOW)
+LPCREBARBANDINFOW = LPREBARBANDINFOW
+
+REBARBANDINFO = REBARBANDINFOW if UNICODE else REBARBANDINFOA
+LPREBARBANDINFO = LPREBARBANDINFOW if UNICODE else LPREBARBANDINFOA
+LPCREBARBANDINFO = LPCREBARBANDINFOW if UNICODE else LPCREBARBANDINFOA
+
+RB_INSERTBANDA = (WM_USER+1)
+RB_DELETEBAND = (WM_USER+2)
+RB_GETBARINFO = (WM_USER+3)
+RB_SETBARINFO = (WM_USER+4)
+RB_SETBANDINFOA = (WM_USER+6)
+RB_SETPARENT = (WM_USER+7)
+RB_HITTEST = (WM_USER+8)
+RB_GETRECT = (WM_USER+9)
+RB_INSERTBANDW = (WM_USER+10)
+RB_SETBANDINFOW = (WM_USER+11)
+RB_GETBANDCOUNT = (WM_USER+12)
+RB_GETROWCOUNT = (WM_USER+13)
+RB_GETROWHEIGHT = (WM_USER+14)
+RB_IDTOINDEX = (WM_USER+16)
+RB_GETTOOLTIPS = (WM_USER+17)
+RB_SETTOOLTIPS = (WM_USER+18)
+RB_SETBKCOLOR = (WM_USER+19)
+RB_GETBKCOLOR = (WM_USER+20)
+RB_SETTEXTCOLOR = (WM_USER+21)
+RB_GETTEXTCOLOR = (WM_USER+22)
+
+RBSTR_CHANGERECT = 0x1
+
+RB_SIZETORECT = (WM_USER+23)
+RB_SETCOLORSCHEME = CCM_SETCOLORSCHEME
+RB_GETCOLORSCHEME = CCM_GETCOLORSCHEME
+
+RB_INSERTBAND = RB_INSERTBANDW if UNICODE else RB_INSERTBANDA
+RB_SETBANDINFO = RB_SETBANDINFOW if UNICODE else RB_SETBANDINFOA
+
+RB_BEGINDRAG = (WM_USER+24)
+RB_ENDDRAG = (WM_USER+25)
+RB_DRAGMOVE = (WM_USER+26)
+RB_GETBARHEIGHT = (WM_USER+27)
+RB_GETBANDINFOW = (WM_USER+28)
+RB_GETBANDINFOA = (WM_USER+29)
+
+RB_GETBANDINFO = RB_GETBANDINFOW if UNICODE else RB_GETBANDINFOA
+
+RB_MINIMIZEBAND = (WM_USER+30)
+RB_MAXIMIZEBAND = (WM_USER+31)
+RB_GETDROPTARGET = (CCM_GETDROPTARGET)
+RB_GETBANDBORDERS = (WM_USER+34)
+RB_SHOWBAND = (WM_USER+35)
+RB_SETPALETTE = (WM_USER+37)
+RB_GETPALETTE = (WM_USER+38)
+RB_MOVEBAND = (WM_USER+39)
+RB_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+RB_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+RB_GETBANDMARGINS = (WM_USER+40)
+RB_SETWINDOWTHEME = CCM_SETWINDOWTHEME
+
+if WIN32_IE >= 0x0600:
+    RB_SETEXTENDEDSTYLE = (WM_USER+41)
+    RB_GETEXTENDEDSTYLE = (WM_USER+42)
+
+RB_PUSHCHEVRON = (WM_USER+43)
+
+if NTDDI_VERSION >= 0x06000000:
+    RB_SETBANDWIDTH = (WM_USER + 44)
+
+RBN_HEIGHTCHANGE = (RBN_FIRST - 0)
+RBN_GETOBJECT = (RBN_FIRST - 1)
+RBN_LAYOUTCHANGED = (RBN_FIRST - 2)
+RBN_AUTOSIZE = (RBN_FIRST - 3)
+RBN_BEGINDRAG = (RBN_FIRST - 4)
+RBN_ENDDRAG = (RBN_FIRST - 5)
+RBN_DELETINGBAND = (RBN_FIRST - 6)
+RBN_DELETEDBAND = (RBN_FIRST - 7)
+RBN_CHILDSIZE = (RBN_FIRST - 8)
+RBN_CHEVRONPUSHED = (RBN_FIRST - 10)
+
+if WIN32_IE >= 0x0600:
+    RBN_SPLITTERDRAG = (RBN_FIRST - 11)
+
+RBN_MINMAX = (RBN_FIRST - 21)
+RBN_AUTOBREAK = (RBN_FIRST - 22)
+
+class tagNMREBARCHILDSIZE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('uBand', UINT),
+                ('wID', UINT),
+                ('rcChild', RECT),
+                ('rcBand', RECT),
+    ]
+
+NMREBARCHILDSIZE = tagNMREBARCHILDSIZE
+LPNMREBARCHILDSIZE = POINTER(NMREBARCHILDSIZE)
+
+class tagNMREBAR(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwMask', DWORD),
+                ('uBand', UINT),
+                ('fStyle', UINT),
+                ('wID', UINT),
+                ('lParam', LPARAM),
+    ]
+
+NMREBAR = tagNMREBAR
+LPNMREBAR = POINTER(NMREBAR)
+
+RBNM_ID = 0x1
+RBNM_STYLE = 0x2
+RBNM_LPARAM = 0x4
+
+class tagNMRBAUTOSIZE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('fChanged', WINBOOL),
+                ('rcTarget', RECT),
+                ('rcActual', RECT),
+    ]
+
+NMRBAUTOSIZE = tagNMRBAUTOSIZE
+LPNMRBAUTOSIZE = POINTER(NMRBAUTOSIZE)
+
+class tagNMREBARCHEVRON(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('uBand', UINT),
+                ('wID', UINT),
+                ('lParam', LPARAM),
+                ('rc', RECT),
+                ('lParamNM', LPARAM),
+    ]
+
+NMREBARCHEVRON = tagNMREBARCHEVRON
+LPNMREBARCHEVRON = POINTER(NMREBARCHEVRON)
+
+if WIN32_IE >= 0x0600:
+    class tagNMREBARSPLITTER(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('rcSizing', RECT)
+        ]
+    
+    NMREBARSPLITTER = tagNMREBARSPLITTER
+    LPNMREBARSPLITTER = POINTER(NMREBARSPLITTER)
+
+RBAB_AUTOSIZE = 0x1
+RBAB_ADDBAND = 0x2
+
+class tagNMREBARAUTOBREAK(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ("uBand", UINT),
+                ("wID", UINT),
+                ("lParam", LPARAM),
+                ("uMsg", UINT),
+                ("fStyleCurrent", UINT),
+                ("fAutoBreak", WINBOOL),
+    ]
+
+NMREBARAUTOBREAK = tagNMREBARAUTOBREAK
+LPNMREBARAUTOBREAK = POINTER(NMREBARAUTOBREAK)
+
+RBHT_NOWHERE = 0x1
+RBHT_CAPTION = 0x2
+RBHT_CLIENT = 0x3
+RBHT_GRABBER = 0x4
+RBHT_CHEVRON = 0x8
+
+if WIN32_IE >= 0x0600:
+    RBHT_SPLITTER = 0x10
+
+class _RB_HITTESTINFO(Structure):
+    _fields_ = [('pt', POINT),
+                ('flags', UINT),
+                ('iBand', INT),
+    ]
+
+RBHITTESTINFO = _RB_HITTESTINFO
+LPRBHITTESTINFO = POINTER(RBHITTESTINFO)
+
+TOOLTIPS_CLASSW = "tooltips_class32"
+
+class tagTOOLINFOA(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('uFlags', UINT),
+                ('hwnd', HWND),
+                ('uId', UINT_PTR),
+                ('rect', RECT),
+                ('hinst', HINSTANCE),
+                ('lpszText', LPSTR),
+                ('lParam', LPARAM),
+                ('lpReserved', PVOID),
+    ]
+
+TTTOOLINFOA = tagTOOLINFOA
+PTOOLINFOA = POINTER(TTTOOLINFOA)
+LPTTTOOLINFOA = PTOOLINFOA
+
+class tagTOOLINFOW(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('uFlags', UINT),
+                ('hwnd', HWND),
+                ('uId', UINT_PTR),
+                ('rect', RECT),
+                ('hinst', HINSTANCE),
+                ('lpszText', LPWSTR),
+                ('lParam', LPARAM),
+                ('lpReserved', PVOID),
+    ]
+
+TTTOOLINFOW = tagTOOLINFOW
+PTOOLINFOW = POINTER(TTTOOLINFOW)
+LPTTTOOLINFOW = PTOOLINFOW
+
+
+LPTOOLINFOA = LPTTTOOLINFOA
+LPTOOLINFOW = LPTTTOOLINFOW
+TOOLINFOA = TTTOOLINFOA
+TOOLINFOW = TTTOOLINFOW
+
+LPTOOLINFO = LPTTTOOLINFOW if UNICODE else LPTTTOOLINFOA
+TOOLINFO = TTTOOLINFOW if UNICODE else TTTOOLINFOA
+
+NEAR = TTTOOLINFOW if UNICODE else TTTOOLINFOA
+
+TTS_ALWAYSTIP = 0x1
+TTS_NOPREFIX = 0x2
+TTS_NOANIMATE = 0x10
+TTS_NOFADE = 0x20
+TTS_BALLOON = 0x40
+TTS_CLOSE = 0x80
+
+if NTDDI_VERSION >= 0x06000000:
+    TTS_USEVISUALSTYLE = 0x100
+
+TTF_IDISHWND = 0x1
+TTF_CENTERTIP = 0x2
+TTF_RTLREADING = 0x4
+TTF_SUBCLASS = 0x10
+TTF_TRACK = 0x20
+TTF_ABSOLUTE = 0x80
+TTF_TRANSPARENT = 0x100
+TTF_PARSELINKS = 0x1000
+TTF_DI_SETITEM = 0x8000
+
+TTDT_AUTOMATIC = 0
+TTDT_RESHOW = 1
+TTDT_AUTOPOP = 2
+TTDT_INITIAL = 3
+
+TTI_NONE = 0
+TTI_INFO = 1
+TTI_WARNING = 2
+TTI_ERROR = 3
+
+if NTDDI_VERSION >= 0x06000000:
+    TTI_INFO_LARGE = 4
+    TTI_WARNING_LARGE = 5
+    TTI_ERROR_LARGE = 6
+
+TTM_ACTIVATE = (WM_USER+1)
+TTM_SETDELAYTIME = (WM_USER+3)
+TTM_ADDTOOLA = (WM_USER+4)
+TTM_ADDTOOLW = (WM_USER+50)
+TTM_DELTOOLA = (WM_USER+5)
+TTM_DELTOOLW = (WM_USER+51)
+TTM_NEWTOOLRECTA = (WM_USER+6)
+TTM_NEWTOOLRECTW = (WM_USER+52)
+TTM_RELAYEVENT = (WM_USER+7)
+
+TTM_GETTOOLINFOA = (WM_USER+8)
+TTM_GETTOOLINFOW = (WM_USER+53)
+
+TTM_SETTOOLINFOA = (WM_USER+9)
+TTM_SETTOOLINFOW = (WM_USER+54)
+
+TTM_HITTESTA = (WM_USER +10)
+TTM_HITTESTW = (WM_USER +55)
+TTM_GETTEXTA = (WM_USER +11)
+TTM_GETTEXTW = (WM_USER +56)
+TTM_UPDATETIPTEXTA = (WM_USER +12)
+TTM_UPDATETIPTEXTW = (WM_USER +57)
+TTM_GETTOOLCOUNT = (WM_USER +13)
+TTM_ENUMTOOLSA = (WM_USER +14)
+TTM_ENUMTOOLSW = (WM_USER +58)
+TTM_GETCURRENTTOOLA = (WM_USER+15)
+TTM_GETCURRENTTOOLW = (WM_USER+59)
+TTM_WINDOWFROMPOINT = (WM_USER+16)
+TTM_TRACKACTIVATE = (WM_USER+17)
+TTM_TRACKPOSITION = (WM_USER+18)
+TTM_SETTIPBKCOLOR = (WM_USER+19)
+TTM_SETTIPTEXTCOLOR = (WM_USER+20)
+TTM_GETDELAYTIME = (WM_USER+21)
+TTM_GETTIPBKCOLOR = (WM_USER+22)
+TTM_GETTIPTEXTCOLOR = (WM_USER+23)
+TTM_SETMAXTIPWIDTH = (WM_USER+24)
+TTM_GETMAXTIPWIDTH = (WM_USER+25)
+TTM_SETMARGIN = (WM_USER+26)
+TTM_GETMARGIN = (WM_USER+27)
+TTM_POP = (WM_USER+28)
+TTM_UPDATE = (WM_USER+29)
+TTM_GETBUBBLESIZE = (WM_USER+30)
+TTM_ADJUSTRECT = (WM_USER+31)
+TTM_SETTITLEA = (WM_USER+32)
+TTM_SETTITLEW = (WM_USER+33)
+
+TTM_POPUP = (WM_USER+34)
+TTM_GETTITLE = (WM_USER+35)
+
+class _TTGETTITLE(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('uTitleBitmap', UINT),
+                ('cch', UINT),
+                ('pszTitle', PWCHAR),
+    ]
+
+TTGETTITLE = _TTGETTITLE
+PTTGETTITLE = POINTER(TTGETTITLE)
+
+TTM_ADDTOOL =  TTM_ADDTOOLW if UNICODE else TTM_ADDTOOLA
+TTM_DELTOOL =  TTM_DELTOOLW if UNICODE else TTM_DELTOOLA
+TTM_NEWTOOLRECT =  TTM_NEWTOOLRECTW if UNICODE else TTM_NEWTOOLRECTA
+TTM_GETTOOLINFO =  TTM_GETTOOLINFOW if UNICODE else TTM_GETTOOLINFOA
+TTM_SETTOOLINFO =  TTM_SETTOOLINFOW if UNICODE else TTM_SETTOOLINFOA
+TTM_HITTEST =  TTM_HITTESTW if UNICODE else TTM_HITTESTA
+TTM_GETTEXT =  TTM_GETTEXTW if UNICODE else TTM_GETTEXTA
+TTM_UPDATETIPTEXT =  TTM_UPDATETIPTEXTW if UNICODE else TTM_UPDATETIPTEXTA
+TTM_ENUMTOOLS =  TTM_ENUMTOOLSW if UNICODE else TTM_ENUMTOOLSA
+TTM_GETCURRENTTOOL =  TTM_GETCURRENTTOOLW if UNICODE else TTM_GETCURRENTTOOLA
+TTM_SETTITLE =  TTM_SETTITLEW if UNICODE else TTM_SETTITLEA
+
+class _TT_HITTESTINFOA(Structure):
+    _fields_ = [('hwnd', HWND),
+                ('pt', POINT),
+                ('ti', TTTOOLINFOA),
+    ]
+
+TTHITTESTINFOA = _TT_HITTESTINFOA
+LPTTHITTESTINFOA = POINTER(TTHITTESTINFOA)
+
+class _TT_HITTESTINFOW(Structure):
+    _fields_ = [('hwnd', HWND),
+                ('pt', POINT),
+                ('ti', TTTOOLINFOW),
+    ]
+
+TTHITTESTINFOW = _TT_HITTESTINFOW
+LPTTHITTESTINFOW = POINTER(TTHITTESTINFOW)
+
+TTHITTESTINFO = TTHITTESTINFOW if UNICODE else TTHITTESTINFOA
+LPTTHITTESTINFO = LPTTHITTESTINFOW if UNICODE else LPTTHITTESTINFOA
+
+LPHITTESTINFOW = LPTTHITTESTINFOW
+LPHITTESTINFOA = LPTTHITTESTINFOA
+LPHITTESTINFO = LPTTHITTESTINFO
+
+TTN_GETDISPINFOA = (TTN_FIRST - 0)
+TTN_GETDISPINFOW = (TTN_FIRST - 10)
+TTN_SHOW = (TTN_FIRST - 1)
+TTN_POP = (TTN_FIRST - 2)
+TTN_LINKCLICK = (TTN_FIRST - 3)
+
+TTN_GETDISPINFO = TTN_GETDISPINFOW if UNICODE else TTN_GETDISPINFOA
+
+TTN_NEEDTEXT = TTN_GETDISPINFO
+TTN_NEEDTEXTA = TTN_GETDISPINFOA
+TTN_NEEDTEXTW = TTN_GETDISPINFOW
+
+class tagNMTTDISPINFOA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('lpszText', LPSTR),
+                ('szText', CHAR * 80),
+                ('hinst', HINSTANCE),
+                ('uFlags', UINT),
+                ('lParam', LPARAM),
+    ]
+
+NMTTDISPINFOA = tagNMTTDISPINFOA
+LPNMTTDISPINFOA = POINTER(NMTTDISPINFOA)
+
+class tagNMTTDISPINFOW(Structure):
+     _fields_ = [('hdr', NMHDR),
+                ('lpszText', LPWSTR),
+                ('szText', WCHAR * 80),
+                ('hinst', HINSTANCE),
+                ('uFlags', UINT),
+                ('lParam', LPARAM),
+    ]
+
+NMTTDISPINFOW = tagNMTTDISPINFOW
+LPNMTTDISPINFOW = POINTER(NMTTDISPINFOW)
+
+TOOLTIPTEXTW = NMTTDISPINFOW
+TOOLTIPTEXTA = NMTTDISPINFOA
+LPTOOLTIPTEXTA = LPNMTTDISPINFOA
+LPTOOLTIPTEXTW = LPNMTTDISPINFOW
+
+TOOLTIPTEXT = NMTTDISPINFOW if UNICODE else NMTTDISPINFOA
+LPTOOLTIPTEXT = LPNMTTDISPINFOW if UNICODE else LPNMTTDISPINFOA
+
+SBARS_SIZEGRIP = 0x100
+SBARS_TOOLTIPS = 0x800
+SBT_TOOLTIPS = 0x800
+
+STATUSCLASSNAME = "msctls_statusbar32"
+
+SB_SETTEXTA = (WM_USER+1)
+SB_SETTEXTW = (WM_USER+11)
+SB_GETTEXTA = (WM_USER+2)
+SB_GETTEXTW = (WM_USER+13)
+SB_GETTEXTLENGTHA = (WM_USER+3)
+SB_GETTEXTLENGTHW = (WM_USER+12)
+
+SB_SETPARTS = (WM_USER+4)
+SB_GETPARTS = (WM_USER+6)
+SB_GETBORDERS = (WM_USER+7)
+SB_SETMINHEIGHT = (WM_USER+8)
+SB_SIMPLE = (WM_USER+9)
+SB_GETRECT = (WM_USER+10)
+SB_ISSIMPLE = (WM_USER+14)
+SB_SETICON = (WM_USER+15)
+SB_SETTIPTEXTA = (WM_USER+16)
+SB_SETTIPTEXTW = (WM_USER+17)
+SB_GETTIPTEXTA = (WM_USER+18)
+SB_GETTIPTEXTW = (WM_USER+19)
+SB_GETICON = (WM_USER+20)
+SB_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+SB_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+SBT_OWNERDRAW = 0x1000
+SBT_NOBORDERS = 0x100
+SBT_POPOUT = 0x200
+SBT_RTLREADING = 0x400
+SBT_NOTABPARSING = 0x800
+
+SB_SETBKCOLOR = CCM_SETBKCOLOR
+
+SB_GETTEXT = SB_GETTEXTW if UNICODE else SB_GETTEXTA
+SB_SETTEXT = SB_SETTEXTW if UNICODE else SB_SETTEXTA
+SB_GETTEXTLENGTH = SB_GETTEXTLENGTHW if UNICODE else SB_GETTEXTLENGTHA
+SB_SETTIPTEXT = SB_SETTIPTEXTW if UNICODE else SB_SETTIPTEXTA
+SB_GETTIPTEXT = SB_GETTIPTEXTW if UNICODE else SB_GETTIPTEXTA
+
+SBN_SIMPLEMODECHANGE = (SBN_FIRST - 0)
+
+SB_SIMPLEID = 0xff
+
+MINSYSCOMMAND = SC_SIZE
+
+TRACKBAR_CLASS = "msctls_trackbar32"
+
+TBS_AUTOTICKS = 0x1
+TBS_VERT = 0x2
+TBS_HORZ = 0x0
+TBS_TOP = 0x4
+TBS_BOTTOM = 0x0
+TBS_LEFT = 0x4
+TBS_RIGHT = 0x0
+TBS_BOTH = 0x8
+TBS_NOTICKS = 0x10
+TBS_ENABLESELRANGE = 0x20
+TBS_FIXEDLENGTH = 0x40
+TBS_NOTHUMB = 0x80
+TBS_TOOLTIPS = 0x100
+TBS_REVERSED = 0x200
+TBS_DOWNISLEFT = 0x400
+#if _WIN32_IE >= 0x0600
+TBS_NOTIFYBEFOREMOVE = 0x800
+#endif
+#if NTDDI_VERSION >= 0x06000000
+TBS_TRANSPARENTBKGND = 0x1000
+#endif
+
+TBM_GETPOS = (WM_USER)
+TBM_GETRANGEMIN = (WM_USER+1)
+TBM_GETRANGEMAX = (WM_USER+2)
+TBM_GETTIC = (WM_USER+3)
+TBM_SETTIC = (WM_USER+4)
+TBM_SETPOS = (WM_USER+5)
+TBM_SETRANGE = (WM_USER+6)
+TBM_SETRANGEMIN = (WM_USER+7)
+TBM_SETRANGEMAX = (WM_USER+8)
+TBM_CLEARTICS = (WM_USER+9)
+TBM_SETSEL = (WM_USER+10)
+TBM_SETSELSTART = (WM_USER+11)
+TBM_SETSELEND = (WM_USER+12)
+TBM_GETPTICS = (WM_USER+14)
+TBM_GETTICPOS = (WM_USER+15)
+TBM_GETNUMTICS = (WM_USER+16)
+TBM_GETSELSTART = (WM_USER+17)
+TBM_GETSELEND = (WM_USER+18)
+TBM_CLEARSEL = (WM_USER+19)
+TBM_SETTICFREQ = (WM_USER+20)
+TBM_SETPAGESIZE = (WM_USER+21)
+TBM_GETPAGESIZE = (WM_USER+22)
+TBM_SETLINESIZE = (WM_USER+23)
+TBM_GETLINESIZE = (WM_USER+24)
+TBM_GETTHUMBRECT = (WM_USER+25)
+TBM_GETCHANNELRECT = (WM_USER+26)
+TBM_SETTHUMBLENGTH = (WM_USER+27)
+TBM_GETTHUMBLENGTH = (WM_USER+28)
+TBM_SETTOOLTIPS = (WM_USER+29)
+TBM_GETTOOLTIPS = (WM_USER+30)
+TBM_SETTIPSIDE = (WM_USER+31)
+
+TBTS_TOP = 0
+TBTS_LEFT = 1
+TBTS_BOTTOM = 2
+TBTS_RIGHT = 3
+
+TBM_SETBUDDY = (WM_USER+32)
+TBM_GETBUDDY = (WM_USER+33)
+TBM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+TBM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+TB_LINEUP = 0
+TB_LINEDOWN = 1
+TB_PAGEUP = 2
+TB_PAGEDOWN = 3
+TB_THUMBPOSITION = 4
+TB_THUMBTRACK = 5
+TB_TOP = 6
+TB_BOTTOM = 7
+TB_ENDTRACK = 8
+
+TBCD_TICS = 0x1
+TBCD_THUMB = 0x2
+TBCD_CHANNEL = 0x3
+
+if NTDDI_VERSION >= 0x06000000:
+    TRBN_THUMBPOSCHANGING = (TRBN_FIRST-1)
+
+    class tagTRBTHUMBPOSCHANGING(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('dwPos', DWORD),
+                    ('nReason', INT),
+        ]
+    
+    NMTRBTHUMBPOSCHANGING = tagTRBTHUMBPOSCHANGING
+
+class tagDRAGLISTINFO(Structure):
+    _fields_ = [('uNotification', UINT),
+                ('hWnd', HWND),
+                ('ptCursor', POINT),
+    ]
+
+DRAGLISTINFO = tagDRAGLISTINFO
+LPDRAGLISTINFO = POINTER(DRAGLISTINFO)
+
+DL_BEGINDRAG = (WM_USER+133)
+DL_DRAGGING = (WM_USER+134)
+DL_DROPPED = (WM_USER+135)
+DL_CANCELDRAG = (WM_USER+136)
+
+DL_CURSORSET = 0
+DL_STOPCURSOR = 1
+DL_COPYCURSOR = 2
+DL_MOVECURSOR = 3
+
+DRAGLISTMSGSTRING = "commctrl_DragListMsg"
+
+UPDOWN_CLASS = "msctls_updown32"
+
+class _UDACCEL(Structure):
+    _fields_ = [('nSec', UINT),
+                ('nInc', UINT)
+    ]
+
+UDACCEL = _UDACCEL
+LPUDACCEL = POINTER(UDACCEL)
+
+UD_MAXVAL = 0x7fff
+UD_MINVAL = (-UD_MAXVAL)
+
+UDS_WRAP = 0x1
+UDS_SETBUDDYINT = 0x2
+UDS_ALIGNRIGHT = 0x4
+UDS_ALIGNLEFT = 0x8
+UDS_AUTOBUDDY = 0x10
+UDS_ARROWKEYS = 0x20
+UDS_HORZ = 0x40
+UDS_NOTHOUSANDS = 0x80
+UDS_HOTTRACK = 0x100
+
+UDM_SETRANGE = (WM_USER+101)
+UDM_GETRANGE = (WM_USER+102)
+UDM_SETPOS = (WM_USER+103)
+UDM_GETPOS = (WM_USER+104)
+UDM_SETBUDDY = (WM_USER+105)
+UDM_GETBUDDY = (WM_USER+106)
+UDM_SETACCEL = (WM_USER+107)
+UDM_GETACCEL = (WM_USER+108)
+UDM_SETBASE = (WM_USER+109)
+UDM_GETBASE = (WM_USER+110)
+UDM_SETRANGE32 = (WM_USER+111)
+UDM_GETRANGE32 = (WM_USER+112)
+UDM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+UDM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+UDM_SETPOS32 = (WM_USER+113)
+UDM_GETPOS32 = (WM_USER+114)
+
+class _NM_UPDOWN(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iPos', INT),
+                ('iDelta', INT),
+    ]
+
+NMUPDOWN = _NM_UPDOWN
+LPNMUPDOWN = POINTER(NMUPDOWN)
+
+NM_UPDOWN = NMUPDOWN
+LPNM_UPDOWN = LPNMUPDOWN
+
+UDN_DELTAPOS = (UDN_FIRST - 1)
+
+PROGRESS_CLASS = "msctls_progress32"
+
+PBS_SMOOTH = 0x1
+PBS_VERTICAL = 0x4
+
+PBM_SETRANGE = (WM_USER+1)
+PBM_SETPOS = (WM_USER+2)
+PBM_DELTAPOS = (WM_USER+3)
+PBM_SETSTEP = (WM_USER+4)
+PBM_STEPIT = (WM_USER+5)
+PBM_SETRANGE32 = (WM_USER+6)
+
+class PBRANGE(Structure):
+    _fields_ = [('iLow', INT),
+                ('iHigh', INT)
+    ]
+
+PPBRANGE = POINTER(PBRANGE)
+
+PBM_GETRANGE = (WM_USER+7)
+PBM_GETPOS = (WM_USER+8)
+PBM_SETBARCOLOR = (WM_USER+9)
+PBM_SETBKCOLOR = CCM_SETBKCOLOR
+
+PBS_MARQUEE = 0x8
+PBM_SETMARQUEE = (WM_USER+10)
+
+if NTDDI_VERSION >= 0x06000000:
+    PBM_GETSTEP = (WM_USER+13)
+    PBM_GETBKCOLOR = (WM_USER+14)
+    PBM_GETBARCOLOR = (WM_USER+15)
+    PBM_SETSTATE = (WM_USER+16)
+    PBM_GETSTATE = (WM_USER+17)
+
+    PBS_SMOOTHREVERSE = 0x10
+
+    PBST_NORMAL = 1
+    PBST_ERROR = 2
+    PBST_PAUSED = 3
+
+HOTKEYF_SHIFT = 0x1
+HOTKEYF_CONTROL = 0x2
+HOTKEYF_ALT = 0x4
+HOTKEYF_EXT = 0x8
+HKCOMB_NONE = 0x1
+HKCOMB_S = 0x2
+HKCOMB_C = 0x4
+HKCOMB_A = 0x8
+HKCOMB_SC = 0x10
+HKCOMB_SA = 0x20
+HKCOMB_CA = 0x40
+HKCOMB_SCA = 0x80
+
+HKM_SETHOTKEY = (WM_USER+1)
+HKM_GETHOTKEY = (WM_USER+2)
+HKM_SETRULES = (WM_USER+3)
+
+HOTKEY_CLASS = "msctls_hotkey32"
+
+CCS_TOP = 0x1
+CCS_NOMOVEY = 0x2
+CCS_BOTTOM = 0x3
+CCS_NORESIZE = 0x4
+CCS_NOPARENTALIGN = 0x8
+CCS_ADJUSTABLE = 0x20
+CCS_NODIVIDER = 0x40
+CCS_VERT = 0x80
+CCS_LEFT = (CCS_VERT | CCS_TOP)
+CCS_RIGHT = (CCS_VERT | CCS_BOTTOM)
+CCS_NOMOVEX = (CCS_VERT | CCS_NOMOVEY)
+
+INVALID_LINK_INDEX = (-1)
+MAX_LINKID_TEXT = 48
+L_MAX_URL_LENGTH = (2048 + 32 + len("://") + 1)
+
+WC_LINK = "SysLink"
+
+class tagLITEM(Structure):
+    _fields_ = [('mask', UINT),
+                ('iLink', INT),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('szID', WCHAR * MAX_LINKID_TEXT),
+                ('szUrl', WCHAR * L_MAX_URL_LENGTH),
+    ]
+
+LITEM = tagLITEM
+PLITEM = POINTER(LITEM)
+
+class tagLHITTESTINFO(Structure):
+    _fields_ = [('pt', POINT),
+                ('item', LITEM)
+    ]
+
+LHITTESTINFO = tagLHITTESTINFO
+PLHITTESTINFO = POINTER(LHITTESTINFO)
+
+class tagNMLINK(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('item', LITEM),
+    ]
+
+NMLINK = tagNMLINK
+PNMLINK = POINTER(NMLINK)
+
+WC_LISTVIEW = "SysListView32"
+
+LVS_ICON = 0x0
+LVS_REPORT = 0x1
+LVS_SMALLICON = 0x2
+LVS_LIST = 0x3
+LVS_TYPEMASK = 0x3
+LVS_SINGLESEL = 0x4
+LVS_SHOWSELALWAYS = 0x8
+LVS_SORTASCENDING = 0x10
+LVS_SORTDESCENDING = 0x20
+LVS_SHAREIMAGELISTS = 0x40
+LVS_NOLABELWRAP = 0x80
+LVS_AUTOARRANGE = 0x100
+LVS_EDITLABELS = 0x200
+LVS_OWNERDATA = 0x1000
+LVS_NOSCROLL = 0x2000
+
+LVS_TYPESTYLEMASK = 0xfc00
+
+LVS_ALIGNTOP = 0x0
+LVS_ALIGNLEFT = 0x800
+LVS_ALIGNMASK = 0xc00
+
+LVS_OWNERDRAWFIXED = 0x400
+LVS_NOCOLUMNHEADER = 0x4000
+LVS_NOSORTHEADER = 0x8000
+
+LVM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+
+LVM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+LVM_GETBKCOLOR = (LVM_FIRST+0)
+
+LVM_SETBKCOLOR = (LVM_FIRST+1)
+
+LVM_GETIMAGELIST = (LVM_FIRST+2)
+
+LVSIL_NORMAL = 0
+LVSIL_SMALL = 1
+LVSIL_STATE = 2
+LVSIL_GROUPHEADER = 3
+
+LVM_SETIMAGELIST = (LVM_FIRST+3)
+
+LVM_GETITEMCOUNT = (LVM_FIRST+4)
+
+LVIF_TEXT = 0x1
+LVIF_IMAGE = 0x2
+LVIF_PARAM = 0x4
+LVIF_STATE = 0x8
+LVIF_INDENT = 0x10
+LVIF_NORECOMPUTE = 0x800
+LVIF_GROUPID = 0x100
+LVIF_COLUMNS = 0x200
+#if NTDDI_VERSION >= 0x06000000
+LVIF_COLFMT = 0x10000
+
+LVIS_FOCUSED = 0x1
+LVIS_SELECTED = 0x2
+LVIS_CUT = 0x4
+LVIS_DROPHILITED = 0x8
+LVIS_GLOW = 0x10
+LVIS_ACTIVATING = 0x20
+
+LVIS_OVERLAYMASK = 0xf00
+LVIS_STATEIMAGEMASK = 0xF000
+
+
+def INDEXTOSTATEIMAGEMASK(i):
+    return i << 12
+
+
+class tagLVITEMA(Structure):
+    _fields_ = [('mask', UINT),
+                ('iItem', INT),
+                ('iSubItem', INT),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('lParam', LPARAM),
+                ('iIndent', INT),
+                ('iGroupId', INT),
+                ('cColumns', UINT),
+                ('puColumns', PUINT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('piColFmt', PINT))
+        _fields_.append(('iGroup', INT))
+
+LVITEMA = tagLVITEMA
+LPLVITEMA = POINTER(LVITEMA)
+
+class tagLVITEMW(Structure):
+    _fields_ = [('mask', UINT),
+                ('iItem', INT),
+                ('iSubItem', INT),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('lParam', LPARAM),
+                ('iIndent', INT),
+                ('iGroupId', INT),
+                ('cColumns', UINT),
+                ('puColumns', PUINT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('piColFmt', PINT))
+        _fields_.append(('iGroup', INT))
+
+LVITEMW = tagLVITEMW
+LPLVITEMW = POINTER(LVITEMW)
+
+I_INDENTCALLBACK = -1
+LV_ITEMA = LVITEMA
+LV_ITEMW = LVITEMW
+
+I_GROUPIDCALLBACK = -1
+I_GROUPIDNONE = -2
+
+LVITEM = LVITEMW if UNICODE else LVITEMA
+LPLVITEM = LPLVITEMW if UNICODE else LPLVITEMA
+
+LV_ITEM = LVITEM
+
+LPSTR_TEXTCALLBACKW = LPVOID(INT_PTR(-1).value).value   # see winuser.py lines 350 ~ 354
+LPSTR_TEXTCALLBACKA = LPVOID(INT_PTR(-1).value).value   # see winuser.py lines 350 ~ 354
+
+# LPSTR_TEXTCALLBACKW = LPWSTR(INT_PTR(-1).value).value
+# LPSTR_TEXTCALLBACKA = LPSTR(INT_PTR(-1).value).value
+
+LPSTR_TEXTCALLBACK = LPSTR_TEXTCALLBACKW if UNICODE else LPSTR_TEXTCALLBACKA
+
+I_IMAGECALLBACK = (-1)
+I_IMAGENONE = (-2)
+I_COLUMNSCALLBACK = UINT(-1).value
+
+LVM_GETITEMA = (LVM_FIRST+5)
+LVM_GETITEMW = (LVM_FIRST+75)
+
+LVM_GETITEM = LVM_GETITEMW if UNICODE else LVM_GETITEMA
+
+LVM_SETITEMA = (LVM_FIRST+6)
+LVM_SETITEMW = (LVM_FIRST+76)
+
+LVM_SETITEM = LVM_SETITEMW if UNICODE else LVM_SETITEMA
+
+LVM_DELETEITEM = (LVM_FIRST+8)
+
+LVM_DELETEALLITEMS = (LVM_FIRST+9)
+
+LVM_GETCALLBACKMASK = (LVM_FIRST+10)
+
+LVM_SETCALLBACKMASK = (LVM_FIRST+11)
+
+LVNI_ALL = 0x0
+LVNI_FOCUSED = 0x1
+LVNI_SELECTED = 0x2
+LVNI_CUT = 0x4
+LVNI_DROPHILITED = 0x8
+LVNI_STATEMASK = (LVNI_FOCUSED | LVNI_SELECTED | LVNI_CUT | LVNI_DROPHILITED)
+LVNI_VISIBLEORDER = 0x10
+LVNI_PREVIOUS = 0x20
+LVNI_VISIBLEONLY = 0x40
+LVNI_SAMEGROUPONLY = 0x80
+LVNI_ABOVE = 0x100
+LVNI_BELOW = 0x200
+LVNI_TOLEFT = 0x400
+LVNI_TORIGHT = 0x800
+LVNI_DIRECTIONMASK = (LVNI_ABOVE | LVNI_BELOW | LVNI_TOLEFT | LVNI_TORIGHT)
+
+LVM_GETNEXTITEM = (LVM_FIRST+12)
+
+LVFI_PARAM = 0x1
+LVFI_STRING = 0x2
+LVFI_SUBSTRING = 0x4 
+LVFI_PARTIAL = 0x8
+LVFI_WRAP = 0x20
+LVFI_NEARESTXY = 0x40
+
+class tagLVFINDINFOA(Structure):
+    _fields_ = [('flags', UINT),
+                ('psz', LPCSTR),
+                ('lParam', LPARAM),
+                ('pt', POINT),
+                ('vkDirection', UINT),
+    ]
+
+LVFINDINFOA = tagLVFINDINFOA
+LPFINDINFOA = POINTER(LVFINDINFOA)
+
+class tagLVFINDINFOW(Structure):
+    _fields_ = [('flags', UINT),
+                ('psz', LPCWSTR),
+                ('lParam', LPARAM),
+                ('pt', POINT),
+                ('vkDirection', UINT),
+    ]
+
+LVFINDINFOW = tagLVFINDINFOW
+LPFINDINFOW = POINTER(LVFINDINFOW)
+
+LV_FINDINFOA = LVFINDINFOA
+LV_FINDINFOW = LVFINDINFOW
+LV_FINDINFO = LVFINDINFOW if UNICODE else LVFINDINFOA
+
+LVM_FINDITEMA = (LVM_FIRST+13)
+LVM_FINDITEMW = (LVM_FIRST+83)
+
+LVM_FINDITEM = LVM_FINDITEMW if UNICODE else LVM_FINDITEMA
+
+LVIR_BOUNDS = 0
+LVIR_ICON = 1
+LVIR_LABEL = 2
+LVIR_SELECTBOUNDS = 3
+
+LVM_GETITEMRECT = (LVM_FIRST+14)
+
+LVM_SETITEMPOSITION = (LVM_FIRST+15)
+
+LVM_GETITEMPOSITION = (LVM_FIRST+16)
+
+LVM_GETSTRINGWIDTHA = (LVM_FIRST+17)
+LVM_GETSTRINGWIDTHW = (LVM_FIRST+87)
+
+LVM_GETSTRINGWIDTH = LVM_GETSTRINGWIDTHW if UNICODE else LVM_GETSTRINGWIDTHA
+
+LVHT_NOWHERE = 0x1
+LVHT_ONITEMICON = 0x2
+LVHT_ONITEMLABEL = 0x4
+LVHT_ONITEMSTATEICON = 0x8
+LVHT_ONITEM = (LVHT_ONITEMICON | LVHT_ONITEMLABEL | LVHT_ONITEMSTATEICON)
+
+LVHT_ABOVE = 0x8
+LVHT_BELOW = 0x10
+LVHT_TORIGHT = 0x20
+LVHT_TOLEFT = 0x40
+
+LVHT_EX_GROUP_HEADER = 0x10000000
+LVHT_EX_GROUP_FOOTER = 0x20000000
+LVHT_EX_GROUP_COLLAPSE = 0x40000000
+LVHT_EX_GROUP_BACKGROUND = 0x80000000
+LVHT_EX_GROUP_STATEICON = 0x01000000
+LVHT_EX_GROUP_SUBSETLINK = 0x02000000
+LVHT_EX_GROUP = (LVHT_EX_GROUP_BACKGROUND | LVHT_EX_GROUP_COLLAPSE | LVHT_EX_GROUP_FOOTER | LVHT_EX_GROUP_HEADER | LVHT_EX_GROUP_STATEICON | LVHT_EX_GROUP_SUBSETLINK)
+LVHT_EX_ONCONTENTS = 0x04000000
+
+class tagLVHITTESTINFO(Structure):
+    _fields_ = [('pt', POINT),
+                ('flags', UINT),
+                ('iItem', INT),
+                ('iSubItem', INT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('iGroup', INT))
+
+LVHITTESTINFO = tagLVHITTESTINFO
+LPLVHITTESTINFO = POINTER(LVHITTESTINFO)
+
+LV_HITTESTINFO = LVHITTESTINFO
+
+LVM_HITTEST = (LVM_FIRST+18)
+
+LVM_ENSUREVISIBLE = (LVM_FIRST+19)
+
+LVM_SCROLL = (LVM_FIRST+20)
+
+LVM_REDRAWITEMS = (LVM_FIRST+21)
+
+LVA_DEFAULT = 0x0
+LVA_ALIGNLEFT = 0x1
+LVA_ALIGNTOP = 0x2
+LVA_SNAPTOGRID = 0x5
+
+LVM_ARRANGE = (LVM_FIRST+22)
+
+LVM_EDITLABELA = (LVM_FIRST+23)
+LVM_EDITLABELW = (LVM_FIRST+118)
+
+LVM_EDITLABEL = LVM_EDITLABELW if UNICODE else LVM_EDITLABEL
+
+LVM_GETEDITCONTROL = (LVM_FIRST+24)
+
+class tagLVCOLUMNA(Structure):
+    _fields_ = [('mask', UINT),
+                ('fmt', INT),
+                ('cx', INT),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iSubItem', INT),
+                ('iImage', INT),
+                ('iOrder', INT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('cxMin', INT))
+        _fields_.append(('cxDefault', INT))
+        _fields_.append(('cxIdeal', INT))
+    
+LVCOLUMNA = tagLVCOLUMNA
+LPLVCOLUMNA = POINTER(LVCOLUMNA)
+
+class tagLVCOLUMNW(Structure):
+    _fields_ = [('mask', UINT),
+                ('fmt', INT),
+                ('cx', INT),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iSubItem', INT),
+                ('iImage', INT),
+                ('iOrder', INT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('cxMin', INT))
+        _fields_.append(('cxDefault', INT))
+        _fields_.append(('cxIdeal', INT))
+
+LVCOLUMNW = tagLVCOLUMNW
+LPLVCOLUMNW = POINTER(LVCOLUMNW)
+
+LV_COLUMNA = LVCOLUMNA
+LV_COLUMNW = LVCOLUMNW
+LVCOLUMN = LVCOLUMNW if UNICODE else LVCOLUMNA
+LPLVCOLUMN = LPLVCOLUMNW if UNICODE else LPLVCOLUMNA
+
+LV_COLUMN = LVCOLUMN
+
+LVCF_FMT = 0x1
+LVCF_WIDTH = 0x2
+LVCF_TEXT = 0x4
+LVCF_SUBITEM = 0x8
+LVCF_IMAGE = 0x10
+LVCF_ORDER = 0x20
+
+if NTDDI_VERSION >= 0x06000000:
+    LVCF_MINWIDTH = 0x40
+    LVCF_DEFAULTWIDTH = 0x80
+    LVCF_IDEALWIDTH = 0x100
+
+LVCFMT_LEFT = 0x0
+LVCFMT_RIGHT = 0x1
+LVCFMT_CENTER = 0x2
+LVCFMT_JUSTIFYMASK = 0x3
+LVCFMT_IMAGE = 0x800
+LVCFMT_BITMAP_ON_RIGHT = 0x1000
+LVCFMT_COL_HAS_IMAGES = 0x8000
+
+if NTDDI_VERSION >= 0x06000000:
+    LVCFMT_FIXED_WIDTH = 0x100
+    LVCFMT_NO_DPI_SCALE = 0x40000
+    LVCFMT_FIXED_RATIO = 0x80000
+    LVCFMT_LINE_BREAK = 0x100000
+    LVCFMT_FILL = 0x200000
+    LVCFMT_WRAP = 0x400000
+    LVCFMT_NO_TITLE = 0x800000
+    LVCFMT_SPLITBUTTON = 0x1000000
+    LVCFMT_TILE_PLACEMENTMASK = (LVCFMT_LINE_BREAK|LVCFMT_FILL)
+
+LVM_GETCOLUMNA = (LVM_FIRST+25)
+LVM_GETCOLUMNW = (LVM_FIRST+95)
+
+LVM_GETCOLUMN = LVM_GETCOLUMNW if UNICODE else LVM_GETCOLUMNA
+
+LVM_SETCOLUMNA = (LVM_FIRST+26)
+LVM_SETCOLUMNW = (LVM_FIRST+96)
+
+LVM_SETCOLUMN = LVM_SETCOLUMNW if UNICODE else LVM_SETCOLUMNA
+
+LVM_DELETECOLUMN = (LVM_FIRST+28)
+
+LVM_GETCOLUMNWIDTH = (LVM_FIRST+29)
+
+LVSCW_AUTOSIZE = -1
+LVSCW_AUTOSIZE_USEHEADER = -2
+LVM_SETCOLUMNWIDTH = (LVM_FIRST+30)
+
+LVM_GETHEADER = (LVM_FIRST+31)
+
+LVM_CREATEDRAGIMAGE = (LVM_FIRST+33)
+
+LVM_GETVIEWRECT = (LVM_FIRST+34)
+
+LVM_GETTEXTCOLOR = (LVM_FIRST+35)
+
+LVM_SETTEXTCOLOR = (LVM_FIRST+36)
+
+LVM_GETTEXTBKCOLOR = (LVM_FIRST+37)
+
+LVM_SETTEXTBKCOLOR = (LVM_FIRST+38)
+
+LVM_GETTOPINDEX = (LVM_FIRST+39)
+
+LVM_GETCOUNTPERPAGE = (LVM_FIRST+40)
+
+LVM_GETORIGIN = (LVM_FIRST+41)
+
+LVM_UPDATE = (LVM_FIRST+42)
+
+LVM_SETITEMSTATE = (LVM_FIRST+43)
+
+LVM_GETITEMSTATE = (LVM_FIRST+44)
+
+LVM_GETITEMTEXTA = (LVM_FIRST+45)
+LVM_GETITEMTEXTW = (LVM_FIRST+115)
+
+LVM_GETITEMTEXT = LVM_GETITEMTEXTW if UNICODE else LVM_GETITEMTEXTA
+
+LVM_SETITEMTEXTA = (LVM_FIRST+46)
+LVM_SETITEMTEXTW = (LVM_FIRST+116)
+
+LVM_SETITEMTEXT = LVM_SETITEMTEXTW if UNICODE else LVM_SETITEMTEXTA
+
+LVSICF_NOINVALIDATEALL = 0x1
+LVSICF_NOSCROLL = 0x2
+
+LVM_SETITEMCOUNT = (LVM_FIRST+47)
+
+PFNLVCOMPARE = CALLBACK(INT, LPARAM, LPARAM, LPARAM)
+
+LVM_SORTITEMS = (LVM_FIRST+48)
+
+LVM_SETITEMPOSITION32 = (LVM_FIRST+49)
+
+LVM_GETSELECTEDCOUNT = (LVM_FIRST+50)
+
+LVM_GETITEMSPACING = (LVM_FIRST+51)
+
+LVM_GETISEARCHSTRINGA = (LVM_FIRST+52)
+LVM_GETISEARCHSTRINGW = (LVM_FIRST+117)
+
+LVM_GETISEARCHSTRING = LVM_GETISEARCHSTRINGW if UNICODE else LVM_GETISEARCHSTRINGA
+
+LVM_SETICONSPACING = (LVM_FIRST+53)
+
+LVM_SETEXTENDEDLISTVIEWSTYLE = (LVM_FIRST+54)
+
+LVM_GETEXTENDEDLISTVIEWSTYLE = (LVM_FIRST+55)
+
+LVS_EX_GRIDLINES = 0x1
+LVS_EX_SUBITEMIMAGES = 0x2
+LVS_EX_CHECKBOXES = 0x4
+LVS_EX_TRACKSELECT = 0x8
+LVS_EX_HEADERDRAGDROP = 0x10
+LVS_EX_FULLROWSELECT = 0x20
+LVS_EX_ONECLICKACTIVATE = 0x40
+LVS_EX_TWOCLICKACTIVATE = 0x80
+LVS_EX_FLATSB = 0x100
+LVS_EX_REGIONAL = 0x200
+LVS_EX_INFOTIP = 0x400
+LVS_EX_UNDERLINEHOT = 0x800
+LVS_EX_UNDERLINECOLD = 0x1000
+LVS_EX_MULTIWORKAREAS = 0x2000
+LVS_EX_LABELTIP = 0x4000
+LVS_EX_BORDERSELECT = 0x8000
+LVS_EX_DOUBLEBUFFER = 0x10000
+LVS_EX_HIDELABELS = 0x20000
+LVS_EX_SINGLEROW = 0x40000
+LVS_EX_SNAPTOGRID = 0x80000
+LVS_EX_SIMPLESELECT = 0x100000
+if NTDDI_VERSION >= 0x06000000:
+    LVS_EX_JUSTIFYCOLUMNS = 0x200000
+    LVS_EX_TRANSPARENTBKGND = 0x400000
+    LVS_EX_TRANSPARENTSHADOWTEXT = 0x800000
+    LVS_EX_AUTOAUTOARRANGE = 0x1000000
+    LVS_EX_HEADERINALLVIEWS = 0x2000000
+    LVS_EX_AUTOCHECKSELECT = 0x8000000
+    LVS_EX_AUTOSIZECOLUMNS = 0x10000000
+    LVS_EX_COLUMNSNAPPOINTS = 0x40000000
+    LVS_EX_COLUMNOVERFLOW = 0x80000000
+
+LVM_GETSUBITEMRECT = (LVM_FIRST+56)
+
+LVM_SUBITEMHITTEST = (LVM_FIRST+57)
+
+LVM_SETCOLUMNORDERARRAY = (LVM_FIRST+58)
+
+LVM_GETCOLUMNORDERARRAY = (LVM_FIRST+59)
+
+LVM_SETHOTITEM = (LVM_FIRST+60)
+
+LVM_GETHOTITEM = (LVM_FIRST+61)
+
+LVM_SETHOTCURSOR = (LVM_FIRST+62)
+
+LVM_GETHOTCURSOR = (LVM_FIRST+63)
+
+LVM_APPROXIMATEVIEWRECT = (LVM_FIRST+64)
+
+LV_MAX_WORKAREAS = 16
+LVM_SETWORKAREAS = (LVM_FIRST+65)
+
+LVM_GETWORKAREAS = (LVM_FIRST+70)
+
+LVM_GETNUMBEROFWORKAREAS = (LVM_FIRST+73)
+
+LVM_GETSELECTIONMARK = (LVM_FIRST+66)
+
+LVM_SETSELECTIONMARK = (LVM_FIRST+67)
+
+LVM_SETHOVERTIME = (LVM_FIRST+71)
+
+LVM_GETHOVERTIME = (LVM_FIRST+72)
+
+LVM_SETTOOLTIPS = (LVM_FIRST+74)
+
+LVM_GETTOOLTIPS = (LVM_FIRST+78)
+
+LVM_SORTITEMSEX = (LVM_FIRST+81)
+
+class tagLVBKIMAGEA(Structure):
+    _fields_ = [('ulFlags', ULONG),
+                ('hbm', HBITMAP),
+                ('pszImage', LPSTR),
+                ('cchImageMax', UINT),
+                ('xOffsetPercent', INT),
+                ('yOffsetPercent', INT),
+    ]
+
+LVBKIMAGEA = tagLVBKIMAGEA
+LPLVBKIMAGEA = POINTER(LVBKIMAGEA)
+
+class tagLVBKIMAGEW(Structure):
+    _fields_ = [('ulFlags', ULONG),
+                ('hbm', HBITMAP),
+                ('pszImage', LPWSTR),
+                ('cchImageMax', UINT),
+                ('xOffsetPercent', INT),
+                ('yOffsetPercent', INT),
+    ]
+
+LVBKIMAGEW = tagLVBKIMAGEW
+LPLVBKIMAGEW = POINTER(LVBKIMAGEW)
+
+LVBKIF_SOURCE_NONE = 0x0
+LVBKIF_SOURCE_HBITMAP = 0x1
+LVBKIF_SOURCE_URL = 0x2
+LVBKIF_SOURCE_MASK = 0x3
+LVBKIF_STYLE_NORMAL = 0x0
+LVBKIF_STYLE_TILE = 0x10
+LVBKIF_STYLE_MASK = 0x10
+LVBKIF_FLAG_TILEOFFSET = 0x100
+LVBKIF_TYPE_WATERMARK = 0x10000000
+LVBKIF_FLAG_ALPHABLEND = 0x20000000
+
+LVM_SETBKIMAGEA = (LVM_FIRST+68)
+LVM_SETBKIMAGEW = (LVM_FIRST+138)
+LVM_GETBKIMAGEA = (LVM_FIRST+69)
+LVM_GETBKIMAGEW = (LVM_FIRST+139)
+
+LVM_SETSELECTEDCOLUMN = (LVM_FIRST+140)
+
+LVM_SETTILEWIDTH = (LVM_FIRST+141)
+
+LV_VIEW_ICON = 0x0
+LV_VIEW_DETAILS = 0x1
+LV_VIEW_SMALLICON = 0x2
+LV_VIEW_LIST = 0x3
+LV_VIEW_TILE = 0x4
+LV_VIEW_MAX = 0x4
+LVM_SETVIEW = (LVM_FIRST+142)
+
+LVM_GETVIEW = (LVM_FIRST+143)
+
+LVGF_NONE = 0x0
+LVGF_HEADER = 0x1
+LVGF_FOOTER = 0x2
+LVGF_STATE = 0x4
+LVGF_ALIGN = 0x8
+LVGF_GROUPID = 0x10
+
+if NTDDI_VERSION >= 0x06000000:
+    LVGF_SUBTITLE = 0x100
+    LVGF_TASK = 0x200
+    LVGF_DESCRIPTIONTOP = 0x400
+    LVGF_DESCRIPTIONBOTTOM = 0x800
+    LVGF_TITLEIMAGE = 0x1000
+    LVGF_EXTENDEDIMAGE = 0x2000
+    LVGF_ITEMS = 0x4000
+    LVGF_SUBSET = 0x00008000
+    LVGF_SUBSETITEMS = 0x10000
+
+LVGS_NORMAL = 0x0
+LVGS_COLLAPSED = 0x1
+LVGS_HIDDEN = 0x2
+LVGS_NOHEADER = 0x4
+LVGS_COLLAPSIBLE = 0x8
+LVGS_FOCUSED = 0x10
+LVGS_SELECTED = 0x20
+LVGS_SUBSETED = 0x40
+LVGS_SUBSETLINKFOCUSED = 0x80
+
+LVGA_HEADER_LEFT = 0x1
+LVGA_HEADER_CENTER = 0x2
+LVGA_HEADER_RIGHT = 0x4
+LVGA_FOOTER_LEFT = 0x8
+LVGA_FOOTER_CENTER = 0x10
+LVGA_FOOTER_RIGHT = 0x20
+
+class tagLVGROUP(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('mask', UINT),
+                ('pszHeader', LPWSTR),
+                ('cchHeader', INT),
+                ('pszFooter', LPWSTR),
+                ('cchFooter', INT),
+                ('iGroupId', INT),
+                ('stateMask', UINT),
+                ('state', UINT),
+                ('uAlign', UINT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('pszSubtitle', LPWSTR))
+        _fields_.append(('cchSubtitle', UINT))
+        _fields_.append(('pszTask', LPWSTR))
+        _fields_.append(('cchTask', UINT))
+        _fields_.append(('pszDescriptionTop', LPWSTR))
+        _fields_.append(('cchDescriptionTop', UINT))
+        _fields_.append(('pszDescriptionBottom', LPWSTR))
+        _fields_.append(('cchDescriptionBottom', UINT))
+        _fields_.append(('iTitleImage', INT))
+        _fields_.append(('iExtendedImage', INT))
+        _fields_.append(('iFirstItem', INT))
+        _fields_.append(('cItems', UINT))
+        _fields_.append(('pszSubsetTitle', LPWSTR))
+        _fields_.append(('cchSubsetTitle', UINT))
+    
+LVGROUP = tagLVGROUP
+PLVGROUP = POINTER(LVGROUP)
+
+LVM_INSERTGROUP = (LVM_FIRST+145)
+
+LVM_SETGROUPINFO = (LVM_FIRST+147)
+
+LVM_GETGROUPINFO = (LVM_FIRST+149)
+
+LVM_REMOVEGROUP = (LVM_FIRST+150)
+
+LVM_MOVEGROUP = (LVM_FIRST+151)
+
+LVM_GETGROUPCOUNT = (LVM_FIRST + 152)
+
+LVM_GETGROUPINFOBYINDEX = (LVM_FIRST + 153)
+
+LVM_MOVEITEMTOGROUP = (LVM_FIRST+154)
+
+LVGGR_GROUP = 0
+LVGGR_HEADER = 1
+LVGGR_LABEL = 2
+LVGGR_SUBSETLINK = 3
+
+LVM_GETGROUPRECT = (LVM_FIRST+98)
+
+LVGMF_NONE = 0x0
+LVGMF_BORDERSIZE = 0x1
+LVGMF_BORDERCOLOR = 0x2
+LVGMF_TEXTCOLOR = 0x4
+
+class tagLVGROUPMETRICS(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('mask', UINT),
+                ('Left', UINT),
+                ('Top', UINT),
+                ('Right', UINT),
+                ('Bottom', UINT),
+                ('crLeft', COLORREF),
+                ('crTop', COLORREF),
+                ('crRight', COLORREF),
+                ('crBottom', COLORREF),
+                ('crHeader', COLORREF),
+                ('crFooter', COLORREF),
+    ]
+
+LVGROUPMETRICS = tagLVGROUPMETRICS
+PLVGROUPMETRICS = POINTER(LVGROUPMETRICS)
+
+LVM_SETGROUPMETRICS = (LVM_FIRST+155)
+
+LVM_GETGROUPMETRICS = (LVM_FIRST+156)
+
+LVM_ENABLEGROUPVIEW = (LVM_FIRST+157)
+
+PFNLVGROUPCOMPARE = CALLBACK(INT, INT, INT, PVOID)
+
+LVM_SORTGROUPS = (LVM_FIRST+158)
+
+class tagLVINSERTGROUPSORTED(Structure):
+    _fields_ = [('pfnGroupCompare', PFNLVGROUPCOMPARE),
+                ('pvData', PVOID),
+                ('lvGroup', LVGROUP),
+    ]
+
+LVINSERTGROUPSORTED = tagLVINSERTGROUPSORTED
+PLVINSERTGROUPSORTED = POINTER(LVINSERTGROUPSORTED)
+
+LVM_INSERTGROUPSORTED = (LVM_FIRST+159)
+
+LVM_REMOVEALLGROUPS = (LVM_FIRST+160)
+
+LVM_HASGROUP = (LVM_FIRST+161)
+
+LVM_GETGROUPSTATE = (LVM_FIRST+92)
+
+LVM_GETFOCUSEDGROUP = (LVM_FIRST+93)
+
+LVTVIF_AUTOSIZE = 0x0
+LVTVIF_FIXEDWIDTH = 0x1
+LVTVIF_FIXEDHEIGHT = 0x2
+LVTVIF_FIXEDSIZE = 0x3
+
+if NTDDI_VERSION >= 0x06000000:
+    LVTVIF_EXTENDED = 0x4
+
+LVTVIM_TILESIZE = 0x1
+LVTVIM_COLUMNS = 0x2
+LVTVIM_LABELMARGIN = 0x4
+
+class tagLVTILEVIEWINFO(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('dwMask', DWORD),
+                ('dwFlags', DWORD),
+                ('sizeTile', SIZE),
+                ('cLines', INT),
+                ('rcLabelMargin', RECT),
+    ]
+
+LVTILEVIEWINFO = tagLVTILEVIEWINFO
+PLVTILEVIEWINFO = POINTER(LVTILEVIEWINFO)
+
+class tagLVTILEINFO(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('iItem', INT),
+                ('cColumns', UINT),
+                ('puColumns', PUINT),
+    ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('piColFmt', PINT))
+    
+LVTILEINFO = tagLVTILEINFO
+PLVTILEINFO = POINTER(LVTILEINFO)
+
+LVM_SETTILEVIEWINFO = (LVM_FIRST+162)
+
+LVM_GETTILEVIEWINFO = (LVM_FIRST+163)
+
+LVM_SETTILEINFO = (LVM_FIRST+164)
+
+LVM_GETTILEINFO = (LVM_FIRST+165)
+
+class LVINSERTMARK(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('dwFlags', DWORD),
+                ('iItem', INT),
+                ('dwReserved', DWORD),
+    ]
+
+LPLVINSERTMARK = POINTER(LVINSERTMARK)
+
+LVIM_AFTER = 0x1
+
+LVM_SETINSERTMARK = (LVM_FIRST+166)
+
+LVM_GETINSERTMARK = (LVM_FIRST+167)
+
+LVM_INSERTMARKHITTEST = (LVM_FIRST+168)
+
+LVM_GETINSERTMARKRECT = (LVM_FIRST+169)
+
+LVM_SETINSERTMARKCOLOR = (LVM_FIRST+170)
+
+LVM_GETINSERTMARKCOLOR = (LVM_FIRST+171)
+
+class tagLVSETINFOTIP(Structure):
+    _fields_ = [('cbSize', UINT),
+                ('dwFlags', DWORD),
+                ('pszText', LPWSTR),
+                ('iItem', INT),
+                ('iSubItem', INT),
+    ]
+
+LVSETINFOTIP = tagLVSETINFOTIP
+PLVSETINFOTIP = POINTER(LVSETINFOTIP)
+
+LVM_SETINFOTIP = (LVM_FIRST+173)
+
+LVM_GETSELECTEDCOLUMN = (LVM_FIRST+174)
+
+LVM_ISGROUPVIEWENABLED = (LVM_FIRST+175)
+
+LVM_GETOUTLINECOLOR = (LVM_FIRST+176)
+
+LVM_SETOUTLINECOLOR = (LVM_FIRST+177)
+
+LVM_CANCELEDITLABEL = (LVM_FIRST+179)
+
+LVM_MAPINDEXTOID = (LVM_FIRST+180)
+
+LVM_MAPIDTOINDEX = (LVM_FIRST+181)
+
+LVM_ISITEMVISIBLE = (LVM_FIRST+182)
+
+if NTDDI_VERSION >= 0x06000000:
+    LVM_GETEMPTYTEXT = (LVM_FIRST + 204)
+
+    LVM_GETFOOTERRECT = (LVM_FIRST + 205)
+
+    LVFF_ITEMCOUNT = 0x1
+
+    class tagLVFOOTERINFO(Structure):
+        _fields_ = [('mask', UINT),
+                    ('pszText', LPWSTR),
+                    ('cchTextMax', INT),
+                    ('cItems', UINT),
+        ]
+
+    LVFOOTERINFO = tagLVFOOTERINFO
+    LPLVFOOTERINFO = POINTER(LVFOOTERINFO)
+
+    LVM_GETFOOTERINFO = (LVM_FIRST+206)
+
+    LVM_GETFOOTERITEMRECT = (LVM_FIRST+207)
+
+    LVFIF_TEXT = 0x1
+    LVFIF_STATE = 0x2
+
+    LVFIS_FOCUSED = 0x1
+
+    class tagLVFOOTERITEM(Structure):
+        _fields_ = [('mask', UINT),
+                    ('iItem', INT),
+                    ('pszText', LPWSTR),
+                    ('cchTextMax', INT),
+                    ('state', UINT),
+                    ('stateMask', UINT),
+        ]
+
+    LVFOOTERITEM = tagLVFOOTERITEM
+    LPLVFOOTERITEM = POINTER(LVFOOTERITEM)
+
+    LVM_GETFOOTERITEM = (LVM_FIRST+208)
+
+    class tagLVITEMINDEX(Structure):
+        _fields_ = [('iItem', INT),
+                    ('iGroup', INT)
+        ]
+
+    LVITEMINDEX = tagLVITEMINDEX
+    PLVITEMINDEX = POINTER(LVITEMINDEX)
+
+    LVM_GETITEMINDEXRECT = (LVM_FIRST+209)
+
+    LVM_SETITEMINDEXSTATE = (LVM_FIRST+210)
+
+    LVM_GETNEXTITEMINDEX = (LVM_FIRST + 211)
+
+LVBKIMAGE = LVBKIMAGEW if UNICODE else LVBKIMAGEA
+LPLVBKIMAGE = LPLVBKIMAGEW if UNICODE else LPLVBKIMAGEA 
+LVM_SETBKIMAGE = LVM_SETBKIMAGEW if UNICODE else LVM_SETBKIMAGEA 
+LVM_GETBKIMAGE = LVM_GETBKIMAGEW if UNICODE else LVM_GETBKIMAGEA
+
+class  tagNMLISTVIEW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('iSubItem', INT),
+                ('uNewState', UINT),
+                ('uOldState', UINT),
+                ('uChanged', UINT),
+                ('ptAction', POINT),
+                ('lParam', LPARAM),
+    ]
+
+NMLISTVIEW = tagNMLISTVIEW
+LPNMLISTVIEW = POINTER(NMLISTVIEW)
+
+LPNM_LISTVIEW = LPNMLISTVIEW
+NM_LISTVIEW = NMLISTVIEW
+
+class tagNMITEMACTIVATE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iItem', INT),
+                ('iSubItem', INT),
+                ('uNewState', UINT),
+                ('uOldState', UINT),
+                ('uChanged', UINT),
+                ('ptAction', POINT),
+                ('lParam', LPARAM),
+                ('uKeyFlags', UINT),
+    ]
+
+NMITEMACTIVATE = tagNMITEMACTIVATE
+LPNMITEMACTIVATE = POINTER(NMITEMACTIVATE)
+
+LVKF_ALT = 0x1
+LVKF_CONTROL = 0x2
+LVKF_SHIFT = 0x4
+
+class tagNMLVCUSTOMDRAW(Structure):
+    _fields_ = [('nmcd', NMCUSTOMDRAW),
+                ('clrText', COLORREF),
+                ('clrTextBk', COLORREF),
+                ('iSubItem', INT),
+                ('dwItemType', DWORD),
+                ('clrFace', COLORREF),
+                ('iIconEffect', INT),
+                ('iIconPhase', INT),
+                ('iPartId', INT),
+                ('iStateId', INT),
+                ('rcText', RECT),
+                ('uAlign', UINT),
+    ]
+
+NMLVCUSTOMDRAW = tagNMLVCUSTOMDRAW
+LPNMLVCUSTOMDRAW = POINTER(NMLVCUSTOMDRAW)
+
+LVCDI_ITEM = 0x0
+LVCDI_GROUP = 0x1
+LVCDI_ITEMSLIST = 0x2
+
+LVCDRF_NOSELECT = 0x10000
+LVCDRF_NOGROUPFRAME = 0x20000
+
+class tagNMLVCACHEHINT(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iFrom', INT),
+                ('iTo', INT),
+    ]
+
+NMLVCACHEHINT = tagNMLVCACHEHINT
+LPNMLVCACHEHINT = POINTER(NMLVCACHEHINT)
+
+class tagNMLVFINDITEMA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iStart', INT),
+                ('lvfi', LVFINDINFOA),
+    ]
+
+NMLVFINDITEMA = tagNMLVFINDITEMA
+LPNMLVFINDITEMA = POINTER(NMLVFINDITEMA)
+
+class tagNMLVFINDITEMW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iStart', INT),
+                ('lvfi', LVFINDINFOW),
+    ]
+
+NMLVFINDITEMW = tagNMLVFINDITEMW
+LPNMLVFINDITEMW = POINTER(NMLVFINDITEMW)
+
+PNM_FINDITEMA = LPNMLVFINDITEMA
+LPNM_FINDITEMA = LPNMLVFINDITEMA
+NM_FINDITEMA = NMLVFINDITEMA
+
+PNM_FINDITEMW = LPNMLVFINDITEMW
+LPNM_FINDITEMW = LPNMLVFINDITEMW
+NM_FINDITEMW = NMLVFINDITEMW
+
+LPNM_CACHEHINT = LPNMLVCACHEHINT
+PNM_CACHEHINT = LPNMLVCACHEHINT
+NM_CACHEHINT = NMLVCACHEHINT
+
+PNM_FINDITEM = PNM_FINDITEMW if UNICODE else PNM_FINDITEMA
+LPNM_FINDITEM = LPNM_FINDITEMW if UNICODE else LPNM_FINDITEMA
+NM_FINDITEM = NM_FINDITEMW if UNICODE else NM_FINDITEMA
+NMLVFINDITEM = NMLVFINDITEMW if UNICODE else NMLVFINDITEMA
+LPNMLVFINDITEM = LPNMLVFINDITEMW if UNICODE else LPNMLVFINDITEMA
+
+class tagNMLVODSTATECHANGE(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('iFrom', INT),
+                ('iTo', INT),
+                ('uNewState', UINT),
+                ('uOldState', UINT),
+    ]
+
+NMLVODSTATECHANGE = tagNMLVODSTATECHANGE
+LPNMLVODSTATECHANGE = POINTER(NMLVODSTATECHANGE)
+
+PNM_ODSTATECHANGE = LPNMLVODSTATECHANGE
+LPNM_ODSTATECHANGE = LPNMLVODSTATECHANGE
+NM_ODSTATECHANGE = NMLVODSTATECHANGE
+
+LVN_ITEMCHANGING = (LVN_FIRST-0)
+LVN_ITEMCHANGED = (LVN_FIRST-1)
+LVN_INSERTITEM = (LVN_FIRST-2)
+LVN_DELETEITEM = (LVN_FIRST-3)
+LVN_DELETEALLITEMS = (LVN_FIRST-4)
+LVN_BEGINLABELEDITA = (LVN_FIRST-5)
+LVN_BEGINLABELEDITW = (LVN_FIRST-75)
+LVN_ENDLABELEDITA = (LVN_FIRST-6)
+LVN_ENDLABELEDITW = (LVN_FIRST-76)
+LVN_COLUMNCLICK = (LVN_FIRST-8)
+LVN_BEGINDRAG = (LVN_FIRST-9)
+LVN_BEGINRDRAG = (LVN_FIRST-11)
+
+LVN_ODCACHEHINT = (LVN_FIRST-13)
+LVN_ODFINDITEMA = (LVN_FIRST-52)
+LVN_ODFINDITEMW = (LVN_FIRST-79)
+
+LVN_ITEMACTIVATE = (LVN_FIRST-14)
+LVN_ODSTATECHANGED = (LVN_FIRST-15)
+
+LVN_ODFINDITEM = LVN_ODFINDITEMW if UNICODE else LVN_ODFINDITEMA
+
+LVN_HOTTRACK = (LVN_FIRST-21)
+LVN_GETDISPINFOA = (LVN_FIRST-50)
+LVN_GETDISPINFOW = (LVN_FIRST-77)
+LVN_SETDISPINFOA = (LVN_FIRST-51)
+LVN_SETDISPINFOW = (LVN_FIRST-78)
+
+LVN_BEGINLABELEDIT = LVN_BEGINLABELEDITW if UNICODE else LVN_BEGINLABELEDITA
+LVN_ENDLABELEDIT = LVN_ENDLABELEDITW if UNICODE else LVN_ENDLABELEDITA
+LVN_GETDISPINFO = LVN_GETDISPINFOW if UNICODE else LVN_GETDISPINFOA
+LVN_SETDISPINFO = LVN_SETDISPINFOW if UNICODE else LVN_SETDISPINFOA
+
+LVIF_DI_SETITEM = 0x1000
+
+class tagLVDISPINFO(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('item', LVITEMA)
+    ]
+
+NMLVDISPINFOA = tagLVDISPINFO
+LPNMLVDISPINFOA = POINTER(NMLVDISPINFOA)
+
+class tagLVDISPINFOW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('item', LVITEMW)
+    ]
+
+NMLVDISPINFOW = tagLVDISPINFOW
+LPNMLVDISPINFOW = POINTER(NMLVDISPINFOW)
+
+LV_DISPINFOA = NMLVDISPINFOA
+LV_DISPINFOW = NMLVDISPINFOW
+NMLVDISPINFO = NMLVDISPINFOW if UNICODE else NMLVDISPINFOA
+LV_DISPINFO = NMLVDISPINFO
+
+LVN_KEYDOWN = (LVN_FIRST-55)
+
+class tagLVKEYDOWN(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('wVKey', WORD),
+                ('flags', UINT),
+    ]
+
+NMLVKEYDOWN = tagLVKEYDOWN
+LPNMLVKEYDOWN = POINTER(NMLVKEYDOWN)
+
+LV_KEYDOWN = NMLVKEYDOWN
+
+LVN_MARQUEEBEGIN = (LVN_FIRST-56)
+
+if NTDDI_VERSION >= 0x06000000:
+    class tagNMLVLINK(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('link', LITEM),
+                    ('iItem', INT),
+                    ('iSubItem', INT),
+        ]
+    
+    NMLVLINK = tagNMLVLINK
+    PNMLVLINK = POINTER(NMLVLINK)
+
+class tagNMLVGETINFOTIPA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwFlags', DWORD),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iItem', INT),
+                ('iSubItem', INT),
+                ('lParam', LPARAM),
+    ]
+
+NMLVGETINFOTIPA = tagNMLVGETINFOTIPA
+LPNMLVGETINFOTIPA = POINTER(NMLVGETINFOTIPA)
+
+class tagNMLVGETINFOTIPW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dwFlags', DWORD),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iItem', INT),
+                ('iSubItem', INT),
+                ('lParam', LPARAM),
+    ]
+
+NMLVGETINFOTIPW = tagNMLVGETINFOTIPW
+LPNMLVGETINFOTIPW = POINTER(NMLVGETINFOTIPW)
+
+LVGIT_UNFOLDED = 0x1
+
+LVN_GETINFOTIPA = (LVN_FIRST-57)
+LVN_GETINFOTIPW = (LVN_FIRST-58)
+
+LVN_GETINFOTIP = LVN_GETINFOTIPW if UNICODE else LVN_GETINFOTIPA
+NMLVGETINFOTIP = NMLVGETINFOTIPW if UNICODE else NMLVGETINFOTIPA
+LPNMLVGETINFOTIP = LPNMLVGETINFOTIPW if UNICODE else LPNMLVGETINFOTIPA
+
+LVNSCH_DEFAULT = -1
+LVNSCH_ERROR = -2
+LVNSCH_IGNORE = -3
+
+LVN_INCREMENTALSEARCHA = (LVN_FIRST-62)
+LVN_INCREMENTALSEARCHW = (LVN_FIRST-63)
+
+LVN_INCREMENTALSEARCH = LVN_INCREMENTALSEARCHW if UNICODE else LVN_INCREMENTALSEARCHA
+
+if NTDDI_VERSION >= 0x06000000:
+    LVN_COLUMNDROPDOWN = (LVN_FIRST-64)
+    LVN_COLUMNOVERFLOWCLICK = (LVN_FIRST-66)
+
+class tagNMLVSCROLL(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('dx', INT),
+                ('dy', INT),
+    ]
+
+NMLVSCROLL = tagNMLVSCROLL
+LPNMLVSCROLL = POINTER(NMLVSCROLL)
+
+LVN_BEGINSCROLL = (LVN_FIRST-80)
+LVN_ENDSCROLL = (LVN_FIRST-81)
+
+if NTDDI_VERSION >= 0x06000000:
+    LVN_LINKCLICK = (LVN_FIRST-84)
+
+    EMF_CENTERED = 0x1
+
+    class tagNMLVEMPTYMARKUP(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('dwFlags', DWORD),
+                    ('szMarkup', WCHAR * L_MAX_URL_LENGTH),
+        ]
+
+    NMLVEMPTYMARKUP = tagNMLVEMPTYMARKUP
+
+    LVN_GETEMPTYMARKUP = (LVN_FIRST-87)
+
+WC_TREEVIEW = "SysTreeView32"
+
+TVS_HASBUTTONS = 0x1
+TVS_HASLINES = 0x2
+TVS_LINESATROOT = 0x4
+TVS_EDITLABELS = 0x8
+TVS_DISABLEDRAGDROP = 0x10
+TVS_SHOWSELALWAYS = 0x20
+TVS_RTLREADING = 0x40
+TVS_NOTOOLTIPS = 0x80
+TVS_CHECKBOXES = 0x100
+TVS_TRACKSELECT = 0x200
+TVS_SINGLEEXPAND = 0x400
+TVS_INFOTIP = 0x800
+TVS_FULLROWSELECT = 0x1000
+TVS_NOSCROLL = 0x2000
+TVS_NONEVENHEIGHT = 0x4000
+TVS_NOHSCROLL = 0x8000
+
+TVS_EX_NOSINGLECOLLAPSE = 0x1
+
+if NTDDI_VERSION >= 0x06000000:
+    TVS_EX_MULTISELECT = 0x2
+    TVS_EX_DOUBLEBUFFER = 0x4
+    TVS_EX_NOINDENTSTATE = 0x8
+    TVS_EX_RICHTOOLTIP = 0x10
+    TVS_EX_AUTOHSCROLL = 0x20
+    TVS_EX_FADEINOUTEXPANDOS = 0x40
+    TVS_EX_PARTIALCHECKBOXES = 0x80
+    TVS_EX_EXCLUSIONCHECKBOXES = 0x100
+    TVS_EX_DIMMEDCHECKBOXES = 0x200
+    TVS_EX_DRAWIMAGEASYNC = 0x400
+
+class _TREEITEM(Structure):
+    pass
+
+HTREEITEM = POINTER(_TREEITEM)
+
+TVIF_TEXT = 0x1
+TVIF_IMAGE = 0x2
+TVIF_PARAM = 0x4
+TVIF_STATE = 0x8
+TVIF_HANDLE = 0x10
+TVIF_SELECTEDIMAGE = 0x20
+TVIF_CHILDREN = 0x40
+TVIF_INTEGRAL = 0x80
+
+if WIN32_IE >= 0x0600:
+    TVIF_STATEEX = 0x100
+    TVIF_EXPANDEDIMAGE = 0x200
+
+TVIS_SELECTED = 0x2
+TVIS_CUT = 0x4
+TVIS_DROPHILITED = 0x8
+TVIS_BOLD = 0x10
+TVIS_EXPANDED = 0x20
+TVIS_EXPANDEDONCE = 0x40
+TVIS_EXPANDPARTIAL = 0x80
+TVIS_OVERLAYMASK = 0xf00
+TVIS_STATEIMAGEMASK = 0xF000
+TVIS_USERMASK = 0xF000
+
+if WIN32_IE >= 0x0600:
+    TVIS_EX_FLAT = 0x1
+    if NTDDI_VERSION >= 0x06000000:
+        TVIS_EX_DISABLED = 0x2
+
+    TVIS_EX_ALL = 0x0002
+
+    class tagNMTVSTATEIMAGECHANGING(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('hti', HTREEITEM),
+                    ('iOldStateImageIndex', INT),
+                    ('iNewStateImageIndex', INT),
+        ]
+    
+    NMTVSTATEIMAGECHANGING = tagNMTVSTATEIMAGECHANGING
+    LPNMTVSTATEIMAGECHANGING = POINTER(NMTVSTATEIMAGECHANGING)
+
+class tagTVITEMA(Structure):
+    _fields_ = [('ask', UINT),
+                ('hItem', HTREEITEM),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('iSelectedImage', INT),
+                ('cChildren', INT),
+                ('lParam', LPARAM),
+    ]
+
+TVITEMA = tagTVITEMA
+LPTVITEMA = POINTER(TVITEMA)
+
+class tagTVITEMW(Structure):
+    _fields_ = [('ask', UINT),
+                ('hItem', HTREEITEM),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('iSelectedImage', INT),
+                ('cChildren', INT),
+                ('lParam', LPARAM),
+    ]
+
+TVITEMW = tagTVITEMW
+LPTVITEMW = POINTER(TVITEMW)
+
+class tagTVITEMEXA(Structure):
+    _fields_ = [('mask', UINT),
+                ('hItem', HTREEITEM),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('pszText', LPSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('iSelectedImage', INT),
+                ('cChildren', INT),
+                ('lParam', LPARAM),
+                ('iIntegral', INT),
+    ]
+
+    if WIN32_IE >= 0x0600:
+        _fields_.append(('uStateEx', UINT))
+        _fields_.append(('hwnd', HWND))
+        _fields_.append(('iExpandedImage', INT))
+    
+    if NTDDI_VERSION >= 0x06010000:
+        _fields_.append(('iReserved', INT))
+    
+TVITEMEXA = tagTVITEMEXA
+LPTVITEMEXA = POINTER(TVITEMEXA)
+
+class tagTVITEMEXW(Structure):
+    _fields_ = [('mask', UINT),
+                ('hItem', HTREEITEM),
+                ('state', UINT),
+                ('stateMask', UINT),
+                ('pszText', LPWSTR),
+                ('cchTextMax', INT),
+                ('iImage', INT),
+                ('iSelectedImage', INT),
+                ('cChildren', INT),
+                ('lParam', LPARAM),
+                ('iIntegral', INT),
+    ]
+
+    if WIN32_IE >= 0x0600:
+        _fields_.append(('uStateEx', UINT))
+        _fields_.append(('hwnd', HWND))
+        _fields_.append(('iExpandedImage', INT))
+    
+    if NTDDI_VERSION >= 0x06010000:
+        _fields_.append(('iReserved', INT))
+
+TVITEMEXW = tagTVITEMEXW
+LPTVITEMEXW = POINTER(TVITEMEXW)
+
+I_CHILDRENCALLBACK = (-1)
+I_CHILDRENAUTO = (-2)
+
+LPTV_ITEMW = LPTVITEMW
+LPTV_ITEMA = LPTVITEMA
+TV_ITEMW = TVITEMW
+TV_ITEMA = TVITEMA
+LPTVITEM = LPTVITEMW if UNICODE else LPTVITEMA
+TVITEM = TVITEMW if UNICODE else TVITEMA
+LPTV_ITEM = LPTVITEM
+TV_ITEM = TVITEM
+
+TVITEMEX = TVITEMEXW if UNICODE else TVITEMEXA
+LPTVITEMEX = LPTVITEMEXW if UNICODE else LPTVITEMEXA
+
+TVI_ROOT = HTREEITEM(ULONG_PTR(-0x10000))
+TVI_FIRST = HTREEITEM(ULONG_PTR(-0xffff))
+TVI_LAST = HTREEITEM(ULONG_PTR(-0xfffe))
+TVI_SORT = HTREEITEM(ULONG_PTR(-0xfffd))
+
+class tagTVINSERTSTRUCTA(Structure):
+    class ItemUnion(Union):
+        _fields_ = [('itemex', TVITEMEXA),
+                    ('item', TV_ITEMA)
+        ]
+
+    _fields_ = [('hParent', HTREEITEM),
+                ('hInsertAfter', HTREEITEM),
+                ('ItemUnion', ItemUnion)
+    ]
+
+TVINSERTSTRUCTA = tagTVINSERTSTRUCTA
+LPTVINSERTSTRUCTA = POINTER(TVINSERTSTRUCTA)
+
+class tagTVINSERTSTRUCTW(Structure):
+    class ItemUnion(Union):
+        _fields_ = [('itemex', TVITEMEXW),
+                    ('item', TV_ITEMW)
+        ]
+
+    _fields_ = [('hParent', HTREEITEM),
+                ('hInsertAfter', HTREEITEM),
+                ('ItemUnion', ItemUnion)
+    ]
+
+TVINSERTSTRUCTW = tagTVINSERTSTRUCTW
+LPTVINSERTSTRUCTW = POINTER(TVINSERTSTRUCTW)
+
+LPTV_INSERTSTRUCTA = LPTVINSERTSTRUCTA
+LPTV_INSERTSTRUCTW = LPTVINSERTSTRUCTW
+TV_INSERTSTRUCTA = TVINSERTSTRUCTA
+TV_INSERTSTRUCTW = TVINSERTSTRUCTW
+
+TVINSERTSTRUCT = TVINSERTSTRUCTW if UNICODE else TVINSERTSTRUCTA
+LPTVINSERTSTRUCT = LPTVINSERTSTRUCTW if UNICODE else LPTVINSERTSTRUCTA
+
+TV_INSERTSTRUCT = TVINSERTSTRUCT
+LPTV_INSERTSTRUCT = LPTVINSERTSTRUCT
+
+TVM_INSERTITEMA = (TV_FIRST+0)
+TVM_INSERTITEMW = (TV_FIRST+50)
+
+TVM_INSERTITEM = TVM_INSERTITEMW if UNICODE else TVM_INSERTITEMA
+
+TVM_DELETEITEM = (TV_FIRST+1)
+
+TVM_EXPAND = (TV_FIRST+2)
+
+TVE_COLLAPSE = 0x1
+TVE_EXPAND = 0x2
+TVE_TOGGLE = 0x3
+TVE_EXPANDPARTIAL = 0x4000
+TVE_COLLAPSERESET = 0x8000
+
+TVM_GETITEMRECT = (TV_FIRST+4)
+
+TVM_GETCOUNT = (TV_FIRST+5)
+
+TVM_GETINDENT = (TV_FIRST+6)
+
+TVM_SETINDENT = (TV_FIRST+7)
+
+TVM_GETIMAGELIST = (TV_FIRST+8)
+
+TVSIL_NORMAL = 0
+TVSIL_STATE = 2
+
+TVM_SETIMAGELIST = (TV_FIRST+9)
+
+TVM_GETNEXTITEM = (TV_FIRST+10)
+
+TVGN_ROOT = 0x0
+TVGN_NEXT = 0x1
+TVGN_PREVIOUS = 0x2
+TVGN_PARENT = 0x3
+TVGN_CHILD = 0x4
+TVGN_FIRSTVISIBLE = 0x5
+TVGN_NEXTVISIBLE = 0x6
+TVGN_PREVIOUSVISIBLE = 0x7
+TVGN_DROPHILITE = 0x8
+TVGN_CARET = 0x9
+TVGN_LASTVISIBLE = 0xa
+
+if WIN32_IE >= 0x0600:
+    TVGN_NEXTSELECTED = 0xb
+
+TVSI_NOSINGLEEXPAND = 0x8000
+
+TVM_SELECTITEM = (TV_FIRST+11)
+
+TVM_GETITEMA = (TV_FIRST+12)
+TVM_GETITEMW = (TV_FIRST+62)
+
+TVM_GETITEM = TVM_GETITEMW if UNICODE else TVM_GETITEMA
+
+TVM_SETITEMA = (TV_FIRST+13)
+TVM_SETITEMW = (TV_FIRST+63)
+
+TVM_SETITEM = TVM_SETITEMW if UNICODE else TVM_SETITEMA
+
+TVM_EDITLABELA = (TV_FIRST+14)
+TVM_EDITLABELW = (TV_FIRST+65)
+
+TVM_EDITLABEL = TVM_EDITLABELW if UNICODE else TVM_EDITLABELA
+
+TVM_GETEDITCONTROL = (TV_FIRST+15)
+
+TVM_GETVISIBLECOUNT = (TV_FIRST+16)
+
+TVM_HITTEST = (TV_FIRST+17)
+
+class tagTVHITTESTINFO(Structure):
+    _fields_ = [('pt', POINT),
+                ('flags', UINT),
+                ('hItem', HTREEITEM),
+    ]
+
+TVHITTESTINFO = tagTVHITTESTINFO
+LPTVHITTESTINFO = POINTER(TVHITTESTINFO)
+
+LPTV_HITTESTINFO = LPTVHITTESTINFO
+TV_HITTESTINFO = TVHITTESTINFO
+
+TVHT_NOWHERE = 0x1
+TVHT_ONITEMICON = 0x2
+TVHT_ONITEMLABEL = 0x4
+TVHT_ONITEMINDENT = 0x8
+TVHT_ONITEMBUTTON = 0x10
+TVHT_ONITEMRIGHT = 0x20
+TVHT_ONITEMSTATEICON = 0x40
+TVHT_ONITEM = (TVHT_ONITEMICON | TVHT_ONITEMLABEL | TVHT_ONITEMSTATEICON)
+
+TVHT_ABOVE = 0x100
+TVHT_BELOW = 0x200
+TVHT_TORIGHT = 0x400
+TVHT_TOLEFT = 0x800
+
+TVM_CREATEDRAGIMAGE = (TV_FIRST+18)
+
+TVM_SORTCHILDREN = (TV_FIRST+19)
+
+TVM_ENSUREVISIBLE = (TV_FIRST+20)
+
+TVM_SORTCHILDRENCB = (TV_FIRST+21)
+
+TVM_ENDEDITLABELNOW = (TV_FIRST+22)
+
+TVM_GETISEARCHSTRINGA = (TV_FIRST+23)
+TVM_GETISEARCHSTRINGW = (TV_FIRST+64)
+
+TVM_GETISEARCHSTRING = TVM_GETISEARCHSTRINGW if UNICODE else TVM_GETISEARCHSTRINGA
+
+TVM_SETTOOLTIPS = (TV_FIRST+24)
+
+TVM_GETTOOLTIPS = (TV_FIRST+25)
+
+TVM_SETINSERTMARK = (TV_FIRST+26)
+
+TVM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
+
+TVM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+TVM_SETITEMHEIGHT = (TV_FIRST+27)
+
+TVM_GETITEMHEIGHT = (TV_FIRST+28)
+
+TVM_SETBKCOLOR = (TV_FIRST+29)
+
+TVM_SETTEXTCOLOR = (TV_FIRST+30)
+
+TVM_GETBKCOLOR = (TV_FIRST+31)
+
+TVM_GETTEXTCOLOR = (TV_FIRST+32)
+
+TVM_SETSCROLLTIME = (TV_FIRST+33)
+
+TVM_GETSCROLLTIME = (TV_FIRST+34)
+
+TVM_SETBORDER = (TV_FIRST+35)
+
+TVSBF_XBORDER = 0x1
+TVSBF_YBORDER = 0x2
+
+TVM_SETINSERTMARKCOLOR = (TV_FIRST+37)
+
+TVM_GETINSERTMARKCOLOR = (TV_FIRST+38)
+
+TVM_GETITEMSTATE = (TV_FIRST+39)
+
+TVM_SETLINECOLOR = (TV_FIRST+40)
+
+TVM_GETLINECOLOR = (TV_FIRST+41)
+
+TVM_MAPACCIDTOHTREEITEM = (TV_FIRST+42)
+
+TVM_MAPHTREEITEMTOACCID = (TV_FIRST+43)
+
+TVM_SETEXTENDEDSTYLE = (TV_FIRST+44)
+
+TVM_GETEXTENDEDSTYLE = (TV_FIRST+45)
+
+TVM_SETHOT = (TV_FIRST+58)
+
+TVM_SETAUTOSCROLLINFO = (TV_FIRST+59)
+
+if NTDDI_VERSION >= 0x06000000:
+    TVM_GETSELECTEDCOUNT = (TV_FIRST+70)
+
+    TVM_SHOWINFOTIP = (TV_FIRST+71)
+
+    TVGIPR_BUTTON = 0x0001
+
+    class _TVITEMPART(enum.IntFlag):
+        TVGIPR_BUTTON = 0x0001
+
+    TVITEMPART = _TVITEMPART
+
+    class tagTVGETITEMPARTRECTINFO(Structure):
+        _fields_ = [('hti', HTREEITEM),
+                    ('prc', PRECT),
+                    ('partID', UINT),
+        ]
+
+    TVGETITEMPARTRECTINFO = tagTVGETITEMPARTRECTINFO
+
+    TVM_GETITEMPARTRECT = (TV_FIRST+72)
+
+PFNTVCOMPARE = CALLBACK(INT, LPARAM, LPARAM, LPARAM)
+
+class tagTVSORTCB(Structure):
+    _fields_ = [('', HTREEITEM),
+                ('', PFNTVCOMPARE),
+                ('', LPARAM),
+    ]
+
+TVSORTCB = tagTVSORTCB
+LPTVSORTCB = POINTER(TVSORTCB)
+
+LPTV_SORTCB = LPTVSORTCB
+TV_SORTCB = TVSORTCB
+
+class tagNMTREEVIEWA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('action', UINT),
+                ('itemOld', TVITEMA),
+                ('itemNew', TVITEMA),
+                ('ptDrag', POINT),
+    ]
+
+NMTREEVIEWA = tagNMTREEVIEWA
+LPNMTREEVIEWA = POINTER(NMTREEVIEWA)
+
+class tagNMTREEVIEWW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('action', UINT),
+                ('itemOld', TVITEMW),
+                ('itemNew', TVITEMW),
+                ('ptDrag', POINT),
+    ]
+
+NMTREEVIEWW = tagNMTREEVIEWW
+LPNMTREEVIEWW = POINTER(NMTREEVIEWW)
+
+NMTREEVIEW = NMTREEVIEWW if UNICODE else NMTREEVIEWA
+LPNMTREEVIEW = LPNMTREEVIEWW if UNICODE else LPNMTREEVIEWA
+
+TVN_SELCHANGINGA = (TVN_FIRST-1)
+TVN_SELCHANGINGW = (TVN_FIRST-50)
+TVN_SELCHANGEDA = (TVN_FIRST-2)
+TVN_SELCHANGEDW = (TVN_FIRST-51)
+
+TVC_UNKNOWN = 0x0
+TVC_BYMOUSE = 0x1
+TVC_BYKEYBOARD = 0x2
+
+TVN_GETDISPINFOA = (TVN_FIRST-3)
+TVN_GETDISPINFOW = (TVN_FIRST-52)
+TVN_SETDISPINFOA = (TVN_FIRST-4)
+TVN_SETDISPINFOW = (TVN_FIRST-53)
+
+TVIF_DI_SETITEM = 0x1000
+
+class tagTVDISPINFOA(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('item', TVITEMA)
+    ]
+
+NMTVDISPINFOA = tagTVDISPINFOA
+LPNMTVDISPINFOA = POINTER(NMTVDISPINFOA)
+
+class tagTVDISPINFOW(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('item', TVITEMW)
+    ]
+
+NMTVDISPINFOW = tagTVDISPINFOW
+LPNMTVDISPINFOW = POINTER(NMTVDISPINFOW)
+
+TV_DISPINFOA = NMTVDISPINFOA
+TV_DISPINFOW = NMTVDISPINFOW
+NMTVDISPINFO = NMTVDISPINFOW if UNICODE else NMTVDISPINFOA
+LPNMTVDISPINFO = LPNMTVDISPINFOW if UNICODE else LPNMTVDISPINFOA
+TV_DISPINFO = NMTVDISPINFO
+
+if WIN32_IE >= 0x0600:
+    class tagTVDISPINFOEXA(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('item', TVITEMEXA),
+        ]
+    
+    NMTVDISPINFOEXA = tagTVDISPINFOEXA
+    LPNMTVDISPINFOEXA = POINTER(NMTVDISPINFOEXA)
+
+    class tagTVDISPINFOEXW(Structure):
+        _fields_ = [('hdr', NMHDR),
+                    ('item', TVITEMEXW),
+        ]
+    
+    NMTVDISPINFOEXW = tagTVDISPINFOEXW
+    LPNMTVDISPINFOEXW = POINTER(NMTVDISPINFOEXW)
+
+    NMTVDISPINFOEX   = NMTVDISPINFOEXW if UNICODE else NMTVDISPINFOEXA
+    LPNMTVDISPINFOEX = LPNMTVDISPINFOEXW if UNICODE else LPNMTVDISPINFOEXA
+
+    TV_DISPINFOEXA = NMTVDISPINFOEXA
+    TV_DISPINFOEXW = NMTVDISPINFOEXW
+    TV_DISPINFOEX =  NMTVDISPINFOEX
+
+TVN_ITEMEXPANDINGA = (TVN_FIRST-5)
+TVN_ITEMEXPANDINGW = (TVN_FIRST-54)
+TVN_ITEMEXPANDEDA = (TVN_FIRST-6)
+TVN_ITEMEXPANDEDW = (TVN_FIRST-55)
+TVN_BEGINDRAGA = (TVN_FIRST-7)
+TVN_BEGINDRAGW = (TVN_FIRST-56)
+TVN_BEGINRDRAGA = (TVN_FIRST-8)
+TVN_BEGINRDRAGW = (TVN_FIRST-57)
+TVN_DELETEITEMA = (TVN_FIRST-9)
+TVN_DELETEITEMW = (TVN_FIRST-58)
+TVN_BEGINLABELEDITA = (TVN_FIRST-10)
+TVN_BEGINLABELEDITW = (TVN_FIRST-59)
+TVN_ENDLABELEDITA = (TVN_FIRST-11)
+TVN_ENDLABELEDITW = (TVN_FIRST-60)
+TVN_KEYDOWN = (TVN_FIRST-12)
+TVN_GETINFOTIPA = (TVN_FIRST-13)
+TVN_GETINFOTIPW = (TVN_FIRST-14)
+TVN_SINGLEEXPAND = (TVN_FIRST-15)
+
+TVNRET_DEFAULT = 0
+TVNRET_SKIPOLD = 1
+TVNRET_SKIPNEW = 2
+
+if WIN32_IE >= 0x0600:
+    TVN_ITEMCHANGINGA = (TVN_FIRST-16)
+    TVN_ITEMCHANGINGW = (TVN_FIRST-17)
+    TVN_ITEMCHANGEDA = (TVN_FIRST-18)
+    TVN_ITEMCHANGEDW = (TVN_FIRST-19)
+    TVN_ASYNCDRAW = (TVN_FIRST-20)
+
+class tagTVKEYDOWN(Structure):
+    _fields_ = [('hdr', NMHDR),
+                ('wVKey', WORD),
+                ('flags', UINT),
+    ]
+
+NMTVKEYDOWN = tagTVKEYDOWN
+LPNMTVKEYDOWN = POINTER(NMTVKEYDOWN)
+
+TV_KEYDOWN = NMTVKEYDOWN
+
+TVN_SELCHANGING = TVN_SELCHANGINGW if UNICODE else TVN_SELCHANGINGA
+TVN_SELCHANGED = TVN_SELCHANGEDW if UNICODE else TVN_SELCHANGEDA
+TVN_GETDISPINFO = TVN_GETDISPINFOW if UNICODE else TVN_GETDISPINFOA
+TVN_SETDISPINFO = TVN_SETDISPINFOW if UNICODE else TVN_SETDISPINFOA
+TVN_ITEMEXPANDING = TVN_ITEMEXPANDINGW if UNICODE else TVN_ITEMEXPANDINGA
+TVN_ITEMEXPANDED = TVN_ITEMEXPANDEDW if UNICODE else TVN_ITEMEXPANDEDA
+TVN_BEGINDRAG = TVN_BEGINDRAGW if UNICODE else TVN_BEGINDRAGA
+TVN_BEGINRDRAG = TVN_BEGINRDRAGW if UNICODE else TVN_BEGINRDRAGA
+TVN_DELETEITEM = TVN_DELETEITEMW if UNICODE else TVN_DELETEITEMA
+TVN_BEGINLABELEDIT = TVN_BEGINLABELEDITW if UNICODE else TVN_BEGINLABELEDITA
+TVN_ENDLABELEDIT = TVN_ENDLABELEDITW if UNICODE else TVN_ENDLABELEDITA
+
+class tagNMTVCUSTOMDRAW(Structure):
+    _fields_ = [('nmcd', NMCUSTOMDRAW),
+                ('clrText', COLORREF),
+                ('clrTextBk', COLORREF),
+                ('iLevel', INT),
+    ]
+
+NMTVCUSTOMDRAW = tagNMTVCUSTOMDRAW
+LPNMTVCUSTOMDRAW = POINTER(NMTVCUSTOMDRAW)

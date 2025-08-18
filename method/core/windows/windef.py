@@ -1,0 +1,125 @@
+# coding = 'utf-8'
+
+import enum
+from ctypes import *
+
+    
+try:
+    from win_cbasictypes import * 
+except ImportError:
+    from .win_cbasictypes import *
+
+# windef.h
+
+TRUE = True
+FALSE = False
+
+class tagRECT(Structure):
+    _fields_ = [('left', LONG), 
+                ('top', LONG),
+                ('right', LONG),
+                ('bottom', LONG)
+    ]
+
+RECT = tagRECT
+PRECT = POINTER(tagRECT)
+NPRECT = PRECT
+LPRECT = PRECT
+
+RECTL = tagRECT
+PRECTL = PRECT
+LPRECTL = PRECT
+
+class tagPOINT(Structure):
+    _fields_ = [("x", LONG),
+                ("y", LONG)]
+    
+POINT = tagPOINT
+PPOINT = POINTER(POINT)
+NPPOINT = PPOINT
+LPPOINT = PPOINT
+
+POINTL = tagPOINT
+PPOINTL = PPOINT
+
+class tagSIZE(Structure):
+    _fields_ = [('cx', LONG),
+                ('cy', LONG)
+    ]
+
+SIZE = tagSIZE
+PSIZE = POINTER(SIZE)
+LPSIZE = PSIZE
+
+SIZEL = SIZE
+PSIZEL = PSIZE
+LPSIZEL = PSIZE
+
+class tagPOINTS(Structure):
+    _fields_ = [('x', SHORT),
+                ('y', SHORT)
+    ]
+
+POINTS = tagPOINTS
+PPOINTS = POINTER(POINTS)
+LPPOINTS = PPOINTS
+
+APP_LOCAL_DEVICE_ID_SIZE = 32
+
+class APP_LOCAL_DEVICE_ID(Structure):
+    _fields_ = [('value', BYTE * APP_LOCAL_DEVICE_ID_SIZE)]
+
+DM_UPDATE = 1
+DM_COPY = 2
+DM_PROMPT = 4
+DM_MODIFY = 8
+
+DM_IN_BUFFER = DM_MODIFY
+DM_IN_PROMPT = DM_PROMPT
+DM_OUT_BUFFER = DM_COPY
+DM_OUT_DEFAULT = DM_UPDATE
+
+DC_FIELDS = 1
+DC_PAPERS = 2
+DC_PAPERSIZE = 3
+DC_MINEXTENT = 4
+DC_MAXEXTENT = 5
+DC_BINS = 6
+DC_DUPLEX = 7
+DC_SIZE = 8
+DC_EXTRA = 9
+DC_VERSION = 10
+DC_DRIVER = 11
+DC_BINNAMES = 12
+DC_ENUMRESOLUTIONS = 13
+DC_FILEDEPENDENCIES = 14
+DC_TRUETYPE = 15
+DC_PAPERNAMES = 16
+DC_ORIENTATION = 17
+DC_COPIES = 18
+
+DPI_AWARENESS_INVALID = -1
+DPI_AWARENESS_UNAWARE = 0
+DPI_AWARENESS_SYSTEM_AWARE = 1
+DPI_AWARENESS_PER_MONITOR_AWARE = 2
+
+class DPI_AWARENESS(enum.IntFlag):
+    DPI_AWARENESS_INVALID = -1
+    DPI_AWARENESS_UNAWARE = 0
+    DPI_AWARENESS_SYSTEM_AWARE = 1
+    DPI_AWARENESS_PER_MONITOR_AWARE = 2
+
+DPI_HOSTING_BEHAVIOR_INVALID = -1
+DPI_HOSTING_BEHAVIOR_DEFAULT = 0
+DPI_HOSTING_BEHAVIOR_MIXED = 1
+
+DPI_AWARENESS_CONTEXT_UNAWARE = 0xffffffffffffffff
+DPI_AWARENESS_CONTEXT_SYSTEM_AWARE = 0xfffffffffffffffe
+DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE = 0xfffffffffffffffd
+DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2 = 0xfffffffffffffffc
+DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED = 0xfffffffffffffffb
+
+class DPI_HOSTING_BEHAVIOR(enum.IntFlag):
+    DPI_HOSTING_BEHAVIOR_INVALID = -1
+    DPI_HOSTING_BEHAVIOR_DEFAULT = 0
+    DPI_HOSTING_BEHAVIOR_MIXED = 1
