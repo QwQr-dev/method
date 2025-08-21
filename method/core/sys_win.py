@@ -16,10 +16,6 @@ Win32_Process = wmi.ExecQuery("SELECT * FROM Win32_Process")
 Win32_Service = wmi.ExecQuery("SELECT * FROM Win32_Service")
 Win32_ComputerSystemProduct = wmi.ExecQuery('SELECT * FROM Win32_ComputerSystemProduct')
 
-IsUserAnAdmin = shell32.IsUserAnAdmin
-ShowWindow = User32.ShowWindow
-WaitForSingleObject = Kernel32.WaitForSingleObject
-
 
 def get_self_directory(temp_dir: bool = False) -> str:
     '''Get the path of file.（获取文件自身路径）'''

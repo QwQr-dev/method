@@ -5,7 +5,7 @@
 import enum
 import ctypes
 from typing import Any
-from ctypes import Structure, POINTER
+from ctypes import Structure, POINTER, WinError
 
 
 try:
@@ -15,6 +15,7 @@ try:
     from win_cbasictypes import *
     from error import GetLastError
     from windef import POINT, RECT
+    from processthreadsapi import *
     from winuser import WM_USER, SendMessageW
 except ImportError:
     from .sdkddkver import *
@@ -23,6 +24,7 @@ except ImportError:
     from .win_cbasictypes import *
     from .error import GetLastError
     from .windef import POINT, RECT
+    from .processthreadsapi import *
     from .winuser import WM_USER, SendMessageW
 
 NULL = 0
@@ -337,92 +339,6 @@ SECURITY_ATTRIBUTES = _SECURITY_ATTRIBUTES
 PSECURITY_ATTRIBUTES = POINTER(SECURITY_ATTRIBUTES)
 LPSECURITY_ATTRIBUTES = POINTER(SECURITY_ATTRIBUTES)
 
-class _STARTUPINFOA(Structure):     # from processthreadsapi.h
-    _fields_ = [('cb', DWORD),
-                ('lpReserved', LPSTR),
-                ('lpDesktop', LPSTR),
-                ('lpTitle', LPSTR),
-                ('dwX', DWORD),
-                ('dwY', DWORD),
-                ('dwXSize', DWORD),
-                ('dwYSize', DWORD),
-                ('dwXCountChars', DWORD),
-                ('dwYCountChars', DWORD),
-                ('dwFillAttribute', DWORD),
-                ('dwFlags', DWORD),
-                ('wShowWindow', WORD),
-                ('cbReserved2', WORD),
-                ('lpReserved2', LPBYTE),
-                ('hStdInput', HANDLE),
-                ('hStdOutput', HANDLE),
-                ('hStdError', HANDLE),
-    ]
-
-STARTUPINFOA = _STARTUPINFOA
-LPSTARTUPINFOA = POINTER(STARTUPINFOA)
-
-class _STARTUPINFOW(Structure):        # from processthreadsapi.h
-    _fields_ = [('cb', DWORD),
-                ('lpReserved', LPWSTR),
-                ('lpDesktop', LPWSTR),
-                ('lpTitle', LPWSTR),
-                ('dwX', DWORD),
-                ('dwY', DWORD),
-                ('dwXSize', DWORD),
-                ('dwYSize', DWORD),
-                ('dwXCountChars', DWORD),
-                ('dwYCountChars', DWORD),
-                ('dwFillAttribute', DWORD),
-                ('dwFlags', DWORD),
-                ('wShowWindow', WORD),
-                ('cbReserved2', WORD),
-                ('lpReserved2', LPBYTE),
-                ('hStdInput', HANDLE),
-                ('hStdOutput', HANDLE),
-                ('hStdError', HANDLE),
-    ]
-
-STARTUPINFOW = _STARTUPINFOW
-LPSTARTUPINFOW = POINTER(STARTUPINFOW)
-
-class _PROCESS_INFORMATION(Structure):      # from processthreadsapi.h
-    _fields_ = [('hProcess', HANDLE),
-                ('hThread', HANDLE),
-                ('dwProcessId', DWORD),
-                ('dwThreadId', DWORD),
-    ]
-
-PROCESS_INFORMATION = _PROCESS_INFORMATION
-PPROCESS_INFORMATION = POINTER(PROCESS_INFORMATION)
-LPPROCESS_INFORMATION = POINTER(PROCESS_INFORMATION)
-
-ProcessMemoryPriority = 0
-ProcessMemoryExhaustionInfo = 1
-ProcessAppMemoryInfo = 2
-ProcessInPrivateInfo = 3
-ProcessPowerThrottling = 4
-ProcessReservedValue1 = 5
-ProcessTelemetryCoverageInfo = 6
-ProcessProtectionLevelInfo = 7
-ProcessLeapSecondInfo = 8
-ProcessMachineTypeInfo = 9
-ProcessInformationClassMax = 10
-
-class _PROCESS_INFORMATION_CLASS(enum.IntFlag):     # from processthreadsapi.h
-    ProcessMemoryPriority = 0
-    ProcessMemoryExhaustionInfo = 1
-    ProcessAppMemoryInfo = 2
-    ProcessInPrivateInfo = 3
-    ProcessPowerThrottling = 4
-    ProcessReservedValue1 = 5
-    ProcessTelemetryCoverageInfo = 6
-    ProcessProtectionLevelInfo = 7
-    ProcessLeapSecondInfo = 8
-    ProcessMachineTypeInfo = 9
-    ProcessInformationClassMax = 10
-
-PROCESS_INFORMATION_CLASS = _PROCESS_INFORMATION_CLASS
-
 class _SHCREATEPROCESSINFOW(Structure):
     _fields_ = [('cbSize', DWORD),
                 ('fMask', ULONG),
@@ -441,8 +357,6 @@ class _SHCREATEPROCESSINFOW(Structure):
 
 SHCREATEPROCESSINFOW = _SHCREATEPROCESSINFOW
 PSHCREATEPROCESSINFOW = POINTER(SHCREATEPROCESSINFOW)
-
-
 
 if NTDDI_VERSION >= 0x06000000:
     ASSOCCLASS_SHELL_KEY = 0
@@ -515,7 +429,7 @@ if NTDDI_VERSION >= 0x06000000:
 class _NOTIFYICONDATAA(ctypes.Structure):
     class UTIMEVER(ctypes.Union):
         _fields_ = [('uTimeout', UINT), 
-                ('uVersion', UINT)
+                    ('uVersion', UINT)
         ]
 
     _fields_ = [('cbSize', DWORD), 
@@ -1002,7 +916,7 @@ def ShellExecute(hwnd: int = HWND(),
         )
     
     if result <= 32:
-        raise ctypes.WinError(GetLastError(result))
+        raise WinError(GetLastError())
     
 
 def ShellExecuteEx(fMask: int = SEE_MASK_FLAG_NO_UI | SEE_MASK_FORCENOIDLIST, 
@@ -1042,10 +956,10 @@ def ShellExecuteEx(fMask: int = SEE_MASK_FLAG_NO_UI | SEE_MASK_FORCENOIDLIST,
     hInstApp = mbr.hInstApp
 
     if hInstApp is not None and hInstApp <= 32:
-        raise ctypes.WinError(GetLastError(hInstApp)) 
+        raise WinError(GetLastError()) 
     
     if res == NULL:
-        raise ctypes.WinError(GetLastError(res)) 
+        raise WinError(GetLastError()) 
     
     return hProcess
 
@@ -1060,14 +974,14 @@ def OpenProcess(dwDesiredAccess: int,
     )
 
     if handle == NULL:
-        raise ctypes.WinError(GetLastError(handle))
+        raise WinError(GetLastError())
     return handle
 
 
 def CloseHandle(hObject: int) -> None:
     result = Kernel32.CloseHandle(hObject)
     if result == NULL:
-        raise ctypes.WinError(GetLastError(result))
+        raise WinError(GetLastError())
 
 
 def QueryFullProcessImageName(hProcess: int, 
@@ -1092,6 +1006,21 @@ def QueryFullProcessImageName(hProcess: int,
         )
 
     if error_code == NULL:
-        raise ctypes.WinError(GetLastError(error_code))
+        raise WinError(GetLastError())
     return lpExeName.value
 
+
+def ShellAbout(hwnd: int, 
+               szApp: str, 
+               szOtherStuff: str, 
+               hIcon: int, 
+               unicode: bool = True) -> None:
+    
+    ShellAbout = (shell32.ShellAboutW 
+                  if unicode else shell32.ShellAboutA
+    )
+
+    res = ShellAbout(hwnd, szApp, szOtherStuff, hIcon)
+    if not res:
+        raise WinError(GetLastError())
+    

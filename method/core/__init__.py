@@ -52,5 +52,6 @@ from .sys_win import (get_proc_path,
                       Links
 )
 
+from .filedialog import *
 from .messagebox import *
 from .TaskDialogIndirect import *

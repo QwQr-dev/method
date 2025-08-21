@@ -238,6 +238,7 @@ USHORT = wintypes.USHORT
 USN = LONGLONG
 VOID = ctypes.c_void_p
 WCHAR = wintypes.WCHAR
+WINAPI = WINFUNCTYPE
 WORD = wintypes.WORD
 WPARAM = wintypes.WPARAM
 

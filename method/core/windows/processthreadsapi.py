@@ -1,6 +1,7 @@
 # coding = 'utf-8'
 
 import enum
+from typing import Any
 from ctypes import (WinError, 
                     Structure, 
                     byref, 
@@ -47,14 +48,14 @@ def OpenProcess(dwDesiredAccess: int,
     )
 
     if handle == NULL:
-        raise WinError(GetLastError(handle))
+        raise WinError(GetLastError())
     return handle
 
 
 def QueueUserAPC(pfnAPC, hThread, dwData):
     res = Kernel32.QueueUserAPC(pfnAPC, hThread, dwData)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
@@ -71,7 +72,7 @@ def GetProcessTimes(hProcess: int):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     
     res = {}
     res['lpCreationTime'] = lpCreationTime
@@ -86,14 +87,14 @@ def ExitProcess(uExitCode):
 
 
 def GetExitCodeProcess(hProcess, LPlpExitCode):
-    LPlpExitCode = LPDWORD()
+    LPlpExitCode = DWORD()
     res = Kernel32.GetExitCodeProcess(hProcess, byref(LPlpExitCode))
     if res == NULL:
-        WinError(GetLastError(res))
-    return LPlpExitCode.contents
+        WinError(GetLastError())
+    return LPlpExitCode.value
 
 
-def SwitchToThread():
+def SwitchToThread() -> int:
     return Kernel32.SwitchToThread()
 
 
@@ -104,14 +105,14 @@ def OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
 def SetThreadPriorityBoost(hThread, bDisablePriorityBoost):
     res = Kernel32.SetThreadPriorityBoost(hThread, bDisablePriorityBoost)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
@@ -119,31 +120,34 @@ def GetThreadPriorityBoost(hThread):
     pDisablePriorityBoost = PBOOL()
     res = Kernel32.GetThreadPriorityBoost(hThread, pDisablePriorityBoost)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return pDisablePriorityBoost.contents
 
 
 def SetThreadToken(PThread, Token):
     res = advapi32.SetThreadToken(PThread, Token)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
 def OpenProcessToken(ProcessHandle, DesiredAccess):
-    PTokenHandle = PHANDLE()
-    res = advapi32.OpenProcessToken(ProcessHandle, 
-                                    DesiredAccess, 
-                                    byref(PTokenHandle)
+    PTokenHandle = HANDLE()
+    OpenProcessToken = advapi32.OpenProcessToken
+    OpenProcessToken.argtypes = [HANDLE, DWORD, HANDLE]
+    OpenProcessToken.restype = BOOL
+    res = OpenProcessToken(ProcessHandle, 
+                           DesiredAccess, 
+                           byref(PTokenHandle)
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
-    return PTokenHandle.contents
+        raise WinError(GetLastError())
+    return PTokenHandle.value
 
 
 def OpenThreadToken(ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle):
-    TokenHandle = PHANDLE()
+    TokenHandle = HANDLE()
     res = advapi32.OpenThreadToken(ThreadHandle, 
                                    DesiredAccess, 
                                    OpenAsSelf, 
@@ -151,35 +155,41 @@ def OpenThreadToken(ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
-    return TokenHandle.contents
+        raise WinError(GetLastError())
+    return TokenHandle.value
+
+
+def GetCurrentProcess() -> int:
+    GetCurrentProcess = Kernel32.GetCurrentProcess
+    GetCurrentProcess.restype = HANDLE
+    return GetCurrentProcess()
 
 
 def SetPriorityClass(hProcess, dwPriorityClass):
     res = Kernel32.SetPriorityClass(hProcess, dwPriorityClass)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
 def GetPriorityClass(hProcess):
     res = Kernel32.GetPriorityClass(hProcess)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
 def GetProcessId(Process):
     res = Kernel32.GetProcessId(Process)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
 def GetThreadId(Thread):
     res = Kernel32.GetThreadId(Thread)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
@@ -190,7 +200,7 @@ def GetThreadContext(hThread, lpContext):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return lpContext
 
 
@@ -201,7 +211,7 @@ def FlushInstructionCache(hProcess, lpBaseAddress, dwSize):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
@@ -218,7 +228,7 @@ def GetThreadTimes(hThread: int):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     
     res = {}
     res['lpCreationTime'] = lpCreationTime
@@ -235,7 +245,7 @@ def GetCurrentProcessorNumber():
 def TerminateProcess(hProcess, uExitCode):
     res = Kernel32.TerminateProcess(hProcess, uExitCode)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
 
 
 class _STARTUPINFOA(Structure):
@@ -438,7 +448,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
         )
 
         if res == NULL:
-            raise WinError(GetLastError(res))
+            raise WinError(GetLastError())
 
 
     def SetThreadSelectedCpuSetMasks(Thread, 
@@ -451,7 +461,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
         )
 
         if res == NULL:
-            raise WinError(GetLastError(res))
+            raise WinError(GetLastError())
 
 
 class _PROC_THREAD_ATTRIBUTE_LIST(Structure):
@@ -479,32 +489,32 @@ def CreateRemoteThread(hProcess,
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
 
 
 def TerminateThread(hThread, dwExitCode):
     res = Kernel32.TerminateThread(hThread, dwExitCode)
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return hThread
 
 
 def SetProcessShutdownParameters(dwLevel, dwFlags):
     res = Kernel32.SetProcessShutdownParameters(dwLevel, dwFlags)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
 
 
 def GetProcessVersion(ProcessId):
     res = Kernel32.GetProcessVersion(ProcessId)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return res
 
 
 def GetStartupInfoW():
-    lpStartupInfo = LPSTARTUPINFOW()
+    lpStartupInfo = STARTUPINFOW()
     Kernel32.GetStartupInfoW(byref(lpStartupInfo))
     return lpStartupInfo
 
@@ -513,7 +523,7 @@ def SetThreadStackGuarantee(StackSizeInBytes):
     StackSizeInBytes = PULONG(StackSizeInBytes)
     res = Kernel32.SetThreadStackGuarantee(StackSizeInBytes)
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return StackSizeInBytes.contents
 
 
@@ -524,7 +534,7 @@ def ProcessIdToSessionId(dwProcessId, pSessionId):
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return pSessionId.value
 
 
@@ -534,47 +544,89 @@ def CreateRemoteThreadEx(hProcess,
                          lpStartAddress, 
                          lpParameter, 
                          dwCreationFlags, 
-                         lpAttributeList, 
-                         lpThreadId):
+                         lpAttributeList,
+                         lpThreadId = byref(DWORD())):
     
-    return
+    res = Kernel32.CreateRemoteThreadEx(hProcess, 
+                         lpThreadAttributes, 
+                         dwStackSize, 
+                         lpStartAddress, 
+                         lpParameter, 
+                         dwCreationFlags, 
+                         lpAttributeList, 
+                         lpThreadId
+    )
+
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res, lpThreadId
 
 
-def SetThreadContext(hThread, lpContext):
-    return
+def SetThreadContext(hThread: int, lpContext):
+    res = Kernel32.SetThreadContext(hThread, lpContext)
+    if res == NULL:
+        raise WinError(GetLastError())
 
 
-def GetProcessHandleCount(hProcess, pdwHandleCount):
-    return
+def GetProcessHandleCount(hProcess: int, pdwHandleCount = byref(DWORD())):
+    res = Kernel32.GetProcessHandleCount(hProcess, pdwHandleCount)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return pdwHandleCount
 
 
 GetStartupInfo = GetStartupInfoW
 
 
-def CreateProcessAsUserW(hToken, 
-                         lpApplicationName, 
-                         lpCommandLine, 
-                         lpProcessAttributes, 
-                         lpThreadAttributes, 
-                         bInheritHandles, 
-                         dwCreationFlags, 
-                         lpEnvironment, 
-                         lpCurrentDirectory, 
-                         lpStartupInfo, 
-                         lpProcessInformation):
+def CreateProcessAsUser(hToken: int, 
+                        lpApplicationName: str, 
+                        lpCommandLine: str, 
+                        lpProcessAttributes: Any, 
+                        lpThreadAttributes: Any, 
+                        bInheritHandles: bool, 
+                        dwCreationFlags: int, 
+                        lpEnvironment: Any, 
+                        lpCurrentDirectory: str, 
+                        lpStartupInfo: Any, 
+                        unicode: bool = True):
+    
+    CreateProcessAsUser = (advapi32.CreateProcessAsUserW 
+                           if unicode else advapi32.CreateProcessAsUserA
+    )
 
-    return
+    lpProcessInformation = PROCESS_INFORMATION()
+    res = CreateProcessAsUser(hToken, 
+                              lpApplicationName, 
+                              lpCommandLine, 
+                              lpProcessAttributes, 
+                              lpThreadAttributes, 
+                              bInheritHandles, 
+                              dwCreationFlags, 
+                              lpEnvironment, 
+                              lpCurrentDirectory, 
+                              lpStartupInfo,
+                              byref(lpProcessInformation)
+    )
 
+    if res == NULL:
+        raise WinError(GetLastError())
+    
+    res = {}
+    res['lpProcessInformation'] = lpProcessInformation
+    res['lpCommandLine'] = lpCommandLine
+    return res
 
-CreateProcessAsUser = CreateProcessAsUserW
 
 #if _WIN32_WINNT >= 0x0600
 PROCESS_AFFINITY_ENABLE_AUTO_UPDATE = 0x1
 PROC_THREAD_ATTRIBUTE_REPLACE_VALUE = 0x00000001
 
 
-def GetProcessIdOfThread(Thread):
-    return
+def GetProcessIdOfThread(Thread: int) -> int:
+    res = Kernel32.GetProcessIdOfThread(Thread)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
 
 
 def InitializeProcThreadAttributeList(lpAttributeList, 
@@ -651,46 +703,36 @@ def QueryProtectedPolicy (PolicyGuid, PolicyValue):
     return
 
 
-def CreateProcessA (lpApplicationName, 
-                    lpCommandLine, 
-                    lpProcessAttributes, 
-                    lpThreadAttributes, 
-                    bInheritHandles, 
-                    dwCreationFlags, 
-                    lpEnvironment, 
-                    lpCurrentDirectory, 
-                    lpStartupInfo, 
-                    lpProcessInformation):
-
-    return
-
-
-def CreateProcessW (lpApplicationName, 
-                    lpCommandLine, 
-                    lpProcessAttributes, 
-                    lpThreadAttributes, 
-                    bInheritHandles, 
-                    dwCreationFlags, 
-                    lpEnvironment, 
-                    lpCurrentDirectory, 
-                    lpStartupInfo):
+def CreateProcess(lpApplicationName: str, 
+                  lpCommandLine: str, 
+                  lpProcessAttributes: Any, 
+                  lpThreadAttributes: Any, 
+                  bInheritHandles: bool, 
+                  dwCreationFlags: int, 
+                  lpEnvironment: Any, 
+                  lpCurrentDirectory: str, 
+                  lpStartupInfo: Any,
+                  unicode: bool = True):
     
-    lpCommandLine = LPWSTR(lpCommandLine)
-    lpProcessInformation = LPPROCESS_INFORMATION()
-    res = Kernel32.CreateProcessW(lpApplicationName, 
-                                  byref(lpCommandLine), 
-                                  lpProcessAttributes, 
-                                  lpThreadAttributes, 
-                                  bInheritHandles, 
-                                  dwCreationFlags, 
-                                  lpEnvironment, 
-                                  lpCurrentDirectory, 
-                                  lpStartupInfo, 
-                                  byref(lpProcessInformation)
+    CreateProcess = (Kernel32.CreateProcessW 
+                     if unicode else Kernel32.CreateProcessA
+    )
+
+    lpProcessInformation = PROCESS_INFORMATION()
+    res = CreateProcess(lpApplicationName, 
+                        lpCommandLine, 
+                        lpProcessAttributes, 
+                        lpThreadAttributes, 
+                        bInheritHandles, 
+                        dwCreationFlags, 
+                        lpEnvironment, 
+                        lpCurrentDirectory, 
+                        lpStartupInfo, 
+                        byref(lpProcessInformation)
     )
 
     if res == NULL:
-        raise WinError(GetLastError(res))
+        raise WinError(GetLastError())
     return lpProcessInformation
 
 
@@ -703,4 +745,88 @@ if _WIN32_WINNT >= 0x0602:
         return
 
 
+class _STARTUPINFOA(Structure):     
+    _fields_ = [('cb', DWORD),
+                ('lpReserved', LPSTR),
+                ('lpDesktop', LPSTR),
+                ('lpTitle', LPSTR),
+                ('dwX', DWORD),
+                ('dwY', DWORD),
+                ('dwXSize', DWORD),
+                ('dwYSize', DWORD),
+                ('dwXCountChars', DWORD),
+                ('dwYCountChars', DWORD),
+                ('dwFillAttribute', DWORD),
+                ('dwFlags', DWORD),
+                ('wShowWindow', WORD),
+                ('cbReserved2', WORD),
+                ('lpReserved2', LPBYTE),
+                ('hStdInput', HANDLE),
+                ('hStdOutput', HANDLE),
+                ('hStdError', HANDLE),
+    ]
 
+STARTUPINFOA = _STARTUPINFOA
+LPSTARTUPINFOA = POINTER(STARTUPINFOA)
+
+class _STARTUPINFOW(Structure):        
+    _fields_ = [('cb', DWORD),
+                ('lpReserved', LPWSTR),
+                ('lpDesktop', LPWSTR),
+                ('lpTitle', LPWSTR),
+                ('dwX', DWORD),
+                ('dwY', DWORD),
+                ('dwXSize', DWORD),
+                ('dwYSize', DWORD),
+                ('dwXCountChars', DWORD),
+                ('dwYCountChars', DWORD),
+                ('dwFillAttribute', DWORD),
+                ('dwFlags', DWORD),
+                ('wShowWindow', WORD),
+                ('cbReserved2', WORD),
+                ('lpReserved2', LPBYTE),
+                ('hStdInput', HANDLE),
+                ('hStdOutput', HANDLE),
+                ('hStdError', HANDLE),
+    ]
+
+STARTUPINFOW = _STARTUPINFOW
+LPSTARTUPINFOW = POINTER(STARTUPINFOW)
+
+class _PROCESS_INFORMATION(Structure):      
+    _fields_ = [('hProcess', HANDLE),
+                ('hThread', HANDLE),
+                ('dwProcessId', DWORD),
+                ('dwThreadId', DWORD),
+    ]
+
+PROCESS_INFORMATION = _PROCESS_INFORMATION
+PPROCESS_INFORMATION = POINTER(PROCESS_INFORMATION)
+LPPROCESS_INFORMATION = POINTER(PROCESS_INFORMATION)
+
+ProcessMemoryPriority = 0
+ProcessMemoryExhaustionInfo = 1
+ProcessAppMemoryInfo = 2
+ProcessInPrivateInfo = 3
+ProcessPowerThrottling = 4
+ProcessReservedValue1 = 5
+ProcessTelemetryCoverageInfo = 6
+ProcessProtectionLevelInfo = 7
+ProcessLeapSecondInfo = 8
+ProcessMachineTypeInfo = 9
+ProcessInformationClassMax = 10
+
+class _PROCESS_INFORMATION_CLASS(enum.IntFlag):     
+    ProcessMemoryPriority = 0
+    ProcessMemoryExhaustionInfo = 1
+    ProcessAppMemoryInfo = 2
+    ProcessInPrivateInfo = 3
+    ProcessPowerThrottling = 4
+    ProcessReservedValue1 = 5
+    ProcessTelemetryCoverageInfo = 6
+    ProcessProtectionLevelInfo = 7
+    ProcessLeapSecondInfo = 8
+    ProcessMachineTypeInfo = 9
+    ProcessInformationClassMax = 10
+
+PROCESS_INFORMATION_CLASS = _PROCESS_INFORMATION_CLASS

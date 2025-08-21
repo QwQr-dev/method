@@ -12,10 +12,8 @@ except ImportError:
 NULL = 0
 
 
-def GetLastError(error_code: int = None) -> int:
-    if error_code is None:
-        return Kernel32.GetLastError()
-    return Kernel32.GetLastError(error_code)
+def GetLastError() -> int:
+    return Kernel32.GetLastError()
 
 
 def SetLastError(dwErrCode: int) -> None:
@@ -28,3 +26,8 @@ def SetLastErrorEx(dwErrCode: int, dwType = NULL) -> None:
 
 def RtlNtStatusToDosError(Status: int) -> int:
     return ntdll.RtlNtStatusToDosError(Status)
+
+
+def CommDlgExtendedError() -> int:
+    return comdlg32.CommDlgExtendedError()
+
