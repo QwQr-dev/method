@@ -4224,18 +4224,8 @@ def MessageBox(hwnd: int = HWND(),
                uType: int = UINT(), 
                unicode: bool = True) -> int:
     
-    if unicode:
-        result = User32.MessageBoxW(hwnd, 
-                                lpText, 
-                                lpCaption, 
-                                uType
-        )
-    else:
-        result = User32.MessageBoxA(hwnd, 
-                                lpText, 
-                                lpCaption, 
-                                uType
-        )
+    MessageBox = User32.MessageBoxW if unicode else User32.MessageBoxA
+    result = MessageBox(hwnd, lpText, lpCaption, uType)
     
     if result == NULL:
         raise WinError(GetLastError())
@@ -4249,21 +4239,9 @@ def MessageBoxEx(hwnd: int = HWND(),
                  wLanguageId: int = INT(), 
                  unicode: bool = True) -> int:
     
-    if unicode:
-        result = User32.MessageBoxExW(hwnd, 
-                                  lpText, 
-                                  lpCaption, 
-                                  uType, 
-                                 wLanguageId
-        )
-    else:
-        result = User32.MessageBoxExA(hwnd, 
-                                  lpText, 
-                                  lpCaption, 
-                                  uType, 
-                                 wLanguageId
-        )
-
+    MessageBoxEx = User32.MessageBoxExW if unicode else User32.MessageBoxExA
+    result = MessageBoxEx(hwnd, lpText, lpCaption, uType, wLanguageId)
+    
     if result == NULL:
         raise WinError(GetLastError())
     return result
@@ -4287,8 +4265,9 @@ def MessageBoxIndirect(hwndOwner: int = HWND(),
                        dwLanguageId: Any = DWORD(), 
                        unicode: bool = True) -> int:
     
-    MessageBoxIndirectW = User32.MessageBoxIndirectW
-    MessageBoxIndirectA = User32.MessageBoxIndirectA
+    MessageBoxIndirect = (User32.MessageBoxIndirectW 
+                          if unicode else User32.MessageBoxIndirectA
+    )
 
     mbp = MSGBOXPARAMSW() if unicode else MSGBOXPARAMSA()
     mbp.cbSize = ctypes.sizeof(mbp)
@@ -4302,9 +4281,7 @@ def MessageBoxIndirect(hwndOwner: int = HWND(),
     mbp.lpfnMsgBoxCallback = lpfnMsgBoxCallback
     mbp.dwLanguageId = dwLanguageId
 
-    result = (MessageBoxIndirectW(byref(mbp)) 
-              if unicode else MessageBoxIndirectA(byref(mbp))
-    )
+    result = MessageBoxIndirect(byref(mbp)) 
 
     if result == NULL:
         raise WinError(GetLastError())
@@ -4340,3 +4317,69 @@ def ExitWindowsEx(uFlags: int, dwReason: int) -> NoReturn:
     if not res:
         raise WinError(GetLastError())
 
+
+def EnableMenuItem(hMenu: int, uIDEnableItem: int, uEnable: int) -> int:
+    res = User32.EnableMenuItem(hMenu, uIDEnableItem, uEnable)
+    return res
+
+
+def DrawMenuBar(hwnd: int) -> None:
+    res = User32.DrawMenuBar(hwnd)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def InsertMenu(hMenu: int, 
+               uPosition: int, 
+               uFlags: int, 
+               uIDNewItem: int, 
+               lpNewItem: str | bytes, 
+               unicode: bool = True) -> None:
+    
+    InsertMenu = User32.InsertMenuW if unicode else User32.InsertMenuA
+    res = InsertMenu(hMenu, uPosition, uFlags, uIDNewItem, lpNewItem)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def InsertMenuItem(hmenu: int, 
+                   item: int, 
+                   fByPosition: bool, 
+                   lpmi: Any, 
+                   unicode: bool = True) -> None:
+    
+    InsertMenuItem = User32.InsertMenuItemW if unicode else User32.InsertMenuItemA
+    res = InsertMenuItem(hmenu, item, fByPosition, lpmi)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def LoadMenuIndirect(lpMenuTemplate: Any, unicode: bool = True) -> None:
+    LoadMenuIndirect = User32.LoadMenuIndirectW if unicode else User32.LoadMenuIndirectA
+    res = LoadMenuIndirect(lpMenuTemplate)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def ModifyMenu(hMnu: int, 
+               uPosition: int, 
+               uFlags: int, 
+               uIDNewItem: int, 
+               lpNewItem: str | bytes, 
+               unicode: bool = True) -> None:
+    
+    ModifyMenu = User32.ModifyMenuW if unicode else User32.ModifyMenuA
+    res = ModifyMenu(hMnu, uPosition, uFlags, uIDNewItem, lpNewItem)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def SetMenuItemInfo(hmenu, item, fByPositon, lpmii, unicode: bool = True) -> None:
+    SetMenuItemInfo = User32.SetMenuItemInfoW if unicode else User32.SetMenuItemInfoA
+    res = SetMenuItemInfo(hmenu, item, fByPositon, lpmii)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def GetSystemMenu(hwnd: int, bRevert: bool) -> int:
+    return User32.GetSystemMenu(hwnd, bRevert)

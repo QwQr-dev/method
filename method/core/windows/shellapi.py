@@ -903,17 +903,17 @@ def ShellExecute(hwnd: int = HWND(),
                  nShowCmd: int = SW_NORMAL,
                  unicode: bool = True) -> None:
     
-    ShellExecuteA = shell32.ShellExecuteA
-    ShellExecuteW = shell32.ShellExecuteW
-    
-    if unicode:
-        result = ShellExecuteW(hwnd, lpOperation, lpFile, 
-                               lpParameters, lpDirectory, nShowCmd
-        )
-    else:
-        result = ShellExecuteA(hwnd, lpOperation, lpFile, 
-                               lpParameters, lpDirectory, nShowCmd
-        )
+    ShellExecute = (shell32.ShellExecuteW 
+                    if unicode else shell32.ShellExecuteA
+    )
+
+    result = ShellExecute(hwnd, 
+                          lpOperation, 
+                          lpFile, 
+                          lpParameters, 
+                          lpDirectory, 
+                          nShowCmd
+    )
     
     if result <= 32:
         raise WinError(GetLastError())
@@ -934,8 +934,9 @@ def ShellExecuteEx(fMask: int = SEE_MASK_FLAG_NO_UI | SEE_MASK_FORCENOIDLIST,
                    hIcon_Monitor: tuple = (None, None), 
                    unicode: bool = True) -> (int | None):
     
-    ShellExecuteExA = shell32.ShellExecuteExA
-    ShellExecuteExW = shell32.ShellExecuteExW
+    ShellExecuteEx = (shell32.ShellExecuteExW 
+                      if unicode else shell32.ShellExecuteExA
+    )
 
     mbr = SHELLEXECUTEINFOW() if unicode else SHELLEXECUTEINFOA()
     mbr.cbSize = ctypes.sizeof(mbr)
@@ -951,7 +952,7 @@ def ShellExecuteEx(fMask: int = SEE_MASK_FLAG_NO_UI | SEE_MASK_FORCENOIDLIST,
     mbr.hkeyClass = hkeyClass
     mbr.dwHotKey = dwHotKey
     mbr.hIcon_Monitor = mbr.SHELLEXECUTEICON(*hIcon_Monitor)
-    res = ShellExecuteExW(ctypes.byref(mbr)) if unicode else ShellExecuteExA(ctypes.byref(mbr))
+    res = ShellExecuteEx(ctypes.byref(mbr))
     hProcess = mbr.hProcess
     hInstApp = mbr.hInstApp
 
@@ -979,7 +980,10 @@ def OpenProcess(dwDesiredAccess: int,
 
 
 def CloseHandle(hObject: int) -> None:
-    result = Kernel32.CloseHandle(hObject)
+    CloseHandle = Kernel32.CloseHandle
+    CloseHandle.argtypes = [HANDLE]
+    CloseHandle.restype = BOOL
+    result = CloseHandle(hObject)
     if result == NULL:
         raise WinError(GetLastError())
 

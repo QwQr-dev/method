@@ -1,27 +1,28 @@
 # coding = 'utf-8'
 
-from typing import NoReturn
+from typing import NoReturn, Any
 from ctypes import sizeof, Structure, Union, byref
 
 try:
     from win_NT import *
     from ntstatus import *
     from sdkddkver import *
-    from winerror import S_OK
     from winuser import WM_USER
     from win_cbasictypes import *
+    from winerror import S_OK, ERROR_INSUFFICIENT_BUFFER
     from public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 except ImportError:
     from .win_NT import *
     from .ntstatus import *
     from .sdkddkver import *
-    from .winerror import S_OK
     from .winuser import WM_USER
     from .win_cbasictypes import *
+    from .winerror import S_OK, ERROR_INSUFFICIENT_BUFFER
     from .public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from .error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 
+MAX_PATH = 260
 FARPROC = INT_PTR
 _WIN32_WINNT = WIN32_WINNT
 
@@ -334,7 +335,15 @@ def NtRaiseHardError(ErrorStatus: int = LONG(),
         raise WinError(RtlNtStatusToDosError(res))
 
 
-# =====================================================================
+# ==========================================================================
+# 蓝屏（BSOD）示例代码（请勿在实体机上使用，以免造成数据丢失）
+#
+# RtlAdjustPrivilege(SE_SHUTDOWN_PRIVILEGE, TRUE, FALSE, byref(BOOLEAN()))
+# NtRaiseHardError(STATUS_ASSERTION_FAILURE, NULL, NULL, NULL, 6, byref(ULONG()))
+# 
+# ==========================================================================
+
+# ==========================================================================
 # libloaderapi.h
 
 DONT_RESOLVE_DLL_REFERENCES = 0x1
@@ -696,45 +705,53 @@ PCIDLIST_ABSOLUTE = ITEMIDLIST
 PCUITEMID_CHILD_ARRAY = ITEMIDLIST
 
 
-def SHOpenFolderAndSelectItems(pidlFolder, 
-                               cidl, 
-                               apidl, 
-                               dwFlags):
+def SHOpenFolderAndSelectItems(pidlFolder: int, 
+                               cidl: int, 
+                               apidl: Any, 
+                               dwFlags: int) -> None:
     
-    res = shell32.SHOpenFolderAndSelectItems(pidlFolder, 
-                                             cidl, 
-                                             apidl, 
-                                             dwFlags
-    )
+    SHOpenFolderAndSelectItems = shell32.SHOpenFolderAndSelectItems
+    SHOpenFolderAndSelectItems.argtypes = [VOID, UINT, VOID, DWORD]
+    SHOpenFolderAndSelectItems.restype = HRESULT
+    res = SHOpenFolderAndSelectItems(pidlFolder, cidl, apidl, dwFlags)
 
     if res != S_OK:
         raise WinError(GetLastError())
     
 
-def ILFindLastID(pidl):
+def ILFindLastID(pidl: int):
     res = shell32.ILFindLastID(pidl)
     return res
 
 
-def ILCreateFromPath(pszPath: str, unicode: bool = True):
+def ILCreateFromPath(pszPath: str, unicode: bool = True) -> int:
     ILCreateFromPath = (shell32.ILCreateFromPathW 
                         if unicode else shell32.ILCreateFromPathA
     )
+
+    ILCreateFromPath.argtypes = [(LPCWSTR if unicode else LPCSTR)]
+    ILCreateFromPath.restype = VOID
 
     res = ILCreateFromPath(pszPath)
     return res
 
 
-def CoInitialize(pvReserved = NULL):
+def CoInitialize(pvReserved: int = NULL) -> None:
     res = ole32.CoInitialize(pvReserved)
-    return res
+    if res not in [0, 1]:
+        raise WinError(GetLastError())
 
 
-def CoUninitialize():
-    return ole32.CoUninitialize()
+def CoUninitialize() -> None:
+    res =  ole32.CoUninitialize()
+    if res not in [0, 1]:
+        raise WinError(GetLastError())
 
 
 def ILFree(pidl):
+    ILFree = shell32.ILFree
+    ILFree.argtypes = [VOID]
+    ILFree.restype = None
     shell32.ILFree(pidl)
 
 
@@ -1021,3 +1038,398 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
     SHGetPathFromIDList(pidl, pszPath)
     return pszPath
 
+
+# ==============================================================================
+# sysinfoapi.h
+
+def to_bytes(x: str) -> int:
+    return int.from_bytes(x, byteorder="big")
+
+
+def GetSystemFirmwareTable(FirmwareTableProviderSignature: bytes, 
+                           FirmwareTableID: int, 
+                           BufferSize: int,
+                           pFirmwareTableBuffer: int):
+    
+    res = Kernel32.GetSystemFirmwareTable(to_bytes(FirmwareTableProviderSignature), 
+                                           FirmwareTableID, 
+                                           pFirmwareTableBuffer,
+                                           BufferSize
+    )
+    
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+class _SMBIOS_HEADER(Structure):
+    _fields_ = [('Type', BYTE),
+                ('Length', BYTE),
+                ('Handle', WORD)
+    ]
+
+SMBIOS_HEADER = _SMBIOS_HEADER
+
+# ==================================================================================
+# ConsoleApi3.h
+
+def GetConsoleWindow() -> int:
+    return Kernel32.GetConsoleWindow()
+
+
+# =================================================================================
+# 
+
+class tagPROCESSENTRY32(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('cntUsage', DWORD),
+                ('th32ProcessID', DWORD),
+                ('th32DefaultHeapID', ULONG_PTR),
+                ('th32ModuleID', DWORD),
+                ('cntThreads', DWORD),
+                ('th32ParentProcessID', DWORD),
+                ('pcPriClassBase', LONG),
+                ('dwFlags', DWORD),
+                ('szExeFile', CHAR * MAX_PATH),
+    ]
+
+tagPROCESSENTRY32A = tagPROCESSENTRY32
+PROCESSENTRY32A = tagPROCESSENTRY32A
+
+class tagPROCESSENTRY32W(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('cntUsage', DWORD),
+                ('th32ProcessID', DWORD),
+                ('th32DefaultHeapID', ULONG_PTR),
+                ('th32ModuleID', DWORD),
+                ('cntThreads', DWORD),
+                ('th32ParentProcessID', DWORD),
+                ('pcPriClassBase', LONG),
+                ('dwFlags', DWORD),
+                ('szExeFile', WCHAR * MAX_PATH),
+    ]
+
+PROCESSENTRY32W = tagPROCESSENTRY32W
+
+
+def Process32First(hSnapshot, lppe, unicode: bool = True):
+    Process32First = (Kernel32.Process32FirstW 
+                      if unicode else Kernel32.Process32First
+    )
+
+    res = Process32First(hSnapshot, lppe)
+    if not res:
+        raise WinError(GetLastError())
+    return lppe
+
+
+def Process32Next(hSnapshot, lppe, unicode: bool = True):
+    Process32Next = (Kernel32.Process32NextW 
+                      if unicode else Kernel32.Process32Next
+    )
+
+    res = Process32Next(hSnapshot, lppe)
+    if not res:
+        raise WinError(GetLastError())
+    return lppe
+
+
+def LookupPrivilegeValue(lpSystemName: str | bytes, 
+                         lpName: str | bytes, 
+                         unicode: bool = True):
+    
+    lpLuid = LUID()
+    LookupPrivilegeValue = (advapi32.LookupPrivilegeValueW 
+                            if unicode else advapi32.LookupPrivilegeValueA
+    )
+
+    res = LookupPrivilegeValue(lpSystemName, lpName, byref(lpLuid))
+    if not res:
+        raise WinError(GetLastError())
+    return lpLuid
+
+
+def PrivilegeCheck(ClientToken, RequiredPrivileges, pfResult):
+    PrivilegeCheck = advapi32.PrivilegeCheck
+    res = PrivilegeCheck(ClientToken, RequiredPrivileges, pfResult)
+    if not res:
+        raise WinError(GetLastError())
+    return RequiredPrivileges
+
+
+def GetTokenInformation(TokenHandle, 
+                        TokenInformationClass,  
+                        TokenInformationLength):
+    
+    ReturnLength = DWORD()
+    GetTokenInformation = advapi32.GetTokenInformation
+    # GetTokenInformation.argtypes = [HANDLE, UINT, VOID, DWORD, DWORD]
+    # GetTokenInformation.restype = BOOL
+    GetTokenInformation(TokenHandle, 
+                        TokenInformationClass, 
+                        NULL, 
+                        NULL, 
+                        byref(ReturnLength)
+    )
+
+    if GetLastError() != ERROR_INSUFFICIENT_BUFFER:
+        raise WinError(GetLastError())
+    
+    TokenInformationLength = ReturnLength.value
+    TokenInformation = (BYTE * TokenInformationLength)()
+
+
+    res = GetTokenInformation(TokenHandle, 
+                              TokenInformationClass, 
+                              TokenInformation, 
+                              TokenInformationLength, 
+                              byref(ReturnLength)
+    )
+    
+    if not res:
+        raise WinError(GetLastError())
+    return TokenInformation._length_
+
+
+def DuplicateTokenEx(hExistingToken, 
+                     dwDesiredAccess, 
+                     lpTokenAttributes, 
+                     ImpersonationLevel, 
+                     TokenType):
+    
+    phNewToken = HANDLE()
+    DuplicateTokenEx = advapi32.DuplicateTokenEx
+    DuplicateTokenEx.argtypes = [HANDLE, DWORD, VOID, UINT, UINT, HANDLE]
+    DuplicateTokenEx.restype = BOOL
+    res = DuplicateTokenEx(hExistingToken, 
+                           dwDesiredAccess, 
+                           lpTokenAttributes, 
+                           ImpersonationLevel, 
+                           TokenType, 
+                           phNewToken
+    )
+
+    if not res:
+        raise WinError(GetLastError())
+    return phNewToken
+
+
+def SetTokenInformation(TokenHandle, 
+                        TokenInformationClass, 
+                        TokenInformation, 
+                        TokenInformationLength):
+    
+    SetTokenInformation = advapi32.SetTokenInformation
+    SetTokenInformation.argtypes = [HANDLE, UINT, LPVOID, DWORD]
+    SetTokenInformation.restype = BOOL
+    res = SetTokenInformation(TokenHandle, 
+                              TokenInformationClass, 
+                              TokenInformation, 
+                              TokenInformationLength
+    )
+
+    if not res:
+        raise WinError(GetLastError())
+
+
+def RevertToSelf():
+    res = advapi32.RevertToSelf()
+    if not res:
+        raise WinError(GetLastError())
+
+
+def GetCommandLine(unicode: bool = True) -> (str | bytes):
+    GetCommandLine = Kernel32.GetCommandLineW if unicode else Kernel32.GetCommandLineA
+    GetCommandLine.restype = LPWSTR if unicode else LPSTR
+    res = GetCommandLine()
+    return res
+
+
+# ==================================================================================
+# 
+
+def GetWindowLongPtr(hwnd, nIndex, unicode: bool = True):
+    GetWindowLongPtr = (User32.GetWindowLongPtrW 
+                        if unicode else User32.GetWindowLongPtrA
+    )
+
+    GetWindowLongPtr.argtypes = [HWND, INT]
+    GetWindowLongPtr.restype = LONG_PTR
+    res = GetWindowLongPtr(hwnd, nIndex)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def SetWindowPos(hwnd, 
+                 hWndInsertAfter, 
+                 X, 
+                 Y, 
+                 cx, 
+                 cy, 
+                 uFlags):
+    
+    SetWindowPos = User32.SetWindowPos
+    SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
+    SetWindowPos.restype = BOOL
+    res = SetWindowPos(hwnd, 
+                       hWndInsertAfter, 
+                       X, 
+                       Y, 
+                       cx, 
+                       cy, 
+                       uFlags
+    )
+
+    if not res:
+        raise WinError(GetLastError())
+
+
+def CheckDlgButton(hDlg, nIDButton, uCheck):
+    CheckDlgButton = User32.CheckDlgButton
+    res = CheckDlgButton(hDlg, nIDButton, uCheck)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+# =====================================================================
+# ???
+
+def SetWindowPos(hwnd: int, 
+                 hWndInsertAfter: int, 
+                 X: int, 
+                 Y: int, 
+                 cx: int, 
+                 cy: int, 
+                 uFlags: int):
+    
+    SetWindowPos = User32.SetWindowPos
+    SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
+    res = SetWindowPos(hwnd, hWndInsertAfter, X, Y, cx, cy, uFlags)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def SetForegroundWindow(hwnd: int) -> bool:
+    SetForegroundWindow = User32.SetForegroundWindow
+    res = SetForegroundWindow(hwnd)
+    return bool(res)
+
+
+# =======================================================================
+def GetWindowBand(hwnd: int, pdwBand: int) -> None:
+    GetWindowBand = User32.GetWindowBand
+    GetWindowBand.argtypes = [HWND, DWORD]
+    GetWindowBand.restype = BOOL
+    res = GetWindowBand(hwnd, pdwBand)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def CreateWindowInBand(dwExStyle: int, 
+                       lpClassName: str, 
+                       lpWindowName: str, 
+                       dwStyle: int, 
+                       x: int, 
+                       y: int, 
+                       nWidth: int, 
+                       nHeight: int, 
+                       hWndParent: int, 
+                       hMenu: int, 
+                       hInstance: int, 
+                       lpParam: Any, 
+                       dwBand: int) -> int:
+    
+    CreateWindowInBand = User32.CreateWindowInBand
+    res = CreateWindowInBand(dwExStyle, 
+                             lpClassName, 
+                             lpWindowName, 
+                             dwStyle, 
+                             x, 
+                             y, 
+                             nWidth, 
+                             nHeight, 
+                             hWndParent, 
+                             hMenu, 
+                             hInstance, 
+                             lpParam, 
+                             dwBand
+    )
+
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def CreateWindowInBandEx(dwExStyle: int, 
+                         lpClassName: str, 
+                         lpWindowName: str, 
+                         dwStyle: int, 
+                         x: int, 
+                         y: int, 
+                         nWidth: int, 
+                         nHeight: int, 
+                         hWndParent: int, 
+                         hMenu: int, 
+                         hInstance: int, 
+                         lpParam: Any, 
+                         dwBand: int,
+                         dwTypeFlags: int) -> int:
+    
+    CreateWindowInBandEx = User32.CreateWindowInBandEx
+    res = CreateWindowInBandEx(dwExStyle, 
+                               lpClassName, 
+                               lpWindowName, 
+                               dwStyle, 
+                               x, 
+                               y, 
+                               nWidth, 
+                               nHeight, 
+                               hWndParent, 
+                               hMenu, 
+                               hInstance, 
+                               lpParam, 
+                               dwBand,
+                               dwTypeFlags
+    )
+
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int):
+    SetWindowBand = User32.SetWindowBand
+    SetWindowBand.argtypes = [HWND, HWND, DWORD]
+    SetWindowBand.restype = BOOL
+    res = SetWindowBand(hwnd, hwndInsertAfter, dwBand)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def UpdateWindow(hwnd: int) -> bool:
+    res = User32.UpdateWindow(hwnd)
+    return bool(res)
+    
+
+ZBID_DEFAULT = 0
+ZBID_DESKTOP = 1
+ZBID_UIACCESS = 2
+ZBID_IMMERSIVE_IHM = 3
+ZBID_IMMERSIVE_NOTIFICATION = 4
+ZBID_IMMERSIVE_APPCHROME = 5
+ZBID_IMMERSIVE_MOGO = 6
+ZBID_IMMERSIVE_EDGY = 7
+ZBID_IMMERSIVE_INACTIVEMOBODY = 8
+ZBID_IMMERSIVE_INACTIVEDOCK = 9
+ZBID_IMMERSIVE_ACTIVEMOBODY = 10
+ZBID_IMMERSIVE_ACTIVEDOCK = 11
+ZBID_IMMERSIVE_BACKGROUND = 12
+ZBID_IMMERSIVE_SEARCH = 13
+ZBID_GENUINE_WINDOWS = 14
+ZBID_IMMERSIVE_RESTRICTED = 15
+ZBID_SYSTEM_TOOLS = 16
+
+# WINDOWS 10+ 
+ZBID_LOCK = 17
+ZBID_ABOVELOCK_UX = 18

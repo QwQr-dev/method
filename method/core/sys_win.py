@@ -33,6 +33,56 @@ def enum_reg_value(root: int, path: str) -> dict:
         return res
 
 
+def get_device_UUID() -> str:
+    '''Get UUID of device.（获取设备的UUID）'''
+
+    smbiosSize = GetSystemFirmwareTable(b'RSMB', NULL, NULL, NULL)
+    pSmbios = (c_ubyte * smbiosSize)()
+
+    if GetSystemFirmwareTable(b'RSMB', NULL, smbiosSize, pSmbios) != smbiosSize:
+        return None
+    
+    smbios_data = bytes(pSmbios)
+    offset = 8
+
+    while offset < len(smbios_data):
+        header = SMBIOS_HEADER.from_buffer_copy(smbios_data, offset)
+
+        # 检查结束标记
+        if header.Type == 127 and header.Length == 4:
+            return None
+
+        if header.Type == 1 and header.Length >= 0x19:
+            uuid_start = offset + 0x08
+            if uuid_start + 16 > len(smbios_data):
+                return None
+
+            uuid_bytes = smbios_data[uuid_start:uuid_start + 16]
+
+            if not all(b == 0 for b in uuid_bytes):
+                break
+
+        offset += header.Length
+
+        while offset + 1 < len(smbios_data):
+            if smbios_data[offset] == 0 and smbios_data[offset + 1] == 0:
+                offset += 2  # 跳过双空终止符
+                break
+            offset += 1
+
+    data1 = uuid_bytes[0:4][::-1]
+    data2 = uuid_bytes[4:6][::-1]
+    data3 = uuid_bytes[6:8][::-1]
+    data4 = uuid_bytes[8:16]
+    uuid_bytes = data1 + data2 + data3 + data4
+
+    data1 = uuid_bytes[0:4].hex().upper()
+    data2 = uuid_bytes[4:6].hex().upper()
+    data3 = uuid_bytes[6:8].hex().upper()
+    data4 = uuid_bytes[8:16]
+    return f"{data1}-{data2}-{data3}-{data4[0:2].hex().upper()}-{data4[2:].hex().upper()}"
+
+
 def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict:
     '''Get information of system.（获取系统信息）'''
 
@@ -51,11 +101,14 @@ def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict:
                     uuid = res.uuid
             except:
                 try:
-                    # This is not uuid of WMI.
-                    uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
-                                        r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
+                    uuid = get_device_UUID()
                 except:
-                    uuid = None
+                    try:
+                        # This is not uuid of WMI.
+                        uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
+                                            r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
+                    except:
+                        uuid = None
             result['UUID'] = uuid
 
     for key in [EditionID, DisplayVersion, CurrentBuild, UBR]:
@@ -206,6 +259,30 @@ def open_file_location(path: str) -> None:
     ShellExecute(lpFile='explorer.exe', 
                  lpParameters=f'/select, {path}'
     )
+
+
+def open_file_location2(path: str, dwFlags: int = NULL) -> None:
+    """
+    Open the location in Explorer through the file path and select the file.
+    （通过文件路径在文件资源管理器中打开文件所在位置并选中文件）
+    """
+    
+    if path.startswith('.') or path.startswith('..'):
+        path = os.path.abspath(path)
+
+    path = os.path.normpath(path)
+
+    if path == '.':
+        path = os.path.abspath(path)
+        
+    if not os.path.exists(path):
+        raise FileNotFoundError(f'No such file or directory: "{path}"')
+    
+    pidl = ILCreateFromPath(path)
+    CoInitialize()
+    SHOpenFolderAndSelectItems(pidl, NULL, NULL, dwFlags=dwFlags)
+    CoUninitialize()
+    ILFree(pidl)
 
 
 def RunAsAdmin(hwnd: int = HWND(), 

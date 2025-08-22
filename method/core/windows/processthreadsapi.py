@@ -82,7 +82,7 @@ def GetProcessTimes(hProcess: int):
     return res
 
 
-def ExitProcess(uExitCode):
+def ExitProcess(uExitCode: int):
     Kernel32.ExitProcess(uExitCode)
 
 
@@ -593,6 +593,22 @@ def CreateProcessAsUser(hToken: int,
     CreateProcessAsUser = (advapi32.CreateProcessAsUserW 
                            if unicode else advapi32.CreateProcessAsUserA
     )
+
+    '''
+    CreateProcessAsUser.argtypes = [HANDLE, 
+                                    (LPCWSTR if unicode else LPCSTR), 
+                                    (LPWSTR if unicode else LPSTR),
+                                    VOID,
+                                    VOID,
+                                    BOOL,
+                                    DWORD,
+                                    LPVOID,
+                                    (LPCWSTR if unicode else LPCSTR),
+                                    VOID,
+                                    VOID]
+    
+    CreateProcessAsUser.restype = BOOL
+    '''
 
     lpProcessInformation = PROCESS_INFORMATION()
     res = CreateProcessAsUser(hToken, 

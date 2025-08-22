@@ -1,5 +1,13 @@
 # coding = 'utf-8'
 
+''' 
+使用 python 来调用 Windows API 的一个模块 
+
+使用时请自觉遵守 AGPL-3.0 license
+
+项目开源网址：https://github.com/QwQr-dev/method
+'''
+
 import os
 import sys
 from platform import system as _system
@@ -14,7 +22,7 @@ if sys.version_info < (major, minor):
 if _system() != 'Windows' and os.name != 'nt':
     raise TypeError('Do not supported system')
 
-__DBG__ = True        # Choose true or false
+__DBG__ = False        # Choose true or false
 
 if __DBG__:
     from .core import *
