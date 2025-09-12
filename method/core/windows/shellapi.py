@@ -10,8 +10,8 @@ from ctypes import Structure, POINTER, WinError
 
 try:
     from sdkddkver import *
+    from win_NT import GUID
     from public_dll import *
-    from win_structure import *
     from win_cbasictypes import *
     from error import GetLastError
     from windef import POINT, RECT
@@ -19,8 +19,8 @@ try:
     from winuser import WM_USER, SendMessageW
 except ImportError:
     from .sdkddkver import *
+    from .win_NT import GUID
     from .public_dll import *
-    from .win_structure import *
     from .win_cbasictypes import *
     from .error import GetLastError
     from .windef import POINT, RECT
@@ -466,12 +466,12 @@ class _NOTIFYICONDATAW(ctypes.Structure):
                 ('uFlags', UINT), 
                 ('uCallbackMessage', UINT), 
                 ('hIcon', HICON), 
-                ('szTip', WCHAR128), 
+                ('szTip', WCHAR * 128), 
                 ('dwState', DWORD), 
                 ('dwStateMask', DWORD), 
-                ('szInfo', WCHAR256), 
+                ('szInfo', WCHAR * 256), 
                 ('uTimeVer', UTIMEVER), 
-                ('szInfoTitle', WCHAR64), 
+                ('szInfoTitle', WCHAR * 64), 
                 ('dwInfoFlags', DWORD), 
                 ('guidItem', GUID)
     ]

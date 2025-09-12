@@ -61,8 +61,16 @@ def askshellfolder(title: str | bytes = '',
 def lpstrFilter(item: SupportTypes) -> str:
     res = []
     for j in item:
-        if len(j) < 2:
-            raise TypeError('The number of each tuple or list should not be less than 2.')
+        if len(j) != 2:
+            raise TypeError('The number of each tuple or list must be 2.')
+        
+        for c in j:
+            if not isinstance(c, str):
+                raise TypeError(f"The object should be of str, not '{type(c).__name__}'")
+                
+            if not c:
+                raise TypeError('Elements cannot be empty.')
+
         res.append('\0'.join(j) + '\0')
     return ''.join(res) + '\0'
 
@@ -71,7 +79,7 @@ def askopenfilename(title: str | bytes = '',
                     lpstrFilter: str | bytes = '\0', 
                     hwnd: int = NULL, 
                     Flags: int = askopenfilename_flags, 
-                    buffer: int = 2**31-1, 
+                    buffer: int = 2**15-1, 
                     szPath: int = MAX_PATH, 
                     nFilterIndex: int = 1, 
                     unicode: bool = True) -> (str | bytes):
@@ -112,7 +120,7 @@ def asksavefilename(title: str | bytes = '',
                     lpstrFilter: str | bytes = '\0', 
                     hwnd: int = NULL, 
                     Flags: int = asksavefilename_flags, 
-                    buffer: int = 2**31-1, 
+                    buffer: int = 2**15-1, 
                     szPath: int = MAX_PATH, 
                     nFilterIndex: int = 1, 
                     unicode: bool = True) -> (str | bytes):
@@ -153,7 +161,7 @@ def askopenfilenames(title: str | bytes = '',
                      lpstrFilter: str | bytes = '\0', 
                      hwnd: int = NULL, 
                      Flags: int = askopenfilenames_flags, 
-                     buffer: int = 2**31-1, 
+                     buffer: int = 2**15-1, 
                      szPath: int = MAX_PATH, 
                      nFilterIndex: int = 1, 
                      unicode: bool = True) -> tuple[str | bytes, list[str | bytes]]:
@@ -203,7 +211,7 @@ def asksavefilenames(title: str | bytes = '',
                      lpstrFilter: str | bytes = '\0', 
                      hwnd: int = NULL, 
                      Flags: int = asksavefilenames_flags, 
-                     buffer: int = 2**31-1, 
+                     buffer: int = 2**15-1, 
                      szPath: int = MAX_PATH, 
                      nFilterIndex: int = 1, 
                      unicode: bool = True) -> tuple[str | bytes, list[str | bytes]]:

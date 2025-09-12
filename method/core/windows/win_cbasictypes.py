@@ -3,7 +3,6 @@
 
 import sys
 import ctypes
-import platform
 from ctypes import wintypes, WINFUNCTYPE
 
 c_uchar = ctypes.c_ubyte
@@ -21,14 +20,14 @@ PDOUBLE = ctypes.POINTER(DOUBLE)
 DWORD = wintypes.DWORD
 DWORDLONG = ctypes.c_int64
 DWORD_PTR = (ctypes.c_ulonglong 
-             if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_ulong
+             if sys.maxsize > 2**32 else ctypes.c_ulong
 )
 DWORD32 = ctypes.c_int32
 DWORD64 = ctypes.c_int64
 FLOAT = wintypes.FLOAT
 HACCEL = wintypes.HACCEL
 HALF_PTR = (ctypes.c_int 
-            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_short
+            if sys.maxsize > 2**32 else ctypes.c_short
 )
 HANDLE = wintypes.HANDLE
 HBITMAP = wintypes.HBITMAP
@@ -67,7 +66,7 @@ HWINSTA = wintypes.HWINSTA
 HWND = wintypes.HWND
 INT = wintypes.INT
 INT_PTR = (ctypes.c_int64 
-           if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_int
+           if sys.maxsize > 2**32 else ctypes.c_int
 )
 INT8 = ctypes.c_int8
 INT16 = ctypes.c_int16
@@ -79,7 +78,7 @@ LCTYPE = wintypes.LCTYPE
 LGRPID = wintypes.LGRPID
 LONG = wintypes.LONG
 LONGLONG = (ctypes.c_int64 
-            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_double
+            if sys.maxsize > 2**32 else ctypes.c_double
 )
 LONG_PTR = ctypes.c_ulonglong
 LONG32 = ctypes.c_int32
@@ -137,10 +136,10 @@ PLONG_STR = ctypes.POINTER(LONG_PTR)
 PLONG32 = ctypes.POINTER(LONG32)
 PLONG64 = ctypes.POINTER(LONG64)
 POINTER_32 = ctypes.POINTER(ctypes.c_uint32 
-                            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_void_p
+                            if sys.maxsize > 2**32 else ctypes.c_void_p
 )
 POINTER_64 = ctypes.POINTER(ctypes.c_uint64 
-                            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_void_p
+                            if sys.maxsize > 2**32 else ctypes.c_void_p
 )
 
 try:
@@ -159,7 +158,7 @@ except Exception:
 
 PSHORT = wintypes.PSHORT
 PSIZE_T = ctypes.POINTER(ctypes.c_int64 
-                        if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_long
+                        if sys.maxsize > 2**32 else ctypes.c_long
 )
 PSSIZE_T = ctypes.POINTER(LONG_PTR)
 PSTR = ctypes.POINTER(wintypes.CHAR)
@@ -174,11 +173,11 @@ PTSTR = ctypes.POINTER(wintypes.LPWSTR
 )
 PUCHAR = ctypes.POINTER(ctypes.c_ubyte)
 PUHALF_PTR = ctypes.POINTER(ctypes.c_uint 
-                            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_ushort
+                            if sys.maxsize > 2**32 else ctypes.c_ushort
 )
 PUINT = wintypes.PUINT
 PUINT_STR = ctypes.POINTER(ctypes.c_uint64 
-                            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_uint
+                            if sys.maxsize > 2**32 else ctypes.c_uint
 )
 PUINT8 = ctypes.POINTER(ctypes.c_ubyte)
 PUINT16 = ctypes.POINTER(ctypes.c_uint16)
@@ -186,10 +185,10 @@ PUINT32 = ctypes.POINTER(ctypes.c_uint32)
 PUINT64 = ctypes.POINTER(ctypes.c_uint64)
 PULONG = ctypes.POINTER(wintypes.PULONG)
 PULONGLONG = ctypes.POINTER(ctypes.c_uint64 
-                            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_double
+                            if sys.maxsize > 2**32 else ctypes.c_double
 )
 PULONG_PTR = ctypes.POINTER(ctypes.c_uint64 
-                            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_ulong
+                            if sys.maxsize > 2**32 else ctypes.c_ulong
 )
 PULONG32 = ctypes.POINTER(ctypes.c_uint)
 PULONG64 = ctypes.POINTER(ctypes.c_uint64)
@@ -204,7 +203,7 @@ SC_LOCK = LPVOID
 SERVICE_STATUS_HANDLE = wintypes.SERVICE_STATUS_HANDLE
 SHORT = wintypes.SHORT
 SIZE_T = (ctypes.c_uint64 
-          if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_ulong
+          if sys.maxsize > 2**32 else ctypes.c_ulong
 )
 SSIZE_T = LONG_PTR
 TBYTE = (wintypes.WCHAR 
@@ -215,11 +214,11 @@ TCHAR = (wintypes.WCHAR
 )
 UCHAR = ctypes.c_ubyte
 UHALF_PTR = (ctypes.c_uint 
-            if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_ushort
+            if sys.maxsize > 2**32 else ctypes.c_ushort
 )
 UINT = wintypes.UINT
 UINT_PTR = (ctypes.c_uint64 
-             if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_uint
+             if sys.maxsize > 2**32 else ctypes.c_uint
 )
 UINT8 = ctypes.c_ubyte
 UINT16 = ctypes.c_uint16
@@ -227,10 +226,10 @@ UINT32 = ctypes.c_uint32
 UINT64 = ctypes.c_uint64
 ULONG = wintypes.ULONG
 ULONGLONG = (ctypes.c_uint64
-              if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_double
+              if sys.maxsize > 2**32 else ctypes.c_double
 )
 ULONG_PTR = (ctypes.c_uint64
-              if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32 else ctypes.c_ulong
+              if sys.maxsize > 2**32 else ctypes.c_ulong
 )
 ULONG32 = ctypes.c_uint
 ULONG64 = ctypes.c_uint64

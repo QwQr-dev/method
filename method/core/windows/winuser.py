@@ -7,14 +7,12 @@ from typing import Any, NoReturn
 
 try:
     from public_dll import *
-    from win_structure import *
     from win_cbasictypes import *
     from error import GetLastError
     from sdkddkver import WINVER, WIN32_WINNT
     from windef import RECT, POINT, TRUE, LPRECT
 except ImportError:
     from .public_dll import *
-    from .win_structure import *
     from .win_cbasictypes import *
     from .error import GetLastError
     from .sdkddkver import WINVER, WIN32_WINNT
@@ -4176,6 +4174,44 @@ if WINVER >= 0x0601:
 
 MAX_STR_BLOCKREASON = 256
 
+MSGBOXCALLBACK = VOID
+
+class tagMSGBOXPARAMSW(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", UINT),
+        ("hwndOwner", HWND),
+        ("hInstance", HINSTANCE),
+        ("lpszText", LPCWSTR),
+        ("lpszCaption", LPCWSTR),
+        ("dwStyle", DWORD),
+        ("lpszIcon", LPCWSTR),
+        ("dwContextHelpId", DWORD_PTR),
+        ("lpfnMsgBoxCallback", MSGBOXCALLBACK),
+        ("dwLanguageId", DWORD),
+    ]
+
+class tagMSGBOXPARAMSA(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", UINT),
+        ("hwndOwner", HWND),
+        ("hInstance", HINSTANCE),
+        ("lpszText", LPCSTR),
+        ("lpszCaption", LPCSTR),
+        ("dwStyle", DWORD),
+        ("lpszIcon", LPCSTR),
+        ("dwContextHelpId", DWORD_PTR),
+        ("lpfnMsgBoxCallback", MSGBOXCALLBACK),
+        ("dwLanguageId", DWORD),
+    ]
+
+MSGBOXPARAMSA = tagMSGBOXPARAMSA
+PMSGBOXPARAMSA = ctypes.POINTER(tagMSGBOXPARAMSA)
+LPMSGBOXPARAMSA = PMSGBOXPARAMSA
+
+MSGBOXPARAMSW = tagMSGBOXPARAMSW
+PMSGBOXPARAMSW = ctypes.POINTER(tagMSGBOXPARAMSW)
+LPMSGBOXPARAMSW = PMSGBOXPARAMSW
+
 
 def EndTask(hwnd: int, fShutDown: bool, fForce: bool) -> None:
     res = User32.EndTask(hwnd, fShutDown, fForce)
@@ -4190,9 +4226,8 @@ def GetForegroundWindow() -> int:
 EnumWindowsProc = CALLBACK(BOOL, HWND, LPARAM)
 
 
-def GetWindowThreadProcessId(hwnd: int) -> dict:
-    lpdwProcessId = DWORD()
-    res = User32.GetWindowThreadProcessId(hwnd, byref(lpdwProcessId))
+def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any) -> dict:
+    res = User32.GetWindowThreadProcessId(hwnd, lpdwProcessId)
     if res == NULL:
         raise WinError(GetLastError())
     

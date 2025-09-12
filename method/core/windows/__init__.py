@@ -19,6 +19,5 @@ from .sdkddkver import *
 from .public_dll import *
 from .fltwinerror import *
 from .knownfolders import *
-from .win_structure import *
 from .win_cbasictypes import *
 from .processthreadsapi import *

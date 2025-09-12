@@ -1,6 +1,6 @@
 # coding = 'utf-8'
 
-''' The TaskDialogIndirect was used Windows API to make. '''
+''' The taskdialog was used Windows API to make. '''
 
 import ctypes
 from typing import Any

@@ -18,7 +18,7 @@ Win32_ComputerSystemProduct = wmi.ExecQuery('SELECT * FROM Win32_ComputerSystemP
 
 
 def get_self_directory(temp_dir: bool = False) -> str:
-    '''Get the path of file.（获取文件自身路径）'''
+    '''Get the path of the file.（获取文件自身路径）'''
 
     return os.path.dirname(os.path.abspath(
         __file__ if temp_dir else sys.argv[0]))
@@ -33,13 +33,13 @@ def enum_reg_value(root: int, path: str) -> dict:
         return res
 
 
-def get_device_UUID() -> str:
-    '''Get UUID of device.（获取设备的UUID）'''
+def get_device_UUID() -> (str | None):
+    '''Get UUID of the device.（获取设备的UUID）'''
 
-    smbiosSize = GetSystemFirmwareTable(b'RSMB', NULL, NULL, NULL)
+    smbiosSize = GetSystemFirmwareTable('RSMB', NULL, NULL, NULL)
     pSmbios = (c_ubyte * smbiosSize)()
 
-    if GetSystemFirmwareTable(b'RSMB', NULL, smbiosSize, pSmbios) != smbiosSize:
+    if GetSystemFirmwareTable('RSMB', NULL, smbiosSize, pSmbios) != smbiosSize:
         return None
     
     smbios_data = bytes(pSmbios)
@@ -83,8 +83,8 @@ def get_device_UUID() -> str:
     return f"{data1}-{data2}-{data3}-{data4[0:2].hex().upper()}-{data4[2:].hex().upper()}"
 
 
-def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict:
-    '''Get information of system.（获取系统信息）'''
+def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict[str, (str | None)]:
+    '''Get information of the system.（获取系统信息）'''
 
     from struct import calcsize
 
@@ -102,9 +102,12 @@ def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict:
             except:
                 try:
                     uuid = get_device_UUID()
+                    if uuid is None:
+                        # This is not uuid of WMI.
+                        uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
+                                            r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
                 except:
                     try:
-                        # This is not uuid of WMI.
                         uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
                                             r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
                     except:
@@ -112,11 +115,17 @@ def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict:
             result['UUID'] = uuid
 
     for key in [EditionID, DisplayVersion, CurrentBuild, UBR]:
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_key) as result:
-            value, *_ = winreg.QueryValueEx(result, key)
+        try:
+            with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_key) as result:
+                value, *_ = winreg.QueryValueEx(result, key)
+        except:
+            pass
    
         if key == DisplayVersion:
-            DisplayVersion = value
+            if WIN32_WINNT < WIN32_WINNT_WIN8:
+                DisplayVersion = None
+            else:
+                DisplayVersion = value
         elif key == EditionID:
             EditionID = value
         elif key == CurrentBuild:
@@ -315,7 +324,6 @@ def RunAsAdmin(hwnd: int = HWND(),
                                 lpParameters=lpParameters, 
                                 nShow=nShow
         )
-        WaitForSingleObject(handle, -1)
     except FileNotFoundError:       # A bug
         pass
     
@@ -330,7 +338,7 @@ def RunAsAdmin2(hwnd: int = HWND(),
                 nShowCmd: int = SW_NORMAL) -> None:
     
     '''
-    (So fast) Use administrator's permission to run.（以管理员权限运行）
+    Use administrator's permission to run.（以管理员权限运行）
 
     e.g:
     ===

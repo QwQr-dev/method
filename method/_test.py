@@ -4,7 +4,7 @@ import subprocess
 from core.sys_win import *
 from core.windows import *
 from core.messagebox import *
-from core.TaskDialogIndirect import *
+from core.taskdialog import *
 
 # messagebox
 
@@ -42,11 +42,11 @@ print(TaskDialogIndirect(pszWindowTitle= 'News',
 # sys_win -- wmi_query_proc
 name, pid, path, *_ = wmi_query_proc()
 num = 0
-print(f'{'ProcessName':30} {'pid':^30} {'path'}')
+print(f"{'ProcessName':30} {'pid':^30} {'path'}")
 print('='*100)
 while True:
     try:
-        print(f'{name[num]:30} {pid[num]:^30} {path[num] or 'None'}')
+        print(f"{name[num]:30} {pid[num]:^30} {path[num] or 'None'}")
     except IndexError:
         break
     num += 1

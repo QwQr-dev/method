@@ -12,7 +12,7 @@ import os
 import sys
 from platform import system as _system
 
-__version__ = ['Beta 0.8.15']
+__version__ = ['Beta 0.8.50']
 major = 3
 minor = 13
 
@@ -22,7 +22,7 @@ if sys.version_info < (major, minor):
 if _system() != 'Windows' and os.name != 'nt':
     raise TypeError('Do not supported system')
 
-__DBG__ = False        # Choose true or false
+__DBG__ = True        # Choose true or false
 
 if __DBG__:
     from .core import *

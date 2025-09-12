@@ -10,13 +10,11 @@ try:
     from win_NT import *
     from ntstatus import *
     from public_dll import *
-    from win_structure import *
 except ImportError:
     from .error import *
     from .win_NT import *
     from .ntstatus import *
     from .public_dll import *
-    from .win_structure import *
 
 # ntddk.h
 
@@ -345,10 +343,18 @@ def NtOpenProcess(ProcessHandle = HANDLE(),
                   ObjectAttributes = OBJECT_ATTRIBUTES(), 
                   ClientId = CLIENT_ID()) -> int:
 
-    res = ntdll.NtOpenProcess(byref(ProcessHandle), 
-                              DesiredAccess, 
-                              byref(ObjectAttributes), 
-                              byref(ClientId)
+    NtOpenProcess = ntdll.NtOpenProcess
+    NtOpenProcess.argtypes = [PHANDLE, 
+                              ACCESS_MASK, 
+                              POBJECT_ATTRIBUTES, 
+                              PCLIENT_ID
+    ]
+
+    NtOpenProcess.restype = VOID
+    res = NtOpenProcess(byref(ProcessHandle), 
+                        DesiredAccess, 
+                        byref(ObjectAttributes), 
+                        byref(ClientId)
     )
 
     if not NT_SUCCESS(res):
@@ -361,10 +367,18 @@ def ZwOpenProcess(ProcessHandle = HANDLE(),
                   ObjectAttributes = OBJECT_ATTRIBUTES(), 
                   ClientId = CLIENT_ID()) -> int:
 
-    res = ntdll.ZwOpenProcess(byref(ProcessHandle), 
-                              DesiredAccess, 
-                              byref(ObjectAttributes), 
-                              byref(ClientId)
+    ZwOpenProcess = ntdll.ZwOpenProcess
+    ZwOpenProcess.argtypes = [PHANDLE, 
+                              ACCESS_MASK, 
+                              POBJECT_ATTRIBUTES, 
+                              PCLIENT_ID
+    ]
+
+    ZwOpenProcess.restype = VOID
+    res = ZwOpenProcess(byref(ProcessHandle), 
+                        DesiredAccess, 
+                        byref(ObjectAttributes), 
+                        byref(ClientId)
     )
 
     if not NT_SUCCESS(res):
@@ -373,12 +387,20 @@ def ZwOpenProcess(ProcessHandle = HANDLE(),
 
 
 def NtTerminateProcess(ProcessHandle: int, ExitStatus: int) -> None:
-    res = ntdll.NtTerminateProcess(ProcessHandle, ExitStatus)
+    NtTerminateProcess = ntdll.NtTerminateProcess
+    NtTerminateProcess.argtypes = [HANDLE, VOID]
+    NtTerminateProcess.restype = VOID
+    res = NtTerminateProcess(ProcessHandle, ExitStatus)
+    
     if not NT_SUCCESS(res):
         raise WinError(RtlNtStatusToDosError(res))
     
 
 def ZwTerminateProcess(hProcess: int, uExitCode: int) -> None:
-    res = ntdll.ZwTerminateProcess(hProcess, uExitCode)
+    ZwTerminateProcess = ntdll.ZwTerminateProcess
+    ZwTerminateProcess.argtypes = [HANDLE, VOID]
+    ZwTerminateProcess.restype = VOID
+    res = ZwTerminateProcess(hProcess, uExitCode)
+
     if not NT_SUCCESS(res):
         raise WinError(RtlNtStatusToDosError(res))

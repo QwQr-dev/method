@@ -26,6 +26,37 @@ FALSE = False
 class CDataType:
     pass
 
+class _GUID(ctypes.Structure):
+    _fields_ = [('Data1', ULONG32), 
+                ('Data2', USHORT),
+                ('Data3', USHORT),
+                ('Data4', UCHAR * 8)
+    ]
+
+GUID = _GUID
+
+class _OBJECT_ATTRIBUTES(ctypes.Structure):
+    _fields_ = [('Length', ULONG),
+                ('RootDirectory', HANDLE),
+                ('ObjectName', PUNICODE_STRING),
+                ('Attributes', ULONG),
+                ('SecurityDescriptor', PVOID),
+                ('SecurityQualityOfService', PVOID)
+    ]
+
+
+class _CLIENT_ID(ctypes.Structure):
+    _fields_ = [('UniqueProcess', HANDLE),
+                ('UniqueThread', HANDLE)
+    ]
+
+
+ACCESS_MASK = ULONG
+OBJECT_ATTRIBUTES = _OBJECT_ATTRIBUTES
+POBJECT_ATTRIBUTES = ctypes.POINTER(OBJECT_ATTRIBUTES)
+CLIENT_ID = _CLIENT_ID
+PCLIENT_ID = ctypes.POINTER(CLIENT_ID)
+
 
 def offsetof(Type: CDataType, Field: str) -> int:       # from stddef.h
     return getattr(Type, Field).offset
@@ -93,7 +124,7 @@ else:
 
 ANYSIZE_ARRAY = 1
 
-if sys.maxsize > 2**32 and platform.machine().lower() == 'amd64':
+if sys.maxsize > 2**32:
     MAX_NATURAL_ALIGNMENT = sizeof(ULONGLONG())
     MEMORY_ALLOCATION_ALIGNMENT = 16
 else:

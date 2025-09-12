@@ -9,14 +9,14 @@ try:
     from windef import *
     from winuser import *
     from sdkddkver import *
+    from win_NT import GUID
     from win_cbasictypes import *
-    from win_structure import GUID
 except ImportError:
     from .windef import *
     from .winuser import *
     from .sdkddkver import *
+    from .win_NT import GUID
     from .win_cbasictypes import *
-    from .win_structure import GUID
 
 _WIN32_IE = WIN32_IE
 
@@ -3931,3 +3931,62 @@ class tagNMTVCUSTOMDRAW(Structure):
 
 NMTVCUSTOMDRAW = tagNMTVCUSTOMDRAW
 LPNMTVCUSTOMDRAW = POINTER(NMTVCUSTOMDRAW)
+
+TASKDIALOG_COMMON_BUTTON_FLAGS = INT
+TASKDIALOG_FLAGS = INT
+PFTASKDIALOGCALLBACK = ctypes.WINFUNCTYPE(
+    HRESULT,
+    HWND,
+    UINT,
+    WPARAM,
+    LPARAM,
+    LONG_PTR
+)
+
+class TASKDIALOGICON(ctypes.Union):
+    _pack_ = 1
+    _fields_ = [('hMainIcon', HICON), 
+                ('pszMainIcon', PCWSTR)
+    ]
+
+class TASKDIALOGFOOTICON(ctypes.Union):
+    _pack_ = 1
+    _fields_ = [('hFooterIcon', HICON), 
+                ('pszFooterIcon', PCWSTR)
+    ]
+
+class TASKDIALOG_BUTTON(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('nButtonID', INT), 
+                ('pszButtonText', PCWSTR)
+    ]
+
+class _TASKDIALOGCONFIG(ctypes.Structure):
+    _pack_ = 1
+    _fields_ = [('cbSize', UINT), 
+                ('hwndParent', HWND),
+                ('hInstance', HINSTANCE),
+                ('dwFlags', TASKDIALOG_FLAGS),
+                ('dwCommonButtons', TASKDIALOG_COMMON_BUTTON_FLAGS),
+                ('pszWindowTitle', PCWSTR),
+                ('MainIcon', TASKDIALOGICON),
+                ('pszMainInstruction', PCWSTR),
+                ('pszContent', PCWSTR),
+                ('cButtons', UINT),
+				('pButtons', ctypes.POINTER(TASKDIALOG_BUTTON)),
+                ('nDefaultButton', INT),
+                ('cRadioButtons', UINT),
+				('pRadioButtons', ctypes.POINTER(TASKDIALOG_BUTTON)),
+                ('nDefaultRadioButton', INT),
+                ('pszVerificationText', PCWSTR),
+                ('pszExpandedInformation', PCWSTR),
+                ('pszExpandedControlText', PCWSTR),
+                ('pszCollapsedControlText', PCWSTR),
+                ('FooterIcon', TASKDIALOGFOOTICON),
+                ('pszFooter', PCWSTR),
+                ('pfCallback', PFTASKDIALOGCALLBACK),
+                ('lpCallbackData', LONG_PTR),
+                ('cxWidth', UINT)
+    ]
+
+TASKDIALOGCONFIG = _TASKDIALOGCONFIG

@@ -1,7 +1,9 @@
 # coding = 'utf-8'
 
+# ???: 指暂时未分类的部分类或函数、或 Microsoft 未公开的 Windows API
+
 from typing import NoReturn, Any
-from ctypes import sizeof, Structure, Union, byref
+from ctypes import sizeof, Structure, Union, byref, WinError
 
 try:
     from win_NT import *
@@ -161,23 +163,25 @@ if NTDDI_VERSION >= NTDDI_WIN10_FE:
     STARTF_HOLOGRAPHIC = 0x00040000
 
 
-def CreateJobObject(lpJobAttributes, lpName, unicode: bool = True) -> int:
-    CreateJobObjectA = Kernel32.CreateJobObjectA
-    CreateJobObjectW = Kernel32.CreateJobObjectW
-    res = (CreateJobObjectW if unicode else CreateJobObjectA)(lpJobAttributes, lpName)
+def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True) -> int:
+    CreateJobObject = (Kernel32.CreateJobObjectW 
+                       if unicode else Kernel32.CreateJobObjectA
+    )
+
+    res = CreateJobObject(lpJobAttributes, lpName)
     if res == NULL:
         raise WinError(GetLastError())
     return res
 
 
-def AssignProcessToJobObject(hJob, hProcess) -> int:
+def AssignProcessToJobObject(hJob: int, hProcess: int) -> int:
     res = Kernel32.AssignProcessToJobObject(hJob, hProcess)
     if res == NULL:
         raise WinError(GetLastError())
     return res
 
 
-def TerminateJobObject(hJob, uExitCode) -> int:
+def TerminateJobObject(hJob: int, uExitCode: int) -> int:
     res = Kernel32.TerminateJobObject(hJob, uExitCode)
     if res == NULL:
         raise WinError(GetLastError())
@@ -243,7 +247,7 @@ TH32CS_SNAPALL =      (TH32CS_SNAPHEAPLIST |
 TH32CS_INHERIT =      0x80000000
 
 
-def CreateToolhelp32Snapshot(dwFlags, th32ProcessID):
+def CreateToolhelp32Snapshot(dwFlags: int, th32ProcessID: int) -> int:
     res = Kernel32.CreateToolhelp32Snapshot(dwFlags, th32ProcessID)
     if res == INVALID_HANDLE_VALUE:
         raise WinError(GetLastError())
@@ -336,6 +340,8 @@ def NtRaiseHardError(ErrorStatus: int = LONG(),
 
 
 # ==========================================================================
+
+# ==========================================================================
 # 蓝屏（BSOD）示例代码（请勿在实体机上使用，以免造成数据丢失）
 #
 # RtlAdjustPrivilege(SE_SHUTDOWN_PRIVILEGE, TRUE, FALSE, byref(BOOLEAN()))
@@ -395,7 +401,6 @@ def FreeLibraryAndExitThread(hLibModule, dwExitCode) -> None:
 
 
 def GetModuleFileName(hModule, lpFilename, nSize, unicode: bool = True):
-    lpFilename = byref(lpFilename)
     if unicode:
         res = Kernel32.GetModuleFileNameW(hModule, lpFilename, nSize)
     else:
@@ -748,7 +753,7 @@ def CoUninitialize() -> None:
         raise WinError(GetLastError())
 
 
-def ILFree(pidl):
+def ILFree(pidl) -> None:
     ILFree = shell32.ILFree
     ILFree.argtypes = [VOID]
     ILFree.restype = None
@@ -756,6 +761,7 @@ def ILFree(pidl):
 
 
 # ================================================================================
+# ???
 
 BIF_RETURNONLYFSDIRS =     0x00000001   # For finding a folder to start document searching
 BIF_DONTGOBELOWDOMAIN =    0x00000002   # For starting the Find Computer
@@ -990,13 +996,13 @@ def GetSaveFileName(unnamedParam1, unicode: bool = True):
 
 def lstrcpyn(lpString1, lpString2, iMaxLength, unicode: bool = True):
     lstrcpyn = Kernel32.lstrcpynW if unicode else Kernel32.lstrcpynA
-    res = lstrcpyn(lpString1, lpString2, iMaxLength)
     lstrcpyn.argtypes = [(LPWSTR if unicode else LPSTR), 
                         (LPCWSTR if unicode else LPCSTR), 
                         INT
     ]
 
     lstrcpyn.restype = (LPWSTR if unicode else LPSTR)
+    res = lstrcpyn(lpString1, lpString2, iMaxLength)
     
     if res == NULL:
         raise WinError()
@@ -1033,7 +1039,10 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
                            if unicode else shell32.SHGetPathFromIDListA
     )
 
-    SHGetPathFromIDList.argtypes = [VOID, (LPWSTR if unicode else LPSTR)]
+    SHGetPathFromIDList.argtypes = [VOID, 
+                                    (LPWSTR if unicode else LPSTR)
+    ]
+    
     SHGetPathFromIDList.restype = BOOL
     SHGetPathFromIDList(pidl, pszPath)
     return pszPath
@@ -1042,19 +1051,20 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
 # ==============================================================================
 # sysinfoapi.h
 
-def to_bytes(x: str) -> int:
-    return int.from_bytes(x, byteorder="big")
 
-
-def GetSystemFirmwareTable(FirmwareTableProviderSignature: bytes, 
+def GetSystemFirmwareTable(FirmwareTableProviderSignature: str, 
                            FirmwareTableID: int, 
                            BufferSize: int,
-                           pFirmwareTableBuffer: int):
+                           pFirmwareTableBuffer: int,
+                           byteorder: str = "big",
+                           encoding: str = 'utf-8') -> int:
     
-    res = Kernel32.GetSystemFirmwareTable(to_bytes(FirmwareTableProviderSignature), 
-                                           FirmwareTableID, 
-                                           pFirmwareTableBuffer,
-                                           BufferSize
+    GetSystemFirmwareTable = Kernel32.GetSystemFirmwareTable
+    FirmwareTableProviderSignature = FirmwareTableProviderSignature.encode(encoding=encoding)
+    res = GetSystemFirmwareTable(int.from_bytes(FirmwareTableProviderSignature, byteorder=byteorder), 
+                                 FirmwareTableID, 
+                                 pFirmwareTableBuffer,
+                                 BufferSize
     )
     
     if res == NULL:
@@ -1078,7 +1088,7 @@ def GetConsoleWindow() -> int:
 
 
 # =================================================================================
-# 
+# ???
 
 class tagPROCESSENTRY32(Structure):
     _fields_ = [('dwSize', DWORD),
@@ -1136,17 +1146,16 @@ def Process32Next(hSnapshot, lppe, unicode: bool = True):
 
 def LookupPrivilegeValue(lpSystemName: str | bytes, 
                          lpName: str | bytes, 
+                         lpLuid: Any,
                          unicode: bool = True):
     
-    lpLuid = LUID()
     LookupPrivilegeValue = (advapi32.LookupPrivilegeValueW 
                             if unicode else advapi32.LookupPrivilegeValueA
     )
 
-    res = LookupPrivilegeValue(lpSystemName, lpName, byref(lpLuid))
+    res = LookupPrivilegeValue(lpSystemName, lpName, lpLuid)
     if not res:
         raise WinError(GetLastError())
-    return lpLuid
 
 
 def PrivilegeCheck(ClientToken, RequiredPrivileges, pfResult):
@@ -1154,50 +1163,33 @@ def PrivilegeCheck(ClientToken, RequiredPrivileges, pfResult):
     res = PrivilegeCheck(ClientToken, RequiredPrivileges, pfResult)
     if not res:
         raise WinError(GetLastError())
-    return RequiredPrivileges
 
 
-def GetTokenInformation(TokenHandle, 
-                        TokenInformationClass,  
-                        TokenInformationLength):
+def GetTokenInformation(TokenHandle: int, 
+                        TokenInformationClass: int,  
+                        TokenInformation: Any, 
+                        TokenInformationLength: int,
+                        ReturnLength: Any):
     
-    ReturnLength = DWORD()
     GetTokenInformation = advapi32.GetTokenInformation
-    # GetTokenInformation.argtypes = [HANDLE, UINT, VOID, DWORD, DWORD]
-    # GetTokenInformation.restype = BOOL
-    GetTokenInformation(TokenHandle, 
-                        TokenInformationClass, 
-                        NULL, 
-                        NULL, 
-                        byref(ReturnLength)
-    )
-
-    if GetLastError() != ERROR_INSUFFICIENT_BUFFER:
-        raise WinError(GetLastError())
-    
-    TokenInformationLength = ReturnLength.value
-    TokenInformation = (BYTE * TokenInformationLength)()
-
-
     res = GetTokenInformation(TokenHandle, 
                               TokenInformationClass, 
                               TokenInformation, 
                               TokenInformationLength, 
-                              byref(ReturnLength)
+                              ReturnLength
     )
     
     if not res:
         raise WinError(GetLastError())
-    return TokenInformation._length_
 
 
-def DuplicateTokenEx(hExistingToken, 
-                     dwDesiredAccess, 
-                     lpTokenAttributes, 
-                     ImpersonationLevel, 
-                     TokenType):
+def DuplicateTokenEx(hExistingToken: int, 
+                     dwDesiredAccess: int, 
+                     lpTokenAttributes: Any, 
+                     ImpersonationLevel: int, 
+                     TokenType: int,
+                     phNewToken: Any):
     
-    phNewToken = HANDLE()
     DuplicateTokenEx = advapi32.DuplicateTokenEx
     DuplicateTokenEx.argtypes = [HANDLE, DWORD, VOID, UINT, UINT, HANDLE]
     DuplicateTokenEx.restype = BOOL
@@ -1211,13 +1203,12 @@ def DuplicateTokenEx(hExistingToken,
 
     if not res:
         raise WinError(GetLastError())
-    return phNewToken
 
 
-def SetTokenInformation(TokenHandle, 
-                        TokenInformationClass, 
-                        TokenInformation, 
-                        TokenInformationLength):
+def SetTokenInformation(TokenHandle: int, 
+                        TokenInformationClass: int, 
+                        TokenInformation: Any, 
+                        TokenInformationLength: int) -> None:
     
     SetTokenInformation = advapi32.SetTokenInformation
     SetTokenInformation.argtypes = [HANDLE, UINT, LPVOID, DWORD]
@@ -1232,7 +1223,7 @@ def SetTokenInformation(TokenHandle,
         raise WinError(GetLastError())
 
 
-def RevertToSelf():
+def RevertToSelf() -> None:
     res = advapi32.RevertToSelf()
     if not res:
         raise WinError(GetLastError())
@@ -1246,9 +1237,9 @@ def GetCommandLine(unicode: bool = True) -> (str | bytes):
 
 
 # ==================================================================================
-# 
+# ???
 
-def GetWindowLongPtr(hwnd, nIndex, unicode: bool = True):
+def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True) -> int:
     GetWindowLongPtr = (User32.GetWindowLongPtrW 
                         if unicode else User32.GetWindowLongPtrA
     )
@@ -1261,13 +1252,13 @@ def GetWindowLongPtr(hwnd, nIndex, unicode: bool = True):
     return res
 
 
-def SetWindowPos(hwnd, 
-                 hWndInsertAfter, 
-                 X, 
-                 Y, 
-                 cx, 
-                 cy, 
-                 uFlags):
+def SetWindowPos(hwnd: int, 
+                 hWndInsertAfter: int, 
+                 X: int, 
+                 Y: int, 
+                 cx: int, 
+                 cy: int, 
+                 uFlags: int) -> None:
     
     SetWindowPos = User32.SetWindowPos
     SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
@@ -1317,10 +1308,12 @@ def SetForegroundWindow(hwnd: int) -> bool:
 
 
 # =======================================================================
+# ???
+
 def GetWindowBand(hwnd: int, pdwBand: int) -> None:
     GetWindowBand = User32.GetWindowBand
-    GetWindowBand.argtypes = [HWND, DWORD]
-    GetWindowBand.restype = BOOL
+    # GetWindowBand.argtypes = [HWND, DWORD]
+    # GetWindowBand.restype = BOOL
     res = GetWindowBand(hwnd, pdwBand)
     if not res:
         raise WinError(GetLastError())
@@ -1398,7 +1391,7 @@ def CreateWindowInBandEx(dwExStyle: int,
     return res
 
 
-def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int):
+def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int) -> None:
     SetWindowBand = User32.SetWindowBand
     SetWindowBand.argtypes = [HWND, HWND, DWORD]
     SetWindowBand.restype = BOOL
@@ -1412,24 +1405,94 @@ def UpdateWindow(hwnd: int) -> bool:
     return bool(res)
     
 
-ZBID_DEFAULT = 0
-ZBID_DESKTOP = 1
-ZBID_UIACCESS = 2
-ZBID_IMMERSIVE_IHM = 3
-ZBID_IMMERSIVE_NOTIFICATION = 4
-ZBID_IMMERSIVE_APPCHROME = 5
-ZBID_IMMERSIVE_MOGO = 6
-ZBID_IMMERSIVE_EDGY = 7
-ZBID_IMMERSIVE_INACTIVEMOBODY = 8
-ZBID_IMMERSIVE_INACTIVEDOCK = 9
-ZBID_IMMERSIVE_ACTIVEMOBODY = 10
-ZBID_IMMERSIVE_ACTIVEDOCK = 11
-ZBID_IMMERSIVE_BACKGROUND = 12
-ZBID_IMMERSIVE_SEARCH = 13
-ZBID_GENUINE_WINDOWS = 14
-ZBID_IMMERSIVE_RESTRICTED = 15
-ZBID_SYSTEM_TOOLS = 16
+if _WIN32_WINNT >= WIN32_WINNT_WIN8:
+    ZBID_DEFAULT = 0
+    ZBID_DESKTOP = 1
+    ZBID_UIACCESS = 2
+    ZBID_IMMERSIVE_IHM = 3
+    ZBID_IMMERSIVE_NOTIFICATION = 4
+    ZBID_IMMERSIVE_APPCHROME = 5
+    ZBID_IMMERSIVE_MOGO = 6
+    ZBID_IMMERSIVE_EDGY = 7
+    ZBID_IMMERSIVE_INACTIVEMOBODY = 8
+    ZBID_IMMERSIVE_INACTIVEDOCK = 9
+    ZBID_IMMERSIVE_ACTIVEMOBODY = 10
+    ZBID_IMMERSIVE_ACTIVEDOCK = 11
+    ZBID_IMMERSIVE_BACKGROUND = 12
+    ZBID_IMMERSIVE_SEARCH = 13
+    ZBID_GENUINE_WINDOWS = 14
+    ZBID_IMMERSIVE_RESTRICTED = 15
+    ZBID_SYSTEM_TOOLS = 16
 
-# WINDOWS 10+ 
-ZBID_LOCK = 17
-ZBID_ABOVELOCK_UX = 18
+    # WINDOWS 10+ 
+    if _WIN32_WINNT >= WIN32_WINNT_WIN10:
+        ZBID_LOCK = 17
+        ZBID_ABOVELOCK_UX = 18
+
+
+def zorder_band_names(zbid: int = NULL) -> str:
+    if WIN32_WINNT < WIN32_WINNT_WIN8:
+        raise OSError('Do not supported system')
+    
+    res = {
+        "Default": ZBID_DEFAULT,
+	    "Desktop": ZBID_DESKTOP,
+	    "UIAccess": ZBID_UIACCESS,
+	    "Immersive IHM": ZBID_IMMERSIVE_IHM,
+	    "Immersive Notification": ZBID_IMMERSIVE_NOTIFICATION,
+	    "Immersive AppChrome": ZBID_IMMERSIVE_APPCHROME,
+	    "Immersive MoGo": ZBID_IMMERSIVE_MOGO,
+	    "Immersive Edgy": ZBID_IMMERSIVE_EDGY,
+	    "Immersive InactiveMoBody": ZBID_IMMERSIVE_INACTIVEMOBODY,
+	    "Immersive InactiveDock": ZBID_IMMERSIVE_INACTIVEDOCK,
+	    "Immersive ActiveMoBody": ZBID_IMMERSIVE_ACTIVEMOBODY,
+	    "Immersive ActiveDock": ZBID_IMMERSIVE_ACTIVEDOCK,
+	    "Immersive Background": ZBID_IMMERSIVE_BACKGROUND,
+	    "Immersive Search": ZBID_IMMERSIVE_SEARCH,
+	    "Genuine Windows": ZBID_GENUINE_WINDOWS,
+	    "Immersive Restricted": ZBID_IMMERSIVE_RESTRICTED,
+	    "System Tools": ZBID_SYSTEM_TOOLS
+    }
+
+    # Windows 10+
+    if WIN32_WINNT >= WIN32_WINNT_WIN10:
+        res["Lock Screen"] = ZBID_LOCK
+        res["Above Lock UX"] = ZBID_ABOVELOCK_UX
+
+    num = 0
+    for j in res:
+        if num == zbid:
+            return j
+        num += 1
+    raise IndexError('Dict index out of range')
+
+
+# ========================================================================
+# ???
+
+class DLGITEMTEMPLATE(ctypes.Structure):
+    _fields_ = [('style', DWORD),
+                ('dwExtendedStyle', DWORD),
+                ('x', SHORT),
+                ('y', SHORT),
+                ('cx', SHORT),
+                ('cy', SHORT),
+                ('id', WORD)
+    ]
+
+class DLGTEMPLATE(ctypes.Structure):
+    _fields_ = [('style', DWORD),
+                ('dwExtendedStyle', DWORD),
+                ('cdit', WORD),
+                ('x', SHORT),
+                ('y', SHORT),
+                ('cx', SHORT),
+                ('cy', SHORT)
+    ]
+
+
+def BringWindowToTop(hwnd: int) -> None:
+    BringWindowToTop = User32.BringWindowToTop
+    res = BringWindowToTop(hwnd)
+    if not res:
+        raise WinError(GetLastError())
