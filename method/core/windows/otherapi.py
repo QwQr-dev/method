@@ -11,7 +11,7 @@ try:
     from sdkddkver import *
     from winuser import WM_USER
     from win_cbasictypes import *
-    from winerror import S_OK, ERROR_INSUFFICIENT_BUFFER
+    from winerror import S_OK, ERROR_INSUFFICIENT_BUFFER, FAILED
     from public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 except ImportError:
@@ -20,7 +20,7 @@ except ImportError:
     from .sdkddkver import *
     from .winuser import WM_USER
     from .win_cbasictypes import *
-    from .winerror import S_OK, ERROR_INSUFFICIENT_BUFFER
+    from .winerror import S_OK, ERROR_INSUFFICIENT_BUFFER, FAILED
     from .public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from .error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 
@@ -517,7 +517,7 @@ def RunfileDlg(hwndOwner: int,
                lpszDirectory: str, 
                lpszTitle: str, 
                lpszDescription: str, 
-               uFlags: int,
+               uFlags: int = RFD_USEFULLPATHDIR | RFD_WOW_APP,
                number: int = 61) -> None:
     
     RUNFILEDLG = WINAPI(VOID, HWND, HICON, LPCWSTR, LPCWSTR, LPCWSTR, UINT)
@@ -743,21 +743,28 @@ def ILCreateFromPath(pszPath: str, unicode: bool = True) -> int:
 
 def CoInitialize(pvReserved: int = NULL) -> None:
     res = ole32.CoInitialize(pvReserved)
-    if res not in [0, 1]:
-        raise WinError(GetLastError())
+    if FAILED(res):
+        raise WinError(res)
+
+
+def CoInitializeEx(pvReserved: int, dwCoInit: int) -> None:
+    CoInitializeEx = ole32.CoInitializeEx
+    res = CoInitializeEx(pvReserved, dwCoInit)
+    if FAILED(res):
+        raise WinError(res)
 
 
 def CoUninitialize() -> None:
     res =  ole32.CoUninitialize()
-    if res not in [0, 1]:
-        raise WinError(GetLastError())
+    if FAILED(res):
+        raise WinError(res)
 
 
 def ILFree(pidl) -> None:
     ILFree = shell32.ILFree
     ILFree.argtypes = [VOID]
     ILFree.restype = None
-    shell32.ILFree(pidl)
+    ILFree(pidl)
 
 
 # ================================================================================

@@ -62,14 +62,17 @@ def lpstrFilter(item: SupportTypes) -> str:
     res = []
     for j in item:
         if len(j) != 2:
-            raise TypeError('The number of each tuple or list must be 2.')
+            raise TypeError('The number of each tuple or list must be 2')
         
         for c in j:
             if not isinstance(c, str):
                 raise TypeError(f"The object should be of str, not '{type(c).__name__}'")
                 
             if not c:
-                raise TypeError('Elements cannot be empty.')
+                raise TypeError('Elements cannot be empty')
+            
+            if c.isspace():
+                raise TypeError('Elements cannot all be Spaces')
 
         res.append('\0'.join(j) + '\0')
     return ''.join(res) + '\0'

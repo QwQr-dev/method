@@ -384,7 +384,7 @@ USERPROFILE: str = _Volatile_Environment_res['USERPROFILE']
 HOME: str = HOMEDRIVE + HOMEPATH
 TEMP: str = os.environ['TEMP']
 TMP: str = os.environ['TMP']
-
+WBEM: str = f'{SYSTEMROOT}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\wbem'
 
 def _get_user_folders() -> dict:
     New_User_Shell_Folders_res = {}

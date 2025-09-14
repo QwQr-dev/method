@@ -10,14 +10,102 @@ try:
     from sdkddkver import *
     from public_dll import *
     from win_cbasictypes import *
+    from error import RtlNtStatusToDosError, GetLastError, SetLastError, SetLastErrorEx
 except ImportError:
     from .sdkddkver import *
     from .public_dll import *
     from .win_cbasictypes import *
+    from .error import RtlNtStatusToDosError, GetLastError, SetLastError, SetLastErrorEx
 
-memcmp = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)
-memcpy = CFUNCTYPE(c_void_p, c_void_p, c_void_p, c_size_t)
 
+#from wchar.h
+
+
+def memchr(buffer, c, count):
+    memchr = ntdll.memchr
+    res = memchr(buffer, c, count)
+    return res
+
+
+def wmemchr(buffer, c, count):
+    wmemchr = ntdll.wmemchr
+    res = wmemchr(buffer, c, count)
+    return res
+
+
+def memcmp(buffer1, buffer2, count):
+    memcmp = ntdll.memcmp
+    res = memcmp(buffer1, buffer2, count)
+    return res
+
+
+def wmemcmp(buffer1, buffer2, count):
+    wmemcmp = ntdll.wmemcmp
+    res = wmemcmp(buffer1, buffer2, count)
+    return res
+
+
+def memcpy(dest, src, count):
+    memcpy = ntdll.memcpy
+    res = memcpy(dest, src, count)
+    return res
+
+
+def wmemcpy(dest, src, count):
+    wmemcpy = ntdll.wmemcpy
+    res = wmemcpy(dest, src, count)
+    return res
+
+
+def memcpy_s(dest, destSize, src, count):
+    memcpy_s = ntdll.memcpy_s
+    res = memcpy_s(dest, destSize, src, count)
+    return res
+
+
+def wmemcpy_s(dest, destSize, src, count):
+    wmemcpy_s = ntdll.wmemcpy_s
+    res = wmemcpy_s(dest, destSize, src, count)
+    return res
+
+
+def memmove(dest, src, count):
+    memmove = ntdll.memmove
+    res = memmove(dest, src, count)
+    return res
+
+
+def wmemmove(dest, src, count):
+    wmemmove = ntdll.wmemmove
+    res = wmemmove(dest, src, count)
+    return res
+
+
+def memmove_s(dest, numberOfElements, src, count):
+    memmove_s = ntdll.memmove_s
+    res = memmove_s(dest, numberOfElements, src, count)
+    return res
+
+
+def wmemmove_s(dest, numberOfElements, src, count):
+    wmemmove_s = ntdll.wmemmove_s
+    res = wmemmove_s(dest, numberOfElements, src, count)
+    return res
+
+
+def memset(dest, c, count):
+    memset = ntdll.memset
+    res = memset(dest, c, count)
+    return res
+
+
+def wmemset(dest, c, count):
+    wmemset = ntdll.wmemset
+    res = wmemset(dest, c, count)
+    return res
+
+
+####################################################################
 NULL = 0
 
 TRUE = True

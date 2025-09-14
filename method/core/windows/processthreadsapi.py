@@ -158,6 +158,12 @@ def GetCurrentProcess() -> int:
     return GetCurrentProcess()
 
 
+def GetCurrentProcessId() -> int:
+	GetCurrentProcessId = Kernel32.GetCurrentProcessId
+	GetCurrentProcessId.restype = DWORD
+	return GetCurrentProcessId()
+
+
 def SetPriorityClass(hProcess, dwPriorityClass):
     res = Kernel32.SetPriorityClass(hProcess, dwPriorityClass)
     if res == NULL:
@@ -216,6 +222,36 @@ def TerminateProcess(hProcess: int, uExitCode: int) -> None:
     TerminateProcess.restype = BOOL
     res = TerminateProcess(hProcess, uExitCode)
     if res == NULL:
+        raise WinError(GetLastError())
+
+
+def CreateProcessWithToken(hToken, 
+                           dwLogonFlags, 
+                           lpApplicationName, 
+                           lpCommandLine, 
+                           dwCreationFlags, 
+                           lpEnvironment, 
+                           lpCurrentDirectory, 
+                           lpStartupInfo, 
+                           lpProcessInformation,
+                           unicode: bool = True):
+    
+    CreateProcessWithToken = (advapi32.CreateProcessWithTokenW 
+                              if unicode else advapi32.CreateProcessWithTokenA
+    )
+    
+    res = CreateProcessWithToken(hToken, 
+                                 dwLogonFlags, 
+                                 lpApplicationName, 
+                                 lpCommandLine, 
+                                 dwCreationFlags, 
+                                 lpEnvironment, 
+                                 lpCurrentDirectory, 
+                                 lpStartupInfo, 
+                                 lpProcessInformation
+    )
+
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -501,7 +537,6 @@ def ProcessIdToSessionId(dwProcessId, pSessionId):
 
     if res == NULL:
         raise WinError(GetLastError())
-    return pSessionId.value
 
 
 def CreateRemoteThreadEx(hProcess, 
@@ -542,6 +577,40 @@ def GetProcessHandleCount(hProcess: int, pdwHandleCount: Any):
 
 
 GetStartupInfo = GetStartupInfoW
+
+LOGON_WITH_PROFILE              = 0x00000001
+LOGON_NETCREDENTIALS_ONLY       = 0x00000002
+LOGON_ZERO_PASSWORD_BUFFER      = 0x80000000
+
+
+def CreateProcessWithToken(hToken, 
+                           dwLogonFlags, 
+                           lpApplicationName, 
+                           lpCommandLine, 
+                           dwCreationFlags, 
+                           lpEnvironment, 
+                           lpCurrentDirectory, 
+                           lpStartupInfo, 
+                           lpProcessInformation,
+                           unicode: bool = True):
+    
+    CreateProcessWithToken = (advapi32.CreateProcessWithTokenW 
+                              if unicode else advapi32.CreateProcessWithTokenA
+    )
+    
+    res = CreateProcessWithToken(hToken, 
+                                 dwLogonFlags, 
+                                 lpApplicationName, 
+                                 lpCommandLine, 
+                                 dwCreationFlags, 
+                                 lpEnvironment, 
+                                 lpCurrentDirectory, 
+                                 lpStartupInfo, 
+                                 lpProcessInformation
+    )
+
+    if not res:
+        raise WinError(GetLastError())
 
 
 def CreateProcessAsUser(hToken: int, 
