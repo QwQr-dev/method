@@ -70,9 +70,6 @@ def lpstrFilter(item: SupportTypes) -> str:
                 
             if not c:
                 raise TypeError('Elements cannot be empty')
-            
-            if c.isspace():
-                raise TypeError('Elements cannot all be Spaces')
 
         res.append('\0'.join(j) + '\0')
     return ''.join(res) + '\0'
@@ -104,19 +101,7 @@ def askopenfilename(title: str | bytes = '',
 
     GetOpenFileName(byref(ofn), unicode=unicode)
     lstrcpyn(szPath, szOpenFileNames, ofn.nFileOffset, unicode=unicode)
-
-    num = 0
-    res = []
-    for j in szOpenFileNames:
-        if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
-            break
-        elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
-            break
-        res.append(j)
-        num += 1
-
-    res = ('' if unicode else b'').join(res)
-    return res
+    return szOpenFileNames.value
 
 
 def asksavefilename(title: str | bytes = '', 
@@ -145,19 +130,7 @@ def asksavefilename(title: str | bytes = '',
 
     GetSaveFileName(byref(ofn), unicode=unicode)
     lstrcpyn(szPath, szOpenFileNames, ofn.nFileOffset, unicode=unicode)
-
-    num = 0
-    res = []
-    for j in szOpenFileNames:
-        if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
-            break
-        elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
-            break
-        res.append(j)
-        num += 1
-
-    res = ('' if unicode else b'').join(res)
-    return res
+    return szOpenFileNames.value
 
 
 def askopenfilenames(title: str | bytes = '', 
@@ -185,17 +158,19 @@ def askopenfilenames(title: str | bytes = '',
     ofn.Flags = Flags
 
     GetOpenFileName(byref(ofn), unicode=unicode)
-    lstrcpyn(szPath, szOpenFileNames, ofn.nFileOffset, unicode=unicode)
 
     num = 0
     res = []
     for j in szOpenFileNames:
-        if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
+        try:
+            if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
+                break
+            elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
+                break
+            res.append(j)
+            num += 1
+        except:
             break
-        elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
-            break
-        res.append(j)
-        num += 1
 
     res = ('' if unicode else b'').join(res).split('\0' if unicode else b'\0')
 
@@ -235,17 +210,19 @@ def asksavefilenames(title: str | bytes = '',
     ofn.Flags = Flags
 
     GetSaveFileName(byref(ofn), unicode=unicode)
-    lstrcpyn(szPath, szOpenFileNames, ofn.nFileOffset, unicode=unicode)
 
     num = 0
     res = []
     for j in szOpenFileNames:
-        if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
+        try:
+            if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
+                break
+            elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
+                break
+            res.append(j)
+            num += 1
+        except:
             break
-        elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
-            break
-        res.append(j)
-        num += 1
 
     res = ('' if unicode else b'').join(res).split('\0' if unicode else b'\0')
 

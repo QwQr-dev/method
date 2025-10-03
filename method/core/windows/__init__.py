@@ -7,6 +7,8 @@ from .ntddk import *
 from .win_NT import *
 from .windef import *
 from .wingdi import *
+from .shiobj import *
+from .guiddef import *
 from .winuser import *
 from .nserror import *
 from .otherapi import *
@@ -17,6 +19,8 @@ from .winerror import *
 from .corerror import *
 from .sdkddkver import *
 from .public_dll import *
+from .wtypesbase import *
+from .combaseapi import *
 from .fltwinerror import *
 from .knownfolders import *
 from .win_cbasictypes import *

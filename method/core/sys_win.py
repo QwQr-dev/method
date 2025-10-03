@@ -7,7 +7,6 @@ import sys
 import winreg
 import platform
 import subprocess
-from typing import Any
 from .windows import *
 from win32com.client import GetObject
 
@@ -36,51 +35,56 @@ def enum_reg_value(root: int, path: str) -> dict:
 def get_device_UUID() -> (str | None):
     '''Get UUID of the device.（获取设备的UUID）'''
 
-    smbiosSize = GetSystemFirmwareTable('RSMB', NULL, NULL, NULL)
-    pSmbios = (c_ubyte * smbiosSize)()
+    try:
+        for res in Win32_ComputerSystemProduct:
+            uuid = res.uuid
+        return uuid
+    except:
+        smbiosSize = GetSystemFirmwareTable('RSMB', NULL, NULL, NULL)
+        pSmbios = (UBYTE * smbiosSize)()
 
-    if GetSystemFirmwareTable('RSMB', NULL, smbiosSize, pSmbios) != smbiosSize:
-        return None
-    
-    smbios_data = bytes(pSmbios)
-    offset = 8
-
-    while offset < len(smbios_data):
-        header = SMBIOS_HEADER.from_buffer_copy(smbios_data, offset)
-
-        # 检查结束标记
-        if header.Type == 127 and header.Length == 4:
+        if GetSystemFirmwareTable('RSMB', NULL, smbiosSize, pSmbios) != smbiosSize:
             return None
+        
+        smbios_data = bytes(pSmbios)
+        offset = 8
 
-        if header.Type == 1 and header.Length >= 0x19:
-            uuid_start = offset + 0x08
-            if uuid_start + 16 > len(smbios_data):
+        while offset < len(smbios_data):
+            header = SMBIOS_HEADER.from_buffer_copy(smbios_data, offset)
+
+            # 检查结束标记
+            if header.Type == 127 and header.Length == 4:
                 return None
 
-            uuid_bytes = smbios_data[uuid_start:uuid_start + 16]
+            if header.Type == 1 and header.Length >= 0x19:
+                uuid_start = offset + 0x08
+                if uuid_start + 16 > len(smbios_data):
+                    return None
 
-            if not all(b == 0 for b in uuid_bytes):
-                break
+                uuid_bytes = smbios_data[uuid_start:uuid_start + 16]
 
-        offset += header.Length
+                if not all(b == 0 for b in uuid_bytes):
+                    break
 
-        while offset + 1 < len(smbios_data):
-            if smbios_data[offset] == 0 and smbios_data[offset + 1] == 0:
-                offset += 2  # 跳过双空终止符
-                break
-            offset += 1
+            offset += header.Length
 
-    data1 = uuid_bytes[0:4][::-1]
-    data2 = uuid_bytes[4:6][::-1]
-    data3 = uuid_bytes[6:8][::-1]
-    data4 = uuid_bytes[8:16]
-    uuid_bytes = data1 + data2 + data3 + data4
+            while offset + 1 < len(smbios_data):
+                if smbios_data[offset] == 0 and smbios_data[offset + 1] == 0:
+                    offset += 2  # 跳过双空终止符
+                    break
+                offset += 1
 
-    data1 = uuid_bytes[0:4].hex().upper()
-    data2 = uuid_bytes[4:6].hex().upper()
-    data3 = uuid_bytes[6:8].hex().upper()
-    data4 = uuid_bytes[8:16]
-    return f"{data1}-{data2}-{data3}-{data4[0:2].hex().upper()}-{data4[2:].hex().upper()}"
+        data1 = uuid_bytes[0:4][::-1]
+        data2 = uuid_bytes[4:6][::-1]
+        data3 = uuid_bytes[6:8][::-1]
+        data4 = uuid_bytes[8:16]
+        uuid_bytes = data1 + data2 + data3 + data4
+
+        data1 = uuid_bytes[0:4].hex().upper()
+        data2 = uuid_bytes[4:6].hex().upper()
+        data3 = uuid_bytes[6:8].hex().upper()
+        data4 = uuid_bytes[8:16]
+        return f"{data1}-{data2}-{data3}-{data4[0:2].hex().upper()}-{data4[2:].hex().upper()}"
 
 
 def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict[str, (str | None)]:
@@ -97,21 +101,17 @@ def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict[str, (
     def _uuid(uuid):
         if uuid:
             try:
-                for res in Win32_ComputerSystemProduct:
-                    uuid = res.uuid
+                uuid = get_device_UUID()
+                if uuid is None:
+                    # This is not uuid of WMI.
+                    uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
+                                        r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
             except:
                 try:
-                    uuid = get_device_UUID()
-                    if uuid is None:
-                        # This is not uuid of WMI.
-                        uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
-                                            r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
+                    uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
+                                        r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
                 except:
-                    try:
-                        uuid = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, 
-                                            r'SOFTWARE\Microsoft\Cryptography')['MachineGuid']
-                    except:
-                        uuid = None
+                    uuid = None
             result['UUID'] = uuid
 
     for key in [EditionID, DisplayVersion, CurrentBuild, UBR]:
@@ -228,29 +228,26 @@ def get_proc_path(proc_name: str) -> (str | None):
 def get_serv_or_proc_path(pid: int,
                           dwDesiredAccess: int = PROCESS_QUERY_LIMITED_INFORMATION, 
                           bInheritHandle: bool = False, 
-                          dwFlags: int = 0, 
-                          lpExeName: Any = MAX_PATH,
-                          unicode: bool = True) -> (str | None):
+                          dwFlags: int = NULL, 
+                          lpExeName: int = MAX_PATH,
+                          unicode: bool = True) -> (str | bytes | None):
     
     '''
     Get the location of the file by using the process ID of the running program or service.
     （通过已运行的程序或服务的进程ID来获取文件位置）
     '''
-    
+    path = ((WCHAR if unicode else CHAR) * lpExeName)()
+    lpdwSize = DWORD(sizeof(path))
+
     try:
         handle = OpenProcess(dwDesiredAccess=dwDesiredAccess, 
                             bInheritHandle=bInheritHandle, 
                             dwProcessId=pid
         )
 
-        path = QueryFullProcessImageName(handle, 
-                                        dwFlags=dwFlags,
-                                        lpExeName=lpExeName,
-                                        unicode=unicode
-        )
-
+        QueryFullProcessImageName(handle, dwFlags, byref(path), byref(lpdwSize), unicode)
         CloseHandle(handle)
-        return path
+        return path.value
     except:
         return None
 
@@ -304,8 +301,8 @@ def RunAsAdmin(hwnd: int = HWND(),
     '''
     Use administrator's permission to run.（以管理员权限运行）
 
-    e.g:
-    ===
+    e.g. :
+    =====
 
     >>> import subprocess
     >>> from method import RunAsAdmin
@@ -324,24 +321,24 @@ def RunAsAdmin(hwnd: int = HWND(),
                                 lpParameters=lpParameters, 
                                 nShow=nShow
         )
-    except FileNotFoundError:       # A bug
+        CloseHandle(handle)
+    except: 
         pass
-    
-    CloseHandle(handle)
+
     sys.exit(0)
 
 
 def RunAsAdmin2(hwnd: int = HWND(),
                 lpOperation: str = 'runas', 
                 lpFile: str = sys.executable, 
-                lpParameters=f'"{os.path.abspath(sys.argv[0])}" --admin',
+                lpParameters=f'{os.path.abspath(sys.argv[0])} --admin',
                 nShowCmd: int = SW_NORMAL) -> None:
     
     '''
     Use administrator's permission to run.（以管理员权限运行）
 
-    e.g:
-    ===
+    e.g. :
+    =====
 
     >>> import subprocess
     >>> from method import RunAsAdmin2
@@ -353,241 +350,143 @@ def RunAsAdmin2(hwnd: int = HWND(),
         return
     
     if '--admin' not in sys.argv:
-        ShellExecute(lpOperation=lpOperation,
-                     lpFile=lpFile,
-                     lpParameters=lpParameters,
-                     hwnd=hwnd,
-                     nShowCmd=nShowCmd
-        )
+        try:
+            ShellExecute(lpOperation=lpOperation,
+                        lpFile=lpFile,
+                        lpParameters=lpParameters,
+                        hwnd=hwnd,
+                        nShowCmd=nShowCmd
+            )
+        except:
+            pass
 
     sys.exit(0)
 
 
-_Volatile_Environment = 'Volatile Environment'
-_User_Shell_Folders = r".DEFAULT\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders"
-_Shell_Folders = r'SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders'
-
-_Volatile_Environment_res: dict = enum_reg_value(winreg.HKEY_CURRENT_USER, _Volatile_Environment)
-_User_Shell_Folders_res: dict = enum_reg_value(winreg.HKEY_USERS, _User_Shell_Folders)
-_System_Shell_Folders_res: dict = enum_reg_value(winreg.HKEY_LOCAL_MACHINE, _Shell_Folders)
-
-SYSTEMROOT: str = os.getenv('SystemRoot')
-APPDATA: str = _Volatile_Environment_res['APPDATA']
-HOMEDRIVE: str = _Volatile_Environment_res['HOMEDRIVE']
-HOMEPATH: str = _Volatile_Environment_res['HOMEPATH']
-LOCALAPPDATA: str = _Volatile_Environment_res['LOCALAPPDATA']
-LOGONSERVER: str = _Volatile_Environment_res['LOGONSERVER']
-USERDOMAIN: str = _Volatile_Environment_res['USERDOMAIN']
-USERDOMAIN_ROAMINGPROFILE: str = _Volatile_Environment_res['USERDOMAIN_ROAMINGPROFILE']
-USERNAME: str = _Volatile_Environment_res['USERNAME']
-USERPROFILE: str = _Volatile_Environment_res['USERPROFILE']
+SYSTEMROOT: str = os.environ['SYSTEMROOT']
+APPDATA: str = os.environ['APPDATA']
+HOMEDRIVE: str = os.environ['HOMEDRIVE']
+HOMEPATH: str = os.environ['HOMEPATH']
+LOCALAPPDATA: str = os.environ['LOCALAPPDATA']
+LOGONSERVER: str = os.environ['LOGONSERVER']
+USERDOMAIN: str = os.environ['USERDOMAIN']
+USERDOMAIN_ROAMINGPROFILE: str = os.environ['USERDOMAIN_ROAMINGPROFILE']
+USERNAME: str = os.environ['USERNAME']
+USERPROFILE: str = os.environ['USERPROFILE']
 HOME: str = HOMEDRIVE + HOMEPATH
 TEMP: str = os.environ['TEMP']
 TMP: str = os.environ['TMP']
-WBEM: str = f'{SYSTEMROOT}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\wbem'
-
-def _get_user_folders() -> dict:
-    New_User_Shell_Folders_res = {}
-    for key in _User_Shell_Folders_res:
-        value = _User_Shell_Folders_res[key].split('\\')
-
-        if value[0] == '%USERPROFILE%':
-            value[0] = USERPROFILE
-
-        value = "\\".join(value)
-
-        if key == '{374DE290-123F-4565-9164-39C4925E467B}':
-            New_User_Shell_Folders_res['Downloads'] = value
-            continue
-        elif key == 'AppData':
-            New_User_Shell_Folders_res['Roaming'] = value
-            continue
-        elif key == 'Cache':
-            New_User_Shell_Folders_res['INetCache'] = value
-            continue
-        elif key == 'Cookies':
-            New_User_Shell_Folders_res['INetCookies'] = value
-            continue
-        elif key == 'Local AppData':
-            New_User_Shell_Folders_res['Local'] = value
-            continue
-        elif key == 'My Music':
-            New_User_Shell_Folders_res['Music'] = value
-            continue
-        elif key == 'My Pictures':
-            New_User_Shell_Folders_res['Pictures'] = value
-            continue
-        elif key == 'My Video':
-            New_User_Shell_Folders_res['Videos'] = value
-            continue
-        elif key == 'NetHood':
-            New_User_Shell_Folders_res['Network Shortcuts'] = value
-            continue
-        elif key == 'Personal':
-            New_User_Shell_Folders_res['Documents'] = value
-            continue
-        elif key == 'PrintHood':
-            New_User_Shell_Folders_res['Printer Shortcuts'] = value
-            continue
-
-        New_User_Shell_Folders_res[key] = value
-    return New_User_Shell_Folders_res
+WBEM: str = f'{SYSTEMROOT}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\wbem'     # WMI path
 
 
-def _get_system_folders() -> dict:
-    New_System_Shell_Folders_res = {}
-    for key in _System_Shell_Folders_res:
-        value = _System_Shell_Folders_res[key]
-        if key == 'Common Administrative Tools':
-            New_System_Shell_Folders_res['Administrative Tools'] = value
-            continue
-        elif key == 'Common AppData':
-            New_System_Shell_Folders_res['ProgramData'] = value
-            continue
-        elif key == 'Common Desktop':
-            New_System_Shell_Folders_res['Desktop'] = value
-            continue
-        elif key == 'Common Documents':
-            New_System_Shell_Folders_res['Documents'] = value
-            continue
-        elif key == 'Common Programs':
-            New_System_Shell_Folders_res['Programs'] = value
-            continue
-        elif key == 'Common Start Menu':
-            New_System_Shell_Folders_res['Start Menu'] = value
-            continue
-        elif key == 'Common Startup':
-            New_System_Shell_Folders_res['Startup'] = value
-            continue
-        elif key == 'Common Templates':
-            New_System_Shell_Folders_res['Templates'] = value
-            continue
-        elif key == 'CommonMusic':
-            New_System_Shell_Folders_res['Music'] = value
-            continue
-        elif key == 'CommonPictures':
-            New_System_Shell_Folders_res['Pictures'] = value
-            continue
-        elif key == 'CommonVideo':
-            New_System_Shell_Folders_res['Videos'] = value
-            continue
-        elif key == 'OEM Links':
-            New_System_Shell_Folders_res['Links'] = value
-            continue
-    return New_System_Shell_Folders_res
+def _get_folder(csidl: int) -> str:
+    path = ((WCHAR if UNICODE else CHAR) * MAX_PATH)()
+    SHGetFolderPath(NULL, csidl | CSIDL_FLAG_NO_ALIAS, NULL, SHGFP_TYPE_CURRENT, path, UNICODE)
+    if UNICODE:
+        return path.value
+    return path.value.decode('utf-8')
 
 
-User_Shell_Folders: dict = _get_user_folders()
-System_Shell_Folders: dict = _get_system_folders()
-
-# An error
-# ========================================= test ==============================================
-
+##############################################################################
 def Desktop(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Desktop']
-    return _get_user_folders()['Desktop']
+    return _get_folder(CSIDL_COMMON_DESKTOPDIRECTORY if common else CSIDL_DESKTOP)
 
 
 def Roaming() -> str:
-    return _get_user_folders()['Roaming']
+    return _get_folder(CSIDL_APPDATA)
 
 
 def INetCache() -> str:
-    return _get_user_folders()['INetCache']
+    return _get_folder(CSIDL_INTERNET_CACHE)
 
 
 def INetCookies() -> str:
-    return _get_user_folders()['INetCookies']
+    return _get_folder(CSIDL_COOKIES)
 
 
 def Favorites() -> str:
-    return _get_user_folders()['Favorites']
+    return _get_folder(CSIDL_FAVORITES)
 
 
 def History() -> str:
-    return _get_user_folders()['History']
+    return _get_folder(CSIDL_HISTORY)
 
 
 def Local() -> str:
-    return _get_user_folders()['Local']
+    return _get_folder(CSIDL_LOCAL_APPDATA)
 
 
 def Music(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Music']
-    return _get_user_folders()['Music']
+    return _get_folder(CSIDL_COMMON_MUSIC if common else CSIDL_MYMUSIC)
 
 
 def Pictures(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Pictures']
-    return _get_user_folders()['Pictures']
+    return _get_folder(CSIDL_COMMON_PICTURES if common else CSIDL_MYPICTURES)
 
 
 def Videos(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Videos']
-    return _get_user_folders()['Videos']
+    return _get_folder(CSIDL_COMMON_VIDEO if common else CSIDL_MYVIDEO)
 
 
 def Network_Shortcuts() -> str:
-    return _get_user_folders()['Network Shortcuts']
+    return _get_folder(CSIDL_NETHOOD)
 
 
 def Documents(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Documents']
-    return _get_user_folders()['Documents']
+    return _get_folder(CSIDL_COMMON_DOCUMENTS if common else CSIDL_MYDOCUMENTS)
 
 
 def Printer_Shortcuts() -> str:
-    return _get_user_folders()['Printer Shortcuts']
+    return _get_folder(CSIDL_PRINTHOOD)
 
 
 def Programs(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Programs']
-    return _get_user_folders()['Programs']
+    return _get_folder(CSIDL_COMMON_PROGRAMS if common else CSIDL_PROGRAMS)
 
 
 def Recent() -> str:
-    return _get_user_folders()['Recent']
+    return _get_folder(CSIDL_RECENT)
 
 
 def SendTo() -> str:
-    return _get_user_folders()['SendTo']
+    return _get_folder(CSIDL_SENDTO)
 
 
 def Start_Menu(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Start Menu']
-    return _get_user_folders()['Start Menu']
+    return _get_folder(CSIDL_STARTMENU if common else CSIDL_COMMON_STARTMENU)
 
 
 def Startup(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Startup']
-    return _get_user_folders()['Startup']
+    return _get_folder(CSIDL_COMMON_STARTUP if common else CSIDL_ALTSTARTUP)
 
 
 def Templates(common: bool = False) -> str:
-    if common:
-        return _get_system_folders()['Templates']
-    return _get_user_folders()['Templates']
+    return _get_folder(CSIDL_COMMON_TEMPLATES if common else CSIDL_TEMPLATES)
 
 
-def Downloads() -> str:
-    return _get_user_folders()['Downloads']
+def Downloads() -> str: 
+    path = c_wchar_p()
+    SHGetKnownFolderPath(FOLDERID_Downloads, NULL, NULL, byref(path))
+    return path.value
 
 
-def Administrative_Tools() -> str:
-    return _get_system_folders()['Administrative Tools']
+def Administrative_Tools(common: bool = False) -> str:
+    return _get_folder(CSIDL_COMMON_ADMINTOOLS if common else CSIDL_ADMINTOOLS)
 
 
 def ProgramData() -> str:
-    return _get_system_folders()['ProgramData']
+    return _get_folder(CSIDL_COMMON_APPDATA)
 
 
 def Links() -> str:
-    return _get_system_folders()['Links']
+    path = c_wchar_p()
+    SHGetKnownFolderPath(FOLDERID_Links, NULL, NULL, byref(path))
+    return path.value
+
+
+def Program_Files(X86: bool = False):
+    return _get_folder(CSIDL_PROGRAM_FILESX86 if X86 and WIN64 else CSIDL_PROGRAM_FILES)
+
+
+def Common_Files(X86: bool = False):
+    return _get_folder(CSIDL_PROGRAM_FILES_COMMONX86 if X86 and WIN64 else CSIDL_PROGRAM_FILES_COMMON)

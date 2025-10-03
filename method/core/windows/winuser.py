@@ -1,26 +1,27 @@
 # coding = 'utf-8'
 
 import sys
-import platform
 from ctypes import *
 from typing import Any, NoReturn
 
 try:
+    from sdkddkver import *
     from public_dll import *
     from win_cbasictypes import *
     from error import GetLastError
-    from sdkddkver import WINVER, WIN32_WINNT
     from windef import RECT, POINT, TRUE, LPRECT
 except ImportError:
+    from .sdkddkver import *
     from .public_dll import *
     from .win_cbasictypes import *
     from .error import GetLastError
-    from .sdkddkver import WINVER, WIN32_WINNT
     from .windef import RECT, POINT, TRUE, LPRECT
 
 QWORD = ULONGLONG
 NULL = 0
 _WIN32_WINNT = WIN32_WINNT
+
+_WIN32_WCE = 0
 
 # winuser.h
 
@@ -974,11 +975,43 @@ class tagWNDCLASSEXA(Structure):
 class tagWNDCLASSEXW(Structure):
     pass
 
-class tagWNDCLASSA(Structure):
-    pass
-
 class tagWNDCLASSW(Structure):
-    pass
+    _fields_ = [('style', UINT),
+                ('lpfnWndProc', WNDPROC),
+                ('cbClsExtra', INT),
+                ('cbWndExtra', INT),
+                ('hInstance', HINSTANCE),
+                ('hIcon', HICON),
+                ('hCursor', HCURSOR),
+                ('hbrBackground', HBRUSH),
+                ('lpszMenuName', LPCWSTR),
+                ('lpszClassName', LPCWSTR)
+    ]
+
+WNDCLASSW = tagWNDCLASSW
+PWNDCLASSW = POINTER(WNDCLASSW)
+NPWNDCLASSW = PWNDCLASSW
+LPWNDCLASSW = PWNDCLASSW
+
+class tagWNDCLASSA(Structure):
+    _fields_ = [('style', UINT),
+                ('lpfnWndProc', WNDPROC),
+                ('cbClsExtra', INT),
+                ('cbWndExtra', INT),
+                ('hInstance', HINSTANCE),
+                ('hIcon', HICON),
+                ('hCursor', HCURSOR),
+                ('hbrBackground', HBRUSH),
+                ('lpszMenuName', LPCSTR),
+                ('lpszClassName', LPCSTR)
+    ]
+
+WNDCLASSA = tagWNDCLASSA
+PWNDCLASSA = POINTER(WNDCLASSA)
+NPWNDCLASSA = PWNDCLASSA
+LPWNDCLASSA = PWNDCLASSA
+
+WNDCLASS = WNDCLASSW if UNICODE else WNDCLASSA
 
 IsHungAppWindow = CALLBACK(BOOL, HWND)
 DisableProcessWindowsGhosting = CALLBACK(VOID, VOID)
@@ -1013,12 +1046,6 @@ GWL_EXSTYLE = -20
 GWL_USERDATA = -21
 GWL_ID = -12
 
-if platform.machine().lower() == 'amd64' and sys.maxsize > 2 ** 32:
-    del GWL_WNDPROC
-    del GWL_HINSTANCE
-    del GWL_HWNDPARENT
-    del GWL_USERDATA 
-
 GWLP_WNDPROC = -4
 GWLP_HINSTANCE = -6
 GWLP_HWNDPARENT = -8
@@ -1036,15 +1063,6 @@ GCL_WNDPROC = -24
 GCL_STYLE = -26
 GCW_ATOM = -32
 GCL_HICONSM = -34
-
-if platform.machine().lower() == 'amd64' and sys.maxsize > 2 ** 32:
-    del GCL_MENUNAME
-    del GCL_HBRBACKGROUND
-    del GCL_HCURSOR
-    del GCL_HICON
-    del GCL_HMODULE
-    del GCL_WNDPROC
-    del GCL_HICONSM
 
 GCLP_MENUNAME = -8
 GCLP_HBRBACKGROUND = -10
@@ -1337,7 +1355,6 @@ PBT_APMRESUMEAUTOMATIC = 0x0012
 PBT_POWERSETTINGCHANGE = 32787
 
 WM_DEVICECHANGE = 0x0219
-
 WM_MDICREATE = 0x0220
 WM_MDIDESTROY = 0x0221
 WM_MDIACTIVATE = 0x0222
@@ -1348,40 +1365,32 @@ WM_MDITILE = 0x0226
 WM_MDICASCADE = 0x0227
 WM_MDIICONARRANGE = 0x0228
 WM_MDIGETACTIVE = 0x0229
-
 WM_MDISETMENU = 0x0230
 WM_ENTERSIZEMOVE = 0x0231
 WM_EXITSIZEMOVE = 0x0232
 WM_DROPFILES = 0x0233
 WM_MDIREFRESHMENU = 0x0234
-if WINVER >= 0x0602:
-    WM_POINTERDEVICECHANGE = 0x238
-    WM_POINTERDEVICEINRANGE = 0x239
-    WM_POINTERDEVICEOUTOFRANGE = 0x23a
-
-#if WINVER >= 0x0601
-if WINVER >= 0x0601:
-    WM_TOUCH = 0x0240
-
-#if WINVER >= 0x0602
-if WINVER >= 0x0602:
-    WM_NCPOINTERUPDATE = 0x0241
-    WM_NCPOINTERDOWN = 0x0242
-    WM_NCPOINTERUP = 0x0243
-    WM_POINTERUPDATE = 0x0245
-    WM_POINTERDOWN = 0x0246
-    WM_POINTERUP = 0x0247
-    WM_POINTERENTER = 0x0249
-    WM_POINTERLEAVE = 0x024a
-    WM_POINTERACTIVATE = 0x024b
-    WM_POINTERCAPTURECHANGED = 0x024c
-    WM_TOUCHHITTESTING = 0x024d
-    WM_POINTERWHEEL = 0x024e
-    WM_POINTERHWHEEL = 0x024f
-    DM_POINTERHITTEST = 0x0250
-    WM_POINTERROUTEDTO = 0x0251
-    WM_POINTERROUTEDAWAY = 0x0252
-    WM_POINTERROUTEDRELEASED = 0x0253
+WM_POINTERDEVICECHANGE = 0x238
+WM_POINTERDEVICEINRANGE = 0x239
+WM_POINTERDEVICEOUTOFRANGE = 0x23a
+WM_TOUCH = 0x0240
+WM_NCPOINTERUPDATE = 0x0241
+WM_NCPOINTERDOWN = 0x0242
+WM_NCPOINTERUP = 0x0243
+WM_POINTERUPDATE = 0x0245
+WM_POINTERDOWN = 0x0246
+WM_POINTERUP = 0x0247
+WM_POINTERENTER = 0x0249
+WM_POINTERLEAVE = 0x024a
+WM_POINTERACTIVATE = 0x024b
+WM_POINTERCAPTURECHANGED = 0x024c
+WM_TOUCHHITTESTING = 0x024d
+WM_POINTERWHEEL = 0x024e
+WM_POINTERHWHEEL = 0x024f
+DM_POINTERHITTEST = 0x0250
+WM_POINTERROUTEDTO = 0x0251
+WM_POINTERROUTEDAWAY = 0x0252
+WM_POINTERROUTEDRELEASED = 0x0253
 
 WM_IME_SETCONTEXT = 0x0281
 WM_IME_NOTIFY = 0x0282
@@ -1400,12 +1409,8 @@ WM_NCMOUSELEAVE = 0x02A2
 WM_WTSSESSION_CHANGE = 0x02B1
 WM_TABLET_FIRST = 0x02c0
 WM_TABLET_LAST = 0x02df
+WM_DPICHANGED = 0x02e0
 
-#if WINVER >= 0x0601
-if WINVER >= 0x0601:
-    WM_DPICHANGED = 0x02e0
-
-#if WINVER >= 0x0605
 if WINVER >= 0x0605:
     WM_DPICHANGED_BEFOREPARENT = 0x02e2
     WM_DPICHANGED_AFTERPARENT = 0x02e3
@@ -1435,23 +1440,13 @@ WM_PRINTCLIENT = 0x0318
 WM_APPCOMMAND = 0x0319
 WM_THEMECHANGED = 0x031A
 WM_CLIPBOARDUPDATE = 0x031d
-
-#if _WIN32_WINNT >= 0x0600
-if WIN32_WINNT >= 0x0600:
-    WM_DWMCOMPOSITIONCHANGED = 0x031e
-    WM_DWMNCRENDERINGCHANGED = 0x031f
-    WM_DWMCOLORIZATIONCOLORCHANGED = 0x0320
-    WM_DWMWINDOWMAXIMIZEDCHANGE = 0x0321
-
-#if _WIN32_WINNT >= 0x0601
-if WIN32_WINNT >= 0x0601:
-    WM_DWMSENDICONICTHUMBNAIL = 0x0323
-    WM_DWMSENDICONICLIVEPREVIEWBITMAP = 0x0326
-
-#if WINVER >= 0x0600
-if WINVER >= 0x0600:
-    WM_GETTITLEBARINFOEX = 0x033f
-
+WM_DWMCOMPOSITIONCHANGED = 0x031e
+WM_DWMNCRENDERINGCHANGED = 0x031f
+WM_DWMCOLORIZATIONCOLORCHANGED = 0x0320
+WM_DWMWINDOWMAXIMIZEDCHANGE = 0x0321
+WM_DWMSENDICONICTHUMBNAIL = 0x0323
+WM_DWMSENDICONICLIVEPREVIEWBITMAP = 0x0326
+WM_GETTITLEBARINFOEX = 0x033f
 WM_HANDHELDFIRST = 0x0358
 WM_HANDHELDLAST = 0x035F
 WM_AFXFIRST = 0x0360
@@ -1504,10 +1499,7 @@ SMTO_NORMAL = 0x0000
 SMTO_BLOCK = 0x0001
 SMTO_ABORTIFHUNG = 0x0002
 SMTO_NOTIMEOUTIFNOTHUNG = 0x0008
-
-#if WINVER >= 0x0600
-if WINVER >= 0x0600:
-    SMTO_ERRORONEXIT = 0x0020
+SMTO_ERRORONEXIT = 0x0020
 
 MA_ACTIVATE = 1
 MA_ACTIVATEANDEAT = 2
@@ -1826,17 +1818,15 @@ QS_SENDMESSAGE = 0x0040
 QS_HOTKEY = 0x0080
 QS_ALLPOSTMESSAGE = 0x0100
 QS_RAWINPUT = 0x0400
-#if _WIN32_WINNT >= 0x0602
 QS_TOUCH = 0x0800
 QS_POINTER = 0x1000
-#endif
-
 QS_MOUSE = (QS_MOUSEMOVE | QS_MOUSEBUTTON)
-#if _WIN32_WINNT >= 0x602
-QS_INPUT = (QS_MOUSE | QS_KEY | QS_RAWINPUT | QS_TOUCH | QS_POINTER)
-#else
-QS_INPUT = (QS_MOUSE | QS_KEY | QS_RAWINPUT)
-#endif
+
+if _WIN32_WINNT >= 0x602:
+    QS_INPUT = (QS_MOUSE | QS_KEY | QS_RAWINPUT | QS_TOUCH | QS_POINTER)
+else:
+    QS_INPUT = (QS_MOUSE | QS_KEY | QS_RAWINPUT)
+
 QS_ALLEVENTS = (QS_INPUT | QS_POSTMESSAGE | QS_TIMER | QS_PAINT | QS_HOTKEY)
 QS_ALLINPUT = (QS_INPUT | QS_POSTMESSAGE | QS_TIMER | QS_PAINT | QS_HOTKEY | QS_SENDMESSAGE)
 
@@ -1849,9 +1839,7 @@ MOD_ALT = 0x0001
 MOD_CONTROL = 0x0002
 MOD_SHIFT = 0x0004
 MOD_WIN = 0x0008
-#if WINVER >= 0x0601
 MOD_NOREPEAT = 0x4000
-#endif
 
 IDHOT_SNAPWINDOW = -1
 IDHOT_SNAPDESKTOP = -2
@@ -1927,9 +1915,7 @@ ISMEX_REPLIED = 0x00000008
 # ......
 
 PW_CLIENTONLY         = 0x00000001
-#if _WIN32_WINNT >= 0x0603
 PW_RENDERFULLCONTENT  = 0x00000002
-#endif
 
 LWA_COLORKEY = 0x00000001
 LWA_ALPHA = 0x00000002
@@ -1946,7 +1932,6 @@ FLASHW_ALL = (FLASHW_CAPTION | FLASHW_TRAY)
 FLASHW_TIMER = 0x00000004
 FLASHW_TIMERNOFG = 0x0000000c
 
-#if _WIN32_WINNT >= 0x0601
 WDA_NONE = 0x00000000
 WDA_MONITOR = 0x00000001
 WDA_EXCLUDEFROMCAPTURE = 0x00000011
@@ -1994,12 +1979,8 @@ MOUSEEVENTF_MIDDLEUP = 0x0040
 MOUSEEVENTF_XDOWN = 0x0080
 MOUSEEVENTF_XUP = 0x0100
 MOUSEEVENTF_WHEEL = 0x0800
-#if _WIN32_WINNT >= 0x0600
 MOUSEEVENTF_HWHEEL = 0x01000
-#endif
-#if WINVER >= 0x0600
 MOUSEEVENTF_MOVE_NOCOALESCE = 0x2000
-#endif
 MOUSEEVENTF_VIRTUALDESK = 0x4000
 MOUSEEVENTF_ABSOLUTE = 0x8000
 
@@ -2008,7 +1989,6 @@ INPUT_KEYBOARD = 1
 INPUT_HARDWARE = 2
 
 
-#if WINVER >= 0x0601
 def TOUCH_COORD_TO_PIXEL(l):
     return l / 100
 
@@ -2028,9 +2008,7 @@ TOUCHINPUTMASKF_CONTACTAREA = 0x0004
 
 TWF_FINETOUCH = 0x00000001
 TWF_WANTPALM = 0x00000002
-#endif
 
-#if WINVER >= 0x0602
 POINTER_FLAG_NONE = 0x00000000
 POINTER_FLAG_NEW = 0x00000001
 POINTER_FLAG_INRANGE = 0x00000002
@@ -2103,15 +2081,13 @@ TOUCH_HIT_TESTING_PROXIMITY_CLOSEST = 0x0
 TOUCH_HIT_TESTING_PROXIMITY_FARTHEST = 0xfff
 
 GWFS_INCLUDE_ANCESTORS = 0x00000001
-#endif
 
 MAPVK_VK_TO_VSC = 0
 MAPVK_VSC_TO_VK = 1
 MAPVK_VK_TO_CHAR = 2
 MAPVK_VSC_TO_VK_EX = 3
-#if WINVER >= 0x0600
 MAPVK_VK_TO_VSC_EX = 4
-#endif
+
 MWMO_WAITALL = 0x0001
 MWMO_ALERTABLE = 0x0002
 MWMO_INPUTAVAILABLE = 0x0004
@@ -2119,13 +2095,11 @@ MWMO_INPUTAVAILABLE = 0x0004
 USER_TIMER_MAXIMUM = 0x7FFFFFFF
 USER_TIMER_MINIMUM = 0x0000000A
 
-#if WINVER >= 0x0601
 TIMERV_DEFAULT_COALESCING = 0
 TIMERV_NO_COALESCING = 0xffffffff
 
 TIMERV_COALESCING_MIN = 1
 TIMERV_COALESCING_MAX = 0x7ffffff5
-#endif
 
 SM_CXSCREEN = 0
 SM_CYSCREEN = 1
@@ -2219,22 +2193,17 @@ SM_TABLETPC = 86
 SM_MEDIACENTER = 87
 SM_STARTER = 88
 SM_SERVERR2 = 89
-#if _WIN32_WINNT >= 0x0600
 SM_MOUSEHORIZONTALWHEELPRESENT = 91
 SM_CXPADDEDBORDER = 92
-#endif
-#if WINVER >= 0x0601
 SM_DIGITIZER = 94
 SM_MAXIMUMTOUCHES = 95
-#endif
 
-#if WINVER <= 0x501
-SM_CMETRICS = 91
-#elif WINVER == 0x600
-SM_CMETRICS = 93
-#else
-SM_CMETRICS = 97
-#endif
+if WINVER <= 0x501:
+    SM_CMETRICS = 91
+elif WINVER == 0x600:
+    SM_CMETRICS = 93
+else:
+    SM_CMETRICS = 97
 
 SM_REMOTESESSION = 0x1000
 SM_SHUTTINGDOWN = 0x2000
@@ -2243,7 +2212,6 @@ SM_CARETBLINKINGENABLED = 0x2002
 #if WINVER >= 0x0602
 SM_CONVERTIBLESLATEMODE = 0x2003
 SM_SYSTEMDOCKED = 0x2004
-#endif
 
 # ......
 
@@ -2309,7 +2277,6 @@ TPM_VERPOSANIMATION = 0x1000
 TPM_VERNEGANIMATION = 0x2000
 TPM_NOANIMATION = 0x4000
 TPM_LAYOUTRTL = 0x8000
-#if _WIN32_WINNT >= 0x0601
 TPM_WORKAREA = 0x10000
 
 DOF_EXECUTABLE = 0x8001
@@ -2463,8 +2430,6 @@ CWP_SKIPINVISIBLE = 0x0001
 CWP_SKIPDISABLED = 0x0002
 CWP_SKIPTRANSPARENT = 0x0004
 
-#ifndef NOCOLOR
-
 CTLCOLOR_MSGBOX = 0
 CTLCOLOR_EDIT = 1
 CTLCOLOR_LISTBOX = 2
@@ -2521,12 +2486,12 @@ GW_HWNDNEXT = 2
 GW_HWNDPREV = 3
 GW_OWNER = 4
 GW_CHILD = 5
-#if WINVER <= 0x0400
-# GW_MAX = 5
-#else
-GW_ENABLEDPOPUP = 6
-GW_MAX = 6
-#endif
+
+if WINVER <= 0x0400:
+    GW_MAX = 5
+else:
+    GW_ENABLEDPOPUP = 6
+    GW_MAX = 6
 
 MF_INSERT = 0x00000000
 MF_CHANGE = 0x00000080
@@ -2597,9 +2562,7 @@ SC_MONITORPOWER = 0xF170
 SC_CONTEXTHELP = 0xF180
 SC_SEPARATOR = 0xF00F
 
-#if WINVER >= 0x0600
 SCF_ISSECURE = 0x00000001
-#endif
 
 
 def GET_SC_WPARAM(wParam):
@@ -2627,10 +2590,8 @@ IDC_NO = 32648
 IDC_HAND = 32649
 IDC_APPSTARTING = 32650
 IDC_HELP = 32651
-#if WINVER >= 0x0606
 IDC_PIN = 32671
 IDC_PERSON = 32672
-#endif
 
 # ......
 
@@ -2662,8 +2623,6 @@ DI_NOMIRROR = 0x0010
 
 RES_ICON = 1
 RES_CURSOR = 2
-
-#ifdef OEMRESOURCE
 
 OBM_CLOSE = 32754
 OBM_UPARROW = 32753
@@ -2727,41 +2686,20 @@ OIC_WINLOGO = 32517
 OIC_WARNING = OIC_BANG
 OIC_ERROR = OIC_HAND
 OIC_INFORMATION = OIC_NOTE
-#if WINVER >= 0x0600
 OIC_SHIELD = 32518
-#endif
-#endif
 
 ORD_LANGDRIVER = 1
 
-#ifndef NOICONS
-
-#ifdef RC_INVOKED
 IDI_APPLICATION = 32512
 IDI_HAND = 32513
 IDI_QUESTION = 32514
 IDI_EXCLAMATION = 32515
 IDI_ASTERISK = 32516
 IDI_WINLOGO = 32517
-#if WINVER >= 0x0600
 IDI_SHIELD = 32518
-#endif
-#else
-IDI_APPLICATION = 32512
-IDI_HAND = 32513
-IDI_QUESTION = 32514
-IDI_EXCLAMATION = 32515
-IDI_ASTERISK = 32516
-IDI_WINLOGO = 32517
-#if WINVER >= 0x0600
-IDI_SHIELD =  32518
-#endif
-#endif
-
 IDI_WARNING = IDI_EXCLAMATION
 IDI_ERROR = IDI_HAND
 IDI_INFORMATION = IDI_ASTERISK
-#endif
 
 IDOK = 1
 IDCANCEL = 2
@@ -2775,7 +2713,6 @@ IDHELP = 9
 IDTRYAGAIN = 10
 IDCONTINUE = 11
 
-#ifndef IDTIMEOUT
 IDTIMEOUT = 32000
 
 ES_LEFT = 0x0000
@@ -2801,27 +2738,23 @@ EN_ERRSPACE = 0x0500
 EN_MAXTEXT = 0x0501
 EN_HSCROLL = 0x0601
 EN_VSCROLL = 0x0602
-#if _WIN32_WINNT >= 0x0500
+
 EN_ALIGN_LTR_EC = 0x0700
 EN_ALIGN_RTL_EC = 0x0701
-#endif
-#if WINVER >= 0x0604
+
+
 EN_BEFORE_PASTE = 0x0800
 EN_AFTER_PASTE = 0x0801
-#endif
-#if WINVER >= 0x0400
+
 EC_LEFTMARGIN = 0x0001
 EC_RIGHTMARGIN = 0x0002
 EC_USEFONTINFO = 0xffff
-#endif
 
 EMSIS_COMPOSITIONSTRING = 0x0001
 
 EIMES_GETCOMPSTRATONCE = 0x0001
 EIMES_CANCELCOMPSTRINFOCUS = 0x0002
 EIMES_COMPLETECOMPSTRKILLFOCUS = 0x0004
-
-#ifndef NOWINMESSAGES
 
 EM_GETSEL = 0x00B0
 EM_SETSEL = 0x00B1
@@ -2862,10 +2795,7 @@ EM_POSFROMCHAR = 0x00D6
 EM_CHARFROMPOS = 0x00D7
 EM_SETIMESTATUS = 0x00D8
 EM_GETIMESTATUS = 0x00D9
-#if WINVER >= 0x0604
 EM_ENABLEFEATURE = 0x00DA
-#endif
-#endif /* !NOWINMESSAGES */
 
 WB_LEFT = 0
 WB_RIGHT = 1
@@ -2921,9 +2851,7 @@ BM_SETSTYLE = 0x00F4
 BM_CLICK = 0x00F5
 BM_GETIMAGE = 0x00F6
 BM_SETIMAGE = 0x00F7
-#if WINVER >= 0x0600
 BM_SETDONTCLICK = 0x00f8
-#endif
 
 BST_UNCHECKED = 0x0000
 BST_CHECKED = 0x0001
@@ -2974,20 +2902,20 @@ STN_ENABLE = 2
 STN_DISABLE = 3
 
 STM_MSGMAX = 0x0174
-#endif
 
-# WC_DIALOG = (MAKEINTATOM(0x8002))
+
+def MAKEINTATOM(i):
+    return LPTSTR(DWORD(WORD(i).value).value).value
+
 
 DWL_MSGRESULT = 0
 DWL_DLGPROC = 4
 DWL_USER = 8
 
-#ifdef _WIN64
-
-del DWL_MSGRESULT
-del DWL_DLGPROC
-del DWL_USER
-#endif
+if WIN64:
+    del DWL_MSGRESULT
+    del DWL_DLGPROC
+    del DWL_USER
 
 DLGPROC = INT_PTR
 
@@ -3066,8 +2994,6 @@ LBN_SELCANCEL = 3
 LBN_SETFOCUS = 4
 LBN_KILLFOCUS = 5
 
-#ifndef NOWINMESSAGES
-
 LB_ADDSTRING = 0x0180
 LB_INSERTSTRING = 0x0181
 LB_DELETESTRING = 0x0182
@@ -3108,22 +3034,17 @@ LB_GETLOCALE = 0x01A6
 LB_SETCOUNT = 0x01A7
 LB_INITSTORAGE = 0x01A8
 LB_ITEMFROMPOINT = 0x01A9
-
-#if d (_WIN32_WCE) && (_WIN32_WCE >= 0x0400)
 LB_MULTIPLEADDSTRING = 0x01B1
-#endif
 LB_GETLISTBOXINFO = 0x01B2
-#if _WIN32_WINNT >= 0x0501
-LB_MSGMAX = 0x01B3
-#elif d(_WIN32_WCE) && (_WIN32_WCE >= 0x0400)
-LB_MSGMAX = 0x01B1
-#elif WINVER >= 0x0400
-LB_MSGMAX = 0x01B0
-#else
-LB_MSGMAX = 0x01A8
-#endif
 
-#endif /* !NOWINMESSAGES */
+if _WIN32_WINNT >= 0x0501:
+    LB_MSGMAX = 0x01B3
+elif _WIN32_WCE >= 0x0400:
+    LB_MSGMAX = 0x01B1
+elif WINVER >= 0x0400:
+    LB_MSGMAX = 0x01B0
+else:
+    LB_MSGMAX = 0x01A8
 
 LBS_NOTIFY = 0x0001
 LBS_SORT = 0x0002
@@ -3143,7 +3064,6 @@ LBS_NOSEL = 0x4000
 LBS_COMBOBOX = 0x8000
 
 LBS_STANDARD = (LBS_NOTIFY | LBS_SORT | WS_VSCROLL | WS_BORDER)
-#endif
 
 CB_OKAY = 0
 CB_ERR = -1
@@ -3174,7 +3094,6 @@ CBS_NOINTEGRALHEIGHT = 0x0400
 CBS_DISABLENOSCROLL = 0x0800
 CBS_UPPERCASE = 0x2000
 CBS_LOWERCASE = 0x4000
-#endif
 
 CB_GETEDITSEL = 0x0140
 CB_LIMITTEXT = 0x0141
@@ -3210,21 +3129,17 @@ CB_SETHORIZONTALEXTENT = 0x015e
 CB_GETDROPPEDWIDTH = 0x015f
 CB_SETDROPPEDWIDTH = 0x0160
 CB_INITSTORAGE = 0x0161
-#if d (_WIN32_WCE) && (_WIN32_WCE >= 0x0400)
 CB_MULTIPLEADDSTRING = 0x0163
-#endif
 CB_GETCOMBOBOXINFO = 0x0164
-#if _WIN32_WINNT >= 0x0501
-CB_MSGMAX = 0x0165
-#elif d(_WIN32_WCE) && (_WIN32_WCE >= 0x0400)
-CB_MSGMAX = 0x0163
-#elif WINVER >= 0x0400
-CB_MSGMAX = 0x0162
-#else
-CB_MSGMAX = 0x015B
-#endif
 
-#endif /* !NOWINMESSAGES */
+if _WIN32_WINNT >= 0x0501:
+    CB_MSGMAX = 0x0165
+elif _WIN32_WCE >= 0x0400:
+    CB_MSGMAX = 0x0163
+elif WINVER >= 0x0400:
+    CB_MSGMAX = 0x0162
+else:
+    CB_MSGMAX = 0x015B
 
 SBS_HORZ = 0x0000
 SBS_VERT = 0x0001
@@ -3292,12 +3207,9 @@ IDH_GENERIC_HELP_BUTTON = 28442
 IDH_OK = 28443
 IDH_CANCEL = 28444
 IDH_HELP = 28445
-#endif
-#endif
 
 GR_GDIOBJECTS = 0
 GR_USEROBJECTS = 1
-#if WINVER >= 0x0601
 GR_GDIOBJECTS_PEAK = 2
 GR_USEROBJECTS_PEAK = 4
 
@@ -3407,23 +3319,18 @@ SPI_GETWHEELSCROLLLINES = 0x0068
 SPI_SETWHEELSCROLLLINES = 0x0069
 SPI_GETMENUSHOWDELAY = 0x006A
 SPI_SETMENUSHOWDELAY = 0x006B
-#if _WIN32_WINNT >= 0x0600
 SPI_GETWHEELSCROLLCHARS = 0x006C
 SPI_SETWHEELSCROLLCHARS = 0x006D
-#endif
 SPI_GETSHOWIMEUI = 0x006E
 SPI_SETSHOWIMEUI = 0x006F
 SPI_GETMOUSESPEED = 0x0070
 SPI_SETMOUSESPEED = 0x0071
 SPI_GETSCREENSAVERRUNNING = 0x0072
 SPI_GETDESKWALLPAPER = 0x0073
-#if WINVER >= 0x0600
 SPI_GETAUDIODESCRIPTION = 0x0074
 SPI_SETAUDIODESCRIPTION = 0x0075
 SPI_GETSCREENSAVESECURE = 0x0076
 SPI_SETSCREENSAVESECURE = 0x0077
-#endif
-#if _WIN32_WINNT >= 0x0601
 SPI_GETHUNGAPPTIMEOUT = 0x0078
 SPI_SETHUNGAPPTIMEOUT = 0x0079
 SPI_GETWAITTOKILLTIMEOUT = 0x007a
@@ -3450,8 +3357,6 @@ SPI_GETSNAPSIZING = 0x008e
 SPI_SETSNAPSIZING = 0x008f
 SPI_GETDOCKMOVING = 0x0090
 SPI_SETDOCKMOVING = 0x0091
-#endif
-#if WINVER >= 0x0602
 SPI_GETTOUCHPREDICTIONPARAMETERS = 0x009c
 SPI_SETTOUCHPREDICTIONPARAMETERS = 0x009d
 SPI_GETLOGICALDPIOVERRIDE = 0x009e
@@ -3460,8 +3365,6 @@ SPI_GETMOUSECORNERCLIPLENGTH = 0x00a0
 SPI_SETMOUSECORNERCLIPLENGTH = 0x00a1
 SPI_GETMENURECT = 0x00a2
 SPI_SETMENURECT = 0x00a3
-#endif
-
 SPI_GETACTIVEWINDOWTRACKING = 0x1000
 SPI_SETACTIVEWINDOWTRACKING = 0x1001
 SPI_GETMENUANIMATION = 0x1002
@@ -3504,7 +3407,6 @@ SPI_GETBLOCKSENDINPUTRESETS = 0x1026
 SPI_SETBLOCKSENDINPUTRESETS = 0x1027
 SPI_GETUIEFFECTS = 0x103E
 SPI_SETUIEFFECTS = 0x103F
-#if _WIN32_WINNT >= 0x0600
 SPI_GETDISABLEOVERLAPPEDCONTENT = 0x1040
 SPI_SETDISABLEOVERLAPPEDCONTENT = 0x1041
 SPI_GETCLIENTAREAANIMATION = 0x1042
@@ -3513,15 +3415,12 @@ SPI_GETCLEARTYPE = 0x1048
 SPI_SETCLEARTYPE = 0x1049
 SPI_GETSPEECHRECOGNITION = 0x104a
 SPI_SETSPEECHRECOGNITION = 0x104b
-#endif
-#if WINVER >= 0x0601
 SPI_GETCARETBROWSING = 0x104c
 SPI_SETCARETBROWSING = 0x104d
 SPI_GETTHREADLOCALINPUTSETTINGS = 0x104e
 SPI_SETTHREADLOCALINPUTSETTINGS = 0x104f
 SPI_GETSYSTEMLANGUAGEBAR = 0x1050
 SPI_SETSYSTEMLANGUAGEBAR = 0x1051
-#endif
 SPI_GETFOREGROUNDLOCKTIMEOUT = 0x2000
 SPI_SETFOREGROUNDLOCKTIMEOUT = 0x2001
 SPI_GETACTIVEWNDTRKTIMEOUT = 0x2002
@@ -3547,29 +3446,20 @@ SPI_GETFOCUSBORDERHEIGHT = 0x2010
 SPI_SETFOCUSBORDERHEIGHT = 0x2011
 SPI_GETFONTSMOOTHINGORIENTATION = 0x2012
 SPI_SETFONTSMOOTHINGORIENTATION = 0x2013
-#if _WIN32_WINNT >= 0x0600
 SPI_GETMINIMUMHITRADIUS = 0x2014
 SPI_SETMINIMUMHITRADIUS = 0x2015
 SPI_GETMESSAGEDURATION = 0x2016
 SPI_SETMESSAGEDURATION = 0x2017
-#endif
-#if WINVER >= 0x0602
 SPI_GETCONTACTVISUALIZATION = 0x2018
 SPI_SETCONTACTVISUALIZATION = 0x2019
 SPI_GETGESTUREVISUALIZATION = 0x201a
 SPI_SETGESTUREVISUALIZATION = 0x201b
-#endif
-#if WINVER >= 0x0602
 SPI_GETMOUSEWHEELROUTING = 0x201C
 SPI_SETMOUSEWHEELROUTING = 0x201D
 MOUSEWHEEL_ROUTING_FOCUS = 0
 MOUSEWHEEL_ROUTING_HYBRID = 1
-#endif
-#if WINVER >= 0x0603
 MOUSEWHEEL_ROUTING_MOUSE_POS = 2
-#endif
 
-#if WINVER >= 0x0604
 SPI_GETPENVISUALIZATION = 0x201E
 SPI_SETPENVISUALIZATION = 0x201F
 
@@ -3587,22 +3477,17 @@ PENARBITRATIONTYPE_WIN8 = 0x0001
 PENARBITRATIONTYPE_FIS = 0x0002
 PENARBITRATIONTYPE_SPT = 0x0003
 PENARBITRATIONTYPE_MAX = 0x0004
-#endif /* WINVER >= 0x0604 */
 
-#if NTDDI_VERSION >= NTDDI_WIN10_RS3
-SPI_GETCARETTIMEOUT = 0x2022
-SPI_SETCARETTIMEOUT = 0x2023
+if NTDDI_VERSION >= NTDDI_WIN10_RS3:
+    SPI_GETCARETTIMEOUT = 0x2022
+    SPI_SETCARETTIMEOUT = 0x2023
 
 # ......
 
-#endif
+if NTDDI_VERSION >= NTDDI_WIN10_RS4:
+    SPI_GETHANDEDNESS = 0x2024
+    SPI_SETHANDEDNESS = 0x2025
 
-#if NTDDI_VERSION >= NTDDI_WIN10_RS4
-SPI_GETHANDEDNESS = 0x2024
-SPI_SETHANDEDNESS = 0x2025
-#endif
-
-#if WINVER >= 0x0602
 CONTACTVISUALIZATION_OFF = 0x0000
 CONTACTVISUALIZATION_ON = 0x0001
 CONTACTVISUALIZATION_PRESENTATIONMODE = 0x0002
@@ -3628,7 +3513,6 @@ TOUCHPREDICTIONPARAMETERS_DEFAULT_RLS_EXPO_SMOOTH_ALPHA = 0.99
 
 MAX_LOGICALDPIOVERRIDE = 2
 MIN_LOGICALDPIOVERRIDE = -2
-#endif
 
 FE_FONTSMOOTHINGORIENTATIONBGR = 0x0000
 FE_FONTSMOOTHINGORIENTATIONRGB = 0x0001
@@ -3676,15 +3560,11 @@ CDS_FULLSCREEN = 0x00000004
 CDS_GLOBAL = 0x00000008
 CDS_SET_PRIMARY = 0x00000010
 CDS_VIDEOPARAMETERS = 0x00000020
-#if WINVER >= 0x0600
 CDS_ENABLE_UNSAFE_MODES = 0x00000100
 CDS_DISABLE_UNSAFE_MODES = 0x00000200
-#endif
 CDS_RESET = 0x40000000
 CDS_RESET_EX = 0x20000000
 CDS_NORESET = 0x10000000
-
-#include <tvout.h>
 
 DISP_CHANGE_SUCCESSFUL = 0
 DISP_CHANGE_RESTART = 1
@@ -3764,7 +3644,6 @@ SSF_SOUNDSENTRYON = 0x00000001
 SSF_AVAILABLE = 0x00000002
 SSF_INDICATOR = 0x00000004
 
-#ifndef CCHDEVICENAME
 CCHDEVICENAME = 32
 
 TKF_TOGGLEKEYSON = 0x00000001
@@ -3834,19 +3713,12 @@ EVENT_SYSTEM_SWITCHSTART = 0x0014
 EVENT_SYSTEM_SWITCHEND = 0x0015
 EVENT_SYSTEM_MINIMIZESTART = 0x0016
 EVENT_SYSTEM_MINIMIZEEND = 0x0017
-#if _WIN32_WINNT >= 0x0600
 EVENT_SYSTEM_DESKTOPSWITCH = 0x0020
-#endif
-#if _WIN32_WINNT >= 0x0602
 EVENT_SYSTEM_SWITCHER_APPGRABBED = 0x0024
 EVENT_SYSTEM_SWITCHER_APPOVERTARGET = 0x0025
 EVENT_SYSTEM_SWITCHER_APPDROPPED = 0x0026
 EVENT_SYSTEM_SWITCHER_CANCELLED = 0x0027
-#endif
-#if _WIN32_WINNT >= 0x0602
 EVENT_SYSTEM_IME_KEY_NOTIFICATION = 0x0029
-#endif
-#if _WIN32_WINNT >= 0x0601
 EVENT_SYSTEM_END = 0x00ff
 EVENT_OEM_D_START = 0x0101
 EVENT_OEM_D_END = 0x01ff
@@ -3854,7 +3726,6 @@ EVENT_UIA_EVENTID_START = 0x4e00
 EVENT_UIA_EVENTID_END = 0x4eff
 EVENT_UIA_PROPID_START = 0x7500
 EVENT_UIA_PROPID_END = 0x75ff
-#endif
 
 EVENT_CONSOLE_CARET = 0x4001
 EVENT_CONSOLE_UPDATE_REGION = 0x4002
@@ -3864,17 +3735,14 @@ EVENT_CONSOLE_LAYOUT = 0x4005
 EVENT_CONSOLE_START_APPLICATION = 0x4006
 EVENT_CONSOLE_END_APPLICATION = 0x4007
 
-#ifdef _WIN64
-CONSOLE_APPLICATION_16BIT = 0x0000
-#else
-CONSOLE_APPLICATION_16BIT = 0x0001
-#endif
+if WIN64:
+    CONSOLE_APPLICATION_16BIT = 0x0000
+else:
+    CONSOLE_APPLICATION_16BIT = 0x0001
 CONSOLE_CARET_SELECTION = 0x0001
 CONSOLE_CARET_VISIBLE = 0x0002
-#if _WIN32_WINNT >= 0x0601
-EVENT_CONSOLE_END = 0x40ff
-#endif
 
+EVENT_CONSOLE_END = 0x40ff
 EVENT_OBJECT_CREATE = 0x8000
 EVENT_OBJECT_DESTROY = 0x8001
 EVENT_OBJECT_SHOW = 0x8002
@@ -3894,15 +3762,10 @@ EVENT_OBJECT_PARENTCHANGE = 0x800F
 EVENT_OBJECT_HELPCHANGE = 0x8010
 EVENT_OBJECT_DEFACTIONCHANGE = 0x8011
 EVENT_OBJECT_ACCELERATORCHANGE = 0x8012
-#if _WIN32_WINNT >= 0x0600
 EVENT_OBJECT_INVOKED = 0x8013
 EVENT_OBJECT_TEXTSELECTIONCHANGED = 0x8014
 EVENT_OBJECT_CONTENTSCROLLED = 0x8015
-#endif
-#if _WIN32_WINNT >= 0x0601
 EVENT_SYSTEM_ARRANGMENTPREVIEW = 0x8016
-#endif
-#if _WIN32_WINNT >= 0x0602
 EVENT_OBJECT_CLOAKED = 0x8017
 EVENT_OBJECT_UNCLOAKED = 0x8018
 EVENT_OBJECT_LIVEREGIONCHANGED = 0x8019
@@ -3916,13 +3779,9 @@ EVENT_OBJECT_DRAGDROPPED = 0x8026
 EVENT_OBJECT_IME_SHOW = 0x8027
 EVENT_OBJECT_IME_HIDE = 0x8028
 EVENT_OBJECT_IME_CHANGE = 0x8029
-#endif
-
-#if _WIN32_WINNT >= 0x0601
 EVENT_OBJECT_END = 0x80ff
 EVENT_AIA_START = 0xa000
 EVENT_AIA_END = 0xafff
-#endif
 
 SOUND_SYSTEM_STARTUP = 1
 SOUND_SYSTEM_SHUTDOWN = 2
@@ -3954,15 +3813,13 @@ GUI_INMOVESIZE = 0x00000002
 GUI_INMENUMODE = 0x00000004
 GUI_SYSTEMMENUMODE = 0x00000008
 GUI_POPUPMENUMODE = 0x00000010
-#ifdef _WIN64
-GUI_16BITTASK = 0x00000000
-#else
-GUI_16BITTASK = 0x00000020
-#endif
+if WIN64:
+    GUI_16BITTASK = 0x00000000
+else:
+    GUI_16BITTASK = 0x00000020
 
 USER_DEFAULT_SCREEN_DPI = 96
 
-#ifndef NO_STATE_FLAGS
 STATE_SYSTEM_UNAVAILABLE = 0x00000001
 STATE_SYSTEM_SELECTED = 0x00000002
 STATE_SYSTEM_FOCUSED = 0x00000004
@@ -3995,15 +3852,12 @@ STATE_SYSTEM_ALERT_MEDIUM = 0x08000000
 STATE_SYSTEM_ALERT_HIGH = 0x10000000
 STATE_SYSTEM_PROTECTED = 0x20000000
 STATE_SYSTEM_VALID = 0x3FFFFFFF
-#endif
 
 CCHILDREN_TITLEBAR = 5
 CCHILDREN_SCROLLBAR = 5
 
 CURSOR_SHOWING = 0x00000001
-#if WINVER >= 0x0602
 CURSOR_SUPPRESSED = 0x00000002
-#endif
 
 GA_PARENT = 1
 GA_ROOT = 2
@@ -4033,9 +3887,7 @@ RI_MOUSE_BUTTON_4_UP = 0x0080
 RI_MOUSE_BUTTON_5_DOWN = 0x0100
 RI_MOUSE_BUTTON_5_UP = 0x0200
 RI_MOUSE_WHEEL = 0x0400
-#if WINVER >= 0x0600
 RI_MOUSE_HWHEEL = 0x0800
-#endif
 
 RI_MOUSE_BUTTON_1_DOWN = RI_MOUSE_LEFT_BUTTON_DOWN
 RI_MOUSE_BUTTON_1_UP = RI_MOUSE_LEFT_BUTTON_UP
@@ -4048,9 +3900,7 @@ MOUSE_MOVE_RELATIVE = 0
 MOUSE_MOVE_ABSOLUTE = 1
 MOUSE_VIRTUAL_DESKTOP = 0x02
 MOUSE_ATTRIBUTES_CHANGED = 0x04
-#if WINVER >= 0x0600
 MOUSE_MOVE_NOCOALESCE = 0x08
-#endif
 
 KEYBOARD_OVERRUN_MAKE_CODE = 0xFF
 
@@ -4063,7 +3913,7 @@ RI_KEY_TERMSRV_SHADOW = 0x10
 
 
 def RAWINPUT_ALIGN(x: int) -> int:
-    if platform.machine().lower() == 'amd64' and sys.maxsize > 2**32:
+    if sys.maxsize > 2**32:
         return (x + sizeof(QWORD()) -1) &~ (sizeof(QWORD()) - 1)
     return (x + sizeof(DWORD()) -1) &~ (sizeof(DWORD()) - 1)
 
@@ -4098,13 +3948,13 @@ def RIDEV_EXMODE(mode):
 GIDC_ARRIVAL = 1
 GIDC_REMOVAL = 2
 
-#if _WIN32_WINNT >= 0x0601
-# GET_DEVICE_CHANGE_WPARAM(wParam) (LOWORD (wParam))
-#else
-# GET_DEVICE_CHANGE_LPARAM(lParam) (LOWORD (lParam))
-#endif
+if _WIN32_WINNT >= 0x0601:
+    def GET_DEVICE_CHANGE_WPARAM(wParam):
+        return LOWORD(wParam)
+else:
+    def GET_DEVICE_CHANGE_LPARAM(lParam):
+        return LOWORD(lParam)
 
-#if WINVER >= 0x0602
 POINTER_DEVICE_PRODUCT_STRING_MAX = 520
 PDC_ARRIVAL = 0x001
 PDC_REMOVAL = 0x002
@@ -4119,9 +3969,8 @@ PDC_RESOLUTION = 0x200
 PDC_ORIGIN = 0x400
 PDC_MODE_ASPECTRATIOPRESERVED = 0x800
 
-if WINVER >= 0x0600:
-    MSGFLT_ADD = 1
-    MSGFLT_REMOVE = 2
+MSGFLT_ADD = 1
+MSGFLT_REMOVE = 2
 
 MSGFLTINFO_NONE = 0
 MSGFLTINFO_ALREADYALLOWED_FORWND = 1
@@ -4132,10 +3981,9 @@ MSGFLT_RESET = 0
 MSGFLT_ALLOW = 1
 MSGFLT_DISALLOW = 2
 
-if WINVER >= 0x0601:
-    GF_BEGIN = 0x00000001
-    GF_INERTIA = 0x00000002
-    GF_END = 0x00000004
+GF_BEGIN = 0x00000001
+GF_INERTIA = 0x00000002
+GF_END = 0x00000004
 
 GID_BEGIN = 1
 GID_END = 2
@@ -4164,13 +4012,12 @@ GESTURECONFIGMAXCOUNT = 256
 
 GCF_INCLUDE_ANCESTORS = 0x00000001
 
-if WINVER >= 0x0601:
-    NID_INTEGRATED_TOUCH = 0x00000001
-    NID_EXTERNAL_TOUCH = 0x00000002
-    NID_INTEGRATED_PEN = 0x00000004
-    NID_EXTERNAL_PEN = 0x00000008
-    NID_MULTI_INPUT = 0x00000040
-    NID_READY = 0x00000080
+NID_INTEGRATED_TOUCH = 0x00000001
+NID_EXTERNAL_TOUCH = 0x00000002
+NID_INTEGRATED_PEN = 0x00000004
+NID_EXTERNAL_PEN = 0x00000008
+NID_MULTI_INPUT = 0x00000040
+NID_READY = 0x00000080
 
 MAX_STR_BLOCKREASON = 256
 
@@ -4214,7 +4061,8 @@ LPMSGBOXPARAMSW = PMSGBOXPARAMSW
 
 
 def EndTask(hwnd: int, fShutDown: bool, fForce: bool) -> None:
-    res = User32.EndTask(hwnd, fShutDown, fForce)
+    EndTask = User32.EndTask
+    res = EndTask(hwnd, fShutDown, fForce)
     if res == NULL:
         raise WinError(GetLastError())
     
@@ -4226,15 +4074,11 @@ def GetForegroundWindow() -> int:
 EnumWindowsProc = CALLBACK(BOOL, HWND, LPARAM)
 
 
-def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any) -> dict:
-    res = User32.GetWindowThreadProcessId(hwnd, lpdwProcessId)
+def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any) -> None:
+    GetWindowThreadProcessId = User32.GetWindowThreadProcessId
+    res = GetWindowThreadProcessId(hwnd, lpdwProcessId)
     if res == NULL:
         raise WinError(GetLastError())
-    
-    ret = {}
-    ret['ProcessId'] = lpdwProcessId.value
-    ret['ThreadId'] = res
-    return ret
 
 
 def IsWindow(hwnd: int = NULL) -> bool:
@@ -4245,7 +4089,7 @@ def IsWindowVisible(hwnd: int) -> bool:
     return bool(User32.IsWindowVisible(hwnd))
 
 
-def IsUserAnAdmin():
+def IsUserAnAdmin() -> bool:
     return bool(shell32.IsUserAnAdmin())
 
 
@@ -4253,10 +4097,10 @@ def ShowWindow(hwnd: int, nCmdShow: int) -> bool:
     return bool(User32.ShowWindow(hwnd, nCmdShow))
 
 
-def MessageBox(hwnd: int = HWND(), 
-               lpText: str = '', 
-               lpCaption: str = '', 
-               uType: int = UINT(), 
+def MessageBox(hwnd: int, 
+               lpText: str, 
+               lpCaption: str, 
+               uType: int, 
                unicode: bool = True) -> int:
     
     MessageBox = User32.MessageBoxW if unicode else User32.MessageBoxA
@@ -4267,11 +4111,11 @@ def MessageBox(hwnd: int = HWND(),
     return result
 
 
-def MessageBoxEx(hwnd: int = HWND(), 
-                 lpText: str = '', 
-                 lpCaption: str = '', 
-                 uType: int = INT(), 
-                 wLanguageId: int = INT(), 
+def MessageBoxEx(hwnd: int, 
+                 lpText: str, 
+                 lpCaption: str, 
+                 uType: int, 
+                 wLanguageId: int, 
                  unicode: bool = True) -> int:
     
     MessageBoxEx = User32.MessageBoxExW if unicode else User32.MessageBoxExA
@@ -4283,7 +4127,8 @@ def MessageBoxEx(hwnd: int = HWND(),
     
 
 def MessageBeep(uType: int) -> bool:
-    result = User32.MessageBeep(uType)
+    MessageBeep = User32.MessageBeep
+    result = MessageBeep(uType)
     if result == 0:
         raise WinError(GetLastError())
     return bool(result)
@@ -4348,18 +4193,21 @@ def LoadImage(hInst: int,
 
 
 def ExitWindowsEx(uFlags: int, dwReason: int) -> NoReturn:
-    res = User32.ExitWindowsEx(uFlags, dwReason)
+    ExitWindowsEx = User32.ExitWindowsEx
+    res = ExitWindowsEx(uFlags, dwReason)
     if not res:
         raise WinError(GetLastError())
 
 
 def EnableMenuItem(hMenu: int, uIDEnableItem: int, uEnable: int) -> int:
-    res = User32.EnableMenuItem(hMenu, uIDEnableItem, uEnable)
+    EnableMenuItem = User32.EnableMenuItem
+    res = EnableMenuItem(hMenu, uIDEnableItem, uEnable)
     return res
 
 
 def DrawMenuBar(hwnd: int) -> None:
-    res = User32.DrawMenuBar(hwnd)
+    DrawMenuBar = User32.DrawMenuBar
+    res = DrawMenuBar(hwnd)
     if not res:
         raise WinError(GetLastError())
     
@@ -4418,3 +4266,205 @@ def SetMenuItemInfo(hmenu, item, fByPositon, lpmii, unicode: bool = True) -> Non
 
 def GetSystemMenu(hwnd: int, bRevert: bool) -> int:
     return User32.GetSystemMenu(hwnd, bRevert)
+
+
+class tagMSG(Structure):
+    _fields_ = [('hwnd', HWND),
+                ('message', UINT),
+                ('wParam', WPARAM),
+                ('lParam', LPARAM),
+                ('time', DWORD),
+                ('pt', POINT)
+    ]
+
+MSG = tagMSG
+PMSG = POINTER(MSG)
+NPMSG = PMSG
+LPMSG = PMSG
+
+
+def RegisterClass(lpWndClass, unicode: bool = True):
+    RegisterClass = User32.RegisterClassW if unicode else User32.RegisterClassA
+    res = RegisterClass(lpWndClass)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def CreateWindowEx(dwExStyle, 
+                   lpClassName, 
+                   lpWindowName, 
+                   dwStyle, 
+                   X, 
+                   Y, 
+                   nWidth, 
+                   nHeight, 
+                   hWndParent, 
+                   hMenu, 
+                   hInstance, 
+                   lpParam, 
+                   unicode: bool = True):
+    
+    CreateWindowEx = User32.CreateWindowExW if unicode else User32.CreateWindowExA
+    res = CreateWindowEx(dwExStyle, 
+                         lpClassName, 
+                         lpWindowName, 
+                         dwStyle, 
+                         X, 
+                         Y, 
+                         nWidth, 
+                         nHeight, 
+                         hWndParent, 
+                         hMenu, 
+                         hInstance, 
+                         lpParam
+    )
+
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, unicode: bool = True):
+    GetMessage = User32.GetMessageW if unicode else User32.GetMessageA
+    res = GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax)
+    if res == -1:
+        raise WinError(GetLastError())
+    return res
+    
+
+def DispatchMessage(lpMsg, unicode: bool = True):
+    DispatchMessage = User32.DispatchMessageW if unicode else User32.DispatchMessageA
+    res = DispatchMessage(lpMsg)
+    return res
+
+
+def PostQuitMessage(nExitCode: int) -> NoReturn:
+    PostQuitMessage = User32.PostQuitMessage
+    PostQuitMessage(nExitCode)
+
+
+def BeginPaint(hWnd, lpPaint):
+    BeginPaint = User32.BeginPaint
+    res = BeginPaint(hWnd, lpPaint)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def FillRect(hDC, lprc, hbr):
+    FillRect = User32.FillRect
+    res = FillRect(hDC, lprc, hbr)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def EndPaint(hWnd, lpPaint):
+    EndPaint = User32.EndPaint
+    res = EndPaint(hWnd, lpPaint)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def DefWindowProc(hWnd, Msg, wParam, lParam, unicode: bool = True):
+    DefWindowProc = User32.DefWindowProcW if unicode else User32.DefWindowProcA
+    DefWindowProc.argtypes = [HWND, UINT, WPARAM, LPARAM]
+    DefWindowProc.restype = LRESULT 
+    res = DefWindowProc(hWnd, Msg, wParam, lParam)
+    return res
+
+
+def TranslateMessage(lpMsg):
+    TranslateMessage = User32.TranslateMessage
+    res = TranslateMessage(lpMsg)
+    return res
+
+
+def mouse_event(dwFlags: int, 
+                dx: int, 
+                dy: int, 
+                dwData: int, 
+                dwExtraInfo: int) -> None:
+    
+    mouse_event = User32.mouse_event
+    mouse_event.argtypes = [DWORD, DWORD, DWORD, DWORD, ULONG_PTR]
+    mouse_event.restype = VOID
+    mouse_event(dwFlags, dx, dy, dwData, dwExtraInfo)
+
+
+def keybd_event(bVk: int, 
+                bScan: int, 
+                dwFlags: int, 
+                dwExtraInfo: int) -> None:
+    
+    keybd_event = User32.keybd_event
+    keybd_event.argtypes = [BYTE, BYTE, DWORD, ULONG_PTR]
+    keybd_event.restype = VOID
+    keybd_event(bVk, bScan, dwFlags, dwExtraInfo)
+
+
+class tagMOUSEINPUT(Structure):
+    _fields_ = [('dx', LONG),
+                ('dy', LONG),
+                ('mouseData', DWORD),
+                ('dwFlags', DWORD),
+                ('time', DWORD),
+                ('dwExtraInfo', ULONG_PTR)
+    ]
+
+MOUSEINPUT = tagMOUSEINPUT
+PMOUSEINPUT = POINTER(MOUSEINPUT)
+LPMOUSEINPUT = PMOUSEINPUT
+
+class tagKEYBDINPUT(Structure):
+    _fields_ = [('wVk', WORD),
+                ('wScan', WORD),
+                ('dwFlags', DWORD),
+                ('time', DWORD),
+                ('dwExtraInfo', ULONG_PTR)
+    ]
+
+KEYBDINPUT = tagKEYBDINPUT
+PKEYBDINPUT = POINTER(KEYBDINPUT)
+LPKEYBDINPUT = PKEYBDINPUT
+
+class tagHARDWAREINPUT(Structure):
+    _fields_ = [('uMsg', DWORD),
+                ('wParamL', WORD),
+                ('wParamH', WORD)
+    ]
+
+HARDWAREINPUT = tagHARDWAREINPUT
+PHARDWAREINPUT = POINTER(HARDWAREINPUT)
+LPHARDWAREINPUT = PHARDWAREINPUT
+
+class tagINPUT(Structure):
+    class DUMMYUNIONNAME(Union):
+        _fields_ = [('mi', MOUSEINPUT),
+                    ('ki', KEYBDINPUT),
+                    ('hi', HARDWAREINPUT)
+        ]
+
+    _anonymous_ = ['DUMMYUNIONNAME']
+    _fields_ = [('type', DWORD), 
+                ('DUMMYUNIONNAME', DUMMYUNIONNAME)
+    ]
+
+INPUT = tagINPUT
+PINPUT = POINTER(INPUT)
+LPINPUT = PINPUT
+
+
+def SendInput(cInputs: int, 
+              pInputs: Array, 
+              cbSize: int) -> int:
+    
+    SendInput = User32.SendInput
+    SendInput.argtypes = [UINT, LPINPUT, INT]
+    SendInput.restype = UINT
+    res = SendInput(cInputs, pInputs, cbSize)
+    if not res:
+        raise WinError(GetLastError())
+    return res

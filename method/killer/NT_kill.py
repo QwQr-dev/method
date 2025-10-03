@@ -6,9 +6,9 @@ from method.core.windows import *
 def NtOpenTerminateProcess(pid: int) -> None:
     ObjectAttributes = OBJECT_ATTRIBUTES()
     ClientId = CLIENT_ID()
-    hProcess = PHANDLE()
+    hProcess = HANDLE()
     ClientId.UniqueProcess = pid
-    hProcess = NtOpenProcess(hProcess, PROCESS_ALL_ACCESS, ObjectAttributes, ClientId)
+    NtOpenProcess(byref(hProcess), PROCESS_ALL_ACCESS, byref(ObjectAttributes), byref(ClientId))
     try:
         NtTerminateProcess(hProcess, 0)
     finally:
@@ -18,9 +18,9 @@ def NtOpenTerminateProcess(pid: int) -> None:
 def ZwOpenTerminateProcess(pid: int) -> None:
     ObjectAttributes = OBJECT_ATTRIBUTES()
     ClientId = CLIENT_ID()
-    hProcess = PHANDLE()
+    hProcess = HANDLE()
     ClientId.UniqueProcess = pid
-    hProcess = ZwOpenProcess(hProcess, PROCESS_ALL_ACCESS, ObjectAttributes, ClientId)
+    ZwOpenProcess(byref(hProcess), PROCESS_ALL_ACCESS, byref(ObjectAttributes), byref(ClientId))
     try:
         ZwTerminateProcess(hProcess, 0)
     finally:

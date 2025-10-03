@@ -9,22 +9,32 @@ except ImportError:
 
 
 def NTSTATUS(Status: int) -> int:
+    if Status is None:
+        Status = 0
     return LONG(Status).value
 
 
 def  NT_SUCCESS(Status: int) -> bool:
+    if Status is None:
+        Status = 0
     return NTSTATUS(Status) >= 0
 
 
 def NT_INFORMATION(Status: int) -> bool:
+    if Status is None:
+        Status = 0
     return (ULONG(Status).value >> 30) == 1
 
 
 def NT_WARNING(Status: int) -> bool:
+    if Status is None:
+        Status = 0
     return (ULONG(Status).value >> 30) == 2
 
 
 def NT_ERROR(Status: int) -> bool:
+    if Status is None:
+        Status = 0
     return (ULONG(Status).value >> 30) == 3
 
 

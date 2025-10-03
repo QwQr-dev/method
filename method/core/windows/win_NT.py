@@ -5,105 +5,102 @@ import enum
 import ctypes
 import platform
 from ctypes import *
+from typing import Any
 
 try:
     from sdkddkver import *
     from public_dll import *
     from win_cbasictypes import *
-    from error import RtlNtStatusToDosError, GetLastError, SetLastError, SetLastErrorEx
+    from guiddef import DEFINE_GUID, GUID
 except ImportError:
     from .sdkddkver import *
     from .public_dll import *
     from .win_cbasictypes import *
-    from .error import RtlNtStatusToDosError, GetLastError, SetLastError, SetLastErrorEx
+    from .guiddef import DEFINE_GUID, GUID
 
-
-#from wchar.h
-
+###################################################################
+# wchar.h
 
 def memchr(buffer, c, count):
     memchr = ntdll.memchr
     res = memchr(buffer, c, count)
     return res
 
-
 def wmemchr(buffer, c, count):
     wmemchr = ntdll.wmemchr
     res = wmemchr(buffer, c, count)
     return res
-
 
 def memcmp(buffer1, buffer2, count):
     memcmp = ntdll.memcmp
     res = memcmp(buffer1, buffer2, count)
     return res
 
-
 def wmemcmp(buffer1, buffer2, count):
     wmemcmp = ntdll.wmemcmp
     res = wmemcmp(buffer1, buffer2, count)
     return res
-
 
 def memcpy(dest, src, count):
     memcpy = ntdll.memcpy
     res = memcpy(dest, src, count)
     return res
 
-
 def wmemcpy(dest, src, count):
     wmemcpy = ntdll.wmemcpy
     res = wmemcpy(dest, src, count)
     return res
-
 
 def memcpy_s(dest, destSize, src, count):
     memcpy_s = ntdll.memcpy_s
     res = memcpy_s(dest, destSize, src, count)
     return res
 
-
 def wmemcpy_s(dest, destSize, src, count):
     wmemcpy_s = ntdll.wmemcpy_s
     res = wmemcpy_s(dest, destSize, src, count)
     return res
-
 
 def memmove(dest, src, count):
     memmove = ntdll.memmove
     res = memmove(dest, src, count)
     return res
 
-
 def wmemmove(dest, src, count):
     wmemmove = ntdll.wmemmove
     res = wmemmove(dest, src, count)
     return res
-
 
 def memmove_s(dest, numberOfElements, src, count):
     memmove_s = ntdll.memmove_s
     res = memmove_s(dest, numberOfElements, src, count)
     return res
 
-
 def wmemmove_s(dest, numberOfElements, src, count):
     wmemmove_s = ntdll.wmemmove_s
     res = wmemmove_s(dest, numberOfElements, src, count)
     return res
-
 
 def memset(dest, c, count):
     memset = ntdll.memset
     res = memset(dest, c, count)
     return res
 
-
 def wmemset(dest, c, count):
     wmemset = ntdll.wmemset
     res = wmemset(dest, c, count)
     return res
 
+
+###################################################################
+# combaseapi.h
+
+def _CLSIDFromString(lpsz: str, pclsid: Any) -> None:
+    CLSIDFromString = ole32.CLSIDFromString
+    res = CLSIDFromString(lpsz, pclsid)
+    if res != 0:
+        raise WinError(res)
+    
 
 ####################################################################
 NULL = 0
@@ -113,15 +110,6 @@ FALSE = False
 
 class CDataType:
     pass
-
-class _GUID(ctypes.Structure):
-    _fields_ = [('Data1', ULONG32), 
-                ('Data2', USHORT),
-                ('Data3', USHORT),
-                ('Data4', UCHAR * 8)
-    ]
-
-GUID = _GUID
 
 class _OBJECT_ATTRIBUTES(ctypes.Structure):
     _fields_ = [('Length', ULONG),
@@ -150,26 +138,7 @@ def offsetof(Type: CDataType, Field: str) -> int:       # from stddef.h
     return getattr(Type, Field).offset
 
 
-def DEFINE_GUID(l: int,
-                w1: int,
-                w2: int,
-                b1: int,
-                b2: int,
-                b3: int,
-                b4: int,
-                b5: int,
-                b6: int,
-                b7: int,
-                b8: int) -> str:       # from guiddef.h
-    
-    l = f'{l:08x}'
-    w1 = f'{w1:04x}'
-    w2 = f'{w2:04x}'
-    w3 = f'{b1:02x}{b2:02x}'
-    w4 = f'{b3:02x}{b4:02x}{b5:02x}{b6:02x}{b7:02x}{b8:02x}'
-    return ('{' + f'{l}-{w1}-{w2}-{w3}-{w4}' + '}').upper()
-
-
+##############################################################
 # winnt.h
 
 def TYPE_ALIGNMENT(t: CDataType) -> int:
@@ -253,7 +222,7 @@ class _XSAVE_FORMAT(Structure):
                 ('FloatRegisters', M128A)
     ]
 
-    if platform.machine().lower() == 'amd64' and sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2 ** 32:
         _fields_.append(('XmmRegisters', M128A * 16))
         _fields_.append(('Reserved4', BYTE * 96))
     else:
@@ -307,19 +276,22 @@ PXSTATE_CONTEXT = POINTER(XSTATE_CONTEXT)
 
 class _KERNEL_CET_CONTEXT(Structure):
     class AllFlagsUn(Union):
-        _fields_ = [('AllFlags', WORD)]
-
-    class UsePopShadowUn(LittleEndianUnion):
-        _fields_ = [('UseWrss', WORD, 1),
-                    ('PopShadowStackOne', WORD, 1),
-                    ('Unused', WORD, 14),
+        class UsePopShadowUn(LittleEndianUnion):
+            _fields_ = [('UseWrss', WORD, 1),
+                        ('PopShadowStackOne', WORD, 1),
+                        ('Unused', WORD, 14),
+            ]
+        
+        _anonymous_ = ['UsePopShadowUn']
+        _fields_ = [('AllFlags', WORD), 
+                    ('UsePopShadowUn', UsePopShadowUn)
         ]
 
+    _anonymous_ = ['AllFlagsUn']
     _fields_ = [('Ssp', DWORD64),
                 ('Rip', DWORD64),
                 ('SegCs', WORD),
-                ('AllFlagsUn', UsePopShadowUn),
-                ('UsePopShadowUn', UsePopShadowUn),
+                ('AllFlagsUn', AllFlagsUn),
                 ('Fill', WORD * 2)
     ]
 
@@ -327,7 +299,7 @@ KERNEL_CET_CONTEXT = _KERNEL_CET_CONTEXT
 PKERNEL_CET_CONTEXT = POINTER(KERNEL_CET_CONTEXT)
 
 class _SCOPE_TABLE_AMD64(Structure):
-    class BegEndHandJump(Structure):
+    class ScopeRecord(Structure):
         _fields_ = [('BeginAddress', DWORD),
                     ('EndAddress', DWORD),
                     ('HandlerAddress', DWORD),
@@ -335,7 +307,7 @@ class _SCOPE_TABLE_AMD64(Structure):
         ]
 
     _fields_ = [('Count', DWORD),
-                ('ScopeRecord', BegEndHandJump * 1)
+                ('ScopeRecord', ScopeRecord * 1)
     ]
 
 SCOPE_TABLE_AMD64 = _SCOPE_TABLE_AMD64
@@ -430,9 +402,6 @@ def DECLARE_HANDLE(name):
 FCHAR = BYTE
 FSHORT = WORD
 FLONG = DWORD
-
-# STDMETHODCALLTYPE = WINAPI
-# STDAPICALLTYPE = WINAPI
 
 UNSPECIFIED_COMPARTMENT_ID = 0
 DEFAULT_COMPARTMENT_ID = 1
@@ -593,15 +562,6 @@ LIST_ENTRY64._fields_ = [('Flink', ULONGLONG),
 ]
 
 PLIST_ENTRY64 = POINTER(LIST_ENTRY64)
-
-class _GUID(Structure):  # from guiddef.h
-    _fields_ = [('Data1', _LONG32),
-                ('Data2', USHORT),
-                ('Data3', USHORT),
-                ('Data4', UCHAR * 8)
-    ]
-
-GUID = _GUID
 
 class _OBJECTID(Structure):
     _fields_ = [('Lineage', GUID),
@@ -771,7 +731,6 @@ LEGACY_SAVE_AREA_LENGTH = sizeof(PXMM_SAVE_AREA32())
 class _CONTEXT(Structure):
     class FSave(Union):
         class Xmm(Structure):
-            _align_ = 16
             _fields_ = [('Header', M128A * 2),
                         ('Legacy', M128A * 8),
                         ('Xmm0', M128A),
@@ -792,13 +751,14 @@ class _CONTEXT(Structure):
                         ('Xmm15', M128A)
             ]
         
-        _align_ = 16
+        _anonymous_ = ['Xmm']
         _fields_ = [('FltSave', XMM_SAVE_AREA32),
                     ('FloatSave', XMM_SAVE_AREA32),
                     ('Xmm', Xmm)
         ]
 
     _align_ = 16
+    _anonymous_ = ['FSave']
     _fields_ = [('P1Home', DWORD64),
                 ('P2Home', DWORD64),
                 ('P3Home', DWORD64),
@@ -1708,10 +1668,12 @@ class _LDT_ENTRY(Structure):
                         ('BaseHi', DWORD, 8)
             ]
         
+        _anonymous_ = ['Bytes', 'Bits']
         _fields_ = [('Bytes', Bytes),
                     ('Bits', Bits)
         ]
 
+    _anonymous_ = ['HighWord']
     _fields_ = [('LimitLow', WORD),
                 ('BaseLow', WORD),
                 ('HighWord', HighWord)
@@ -1920,12 +1882,12 @@ class _SID_AND_ATTRIBUTES_HASH(Structure):
 SID_AND_ATTRIBUTES_HASH = _SID_AND_ATTRIBUTES_HASH
 PSID_AND_ATTRIBUTES_HASH = POINTER(SID_AND_ATTRIBUTES_HASH)
 
-SECURITY_NULL_SID_AUTHORITY = (0,0,0,0,0,0)
-SECURITY_WORLD_SID_AUTHORITY = (0,0,0,0,0,1)
-SECURITY_LOCAL_SID_AUTHORITY = (0,0,0,0,0,2)
-SECURITY_CREATOR_SID_AUTHORITY = (0,0,0,0,0,3)
-SECURITY_NON_UNIQUE_AUTHORITY = (0,0,0,0,0,4)
-SECURITY_RESOURCE_MANAGER_AUTHORITY = (0,0,0,0,0,9)
+SECURITY_NULL_SID_AUTHORITY = [0,0,0,0,0,0]
+SECURITY_WORLD_SID_AUTHORITY = [0,0,0,0,0,1]
+SECURITY_LOCAL_SID_AUTHORITY = [0,0,0,0,0,2]
+SECURITY_CREATOR_SID_AUTHORITY = [0,0,0,0,0,3]
+SECURITY_NON_UNIQUE_AUTHORITY = [0,0,0,0,0,4]
+SECURITY_RESOURCE_MANAGER_AUTHORITY = [0,0,0,0,0,9]
 
 SECURITY_NULL_RID = 0x00000000
 SECURITY_WORLD_RID = 0x00000000
@@ -1938,7 +1900,7 @@ SECURITY_CREATOR_OWNER_SERVER_RID = 0x00000002
 SECURITY_CREATOR_GROUP_SERVER_RID = 0x00000003
 SECURITY_CREATOR_OWNER_RIGHTS_RID = 0x00000004
 
-SECURITY_NT_AUTHORITY = (0,0,0,0,0,5)
+SECURITY_NT_AUTHORITY = [0,0,0,0,0,5]
 
 SECURITY_DIALUP_RID = 0x00000001
 SECURITY_NETWORK_RID = 0x00000002
@@ -2112,7 +2074,7 @@ DOMAIN_ALIAS_RID_DEFAULT_ACCOUNT = 0x00000245
 DOMAIN_ALIAS_RID_STORAGE_REPLICA_ADMINS = 0x00000246
 DOMAIN_ALIAS_RID_DEVICE_OWNERS = 0x00000247
 
-SECURITY_APP_PACKAGE_AUTHORITY = (0, 0, 0, 0, 0, 15)
+SECURITY_APP_PACKAGE_AUTHORITY = [0, 0, 0, 0, 0, 15]
 
 SECURITY_APP_PACKAGE_BASE_RID = 0x00000002
 SECURITY_BUILTIN_APP_PACKAGE_RID_COUNT = 2
@@ -2158,9 +2120,9 @@ SECURITY_MANDATORY_MAXIMUM_USER_RID = SECURITY_MANDATORY_SYSTEM_RID
 def MANDATORY_LEVEL_TO_MANDATORY_RID(IL):
     return IL * 0x1000
 
-SECURITY_SCOPED_POLICY_ID_AUTHORITY = (0, 0, 0, 0, 0, 17)
+SECURITY_SCOPED_POLICY_ID_AUTHORITY = [0, 0, 0, 0, 0, 17]
 
-SECURITY_AUTHENTICATION_AUTHORITY = (0, 0, 0, 0, 0, 18)
+SECURITY_AUTHENTICATION_AUTHORITY = [0, 0, 0, 0, 0, 18]
 SECURITY_AUTHENTICATION_AUTHORITY_RID_COUNT = 1
 SECURITY_AUTHENTICATION_AUTHORITY_ASSERTED_RID = 0x00000001
 SECURITY_AUTHENTICATION_SERVICE_ASSERTED_RID = 0x00000002
@@ -2169,7 +2131,7 @@ SECURITY_AUTHENTICATION_KEY_TRUST_RID = 0x00000004
 SECURITY_AUTHENTICATION_KEY_PROPERTY_MFA_RID = 0x00000005
 SECURITY_AUTHENTICATION_KEY_PROPERTY_ATTESTATION_RID = 0x00000006
 
-SECURITY_PROCESS_TRUST_AUTHORITY = (0, 0, 0, 0, 0, 19)
+SECURITY_PROCESS_TRUST_AUTHORITY = [0, 0, 0, 0, 0, 19]
 SECURITY_PROCESS_TRUST_AUTHORITY_RID_COUNT = 2
 
 SECURITY_PROCESS_PROTECTION_TYPE_FULL_RID = 0x00000400
@@ -2857,7 +2819,7 @@ class _SE_ACCESS_REPLY(Structure):
                 ('GrantedAccess', PACCESS_MASK),
                 ('AccessStatus', PDWORD),
                 ('AccessReason', PACCESS_REASONS),
-                ('Privileges', POINTER(PPRIVILEGE_SET))
+                ('Privileges', PPRIVILEGE_SET)
     ]
 
 SE_ACCESS_REPLY = _SE_ACCESS_REPLY
@@ -3118,6 +3080,8 @@ class _SE_TOKEN_USER(Structure):
         _fields_ = [('Sid', SID),
                     ('Buffer', BYTE * SECURITY_MAX_SID_SIZE)
         ]
+
+    _anonymous_ = ['UserUnion', 'SidBufferUnion']
     _fields_ = [('UserUnion', UserUnion),
                 ('SidBufferUnion', SidBufferUnion)
     ]
@@ -3386,6 +3350,7 @@ class _CLAIM_SECURITY_ATTRIBUTE_V1(Structure):
                     ('pOctetString', PCLAIM_SECURITY_ATTRIBUTE_OCTET_STRING_VALUE)
         ]
 
+    _anonymous_ = ['Values']
     _fields_ = [('Name', PWSTR),
                 ('ValueType', WORD),
                 ('Reserved', WORD),
@@ -3406,6 +3371,7 @@ class _CLAIM_SECURITY_ATTRIBUTE_RELATIVE_V1(Structure):
                     ('pOctetString', DWORD * ANYSIZE_ARRAY)
         ]
 
+    _anonymous_ = ['Values']
     _fields_ = [('Name', DWORD),
                 ('ValueType', WORD),
                 ('Reserved', WORD),
@@ -3425,6 +3391,7 @@ class _CLAIM_SECURITY_ATTRIBUTES_INFORMATION(Structure):
     class Attribute(Union):
         _fields_ = [('pAttributeV1', PCLAIM_SECURITY_ATTRIBUTE_V1)]
 
+    _anonymous_ = ['Attribute']
     _fields_ = [('Version', WORD),
                 ('Reserved', WORD),
                 ('AttributeCount', DWORD),
@@ -3635,6 +3602,7 @@ class HahaUnion(Union):
 NeprUnion._fields_ = [('Next', POINTER(_EXCEPTION_REGISTRATION_RECORD)),
                       ('prev', POINTER(_EXCEPTION_REGISTRATION_RECORD))
 ]
+
 
 _EXCEPTION_REGISTRATION_RECORD._fields_ = [('HahaUnion', HahaUnion),
                                            ('NeprUnion', NeprUnion)
@@ -4699,7 +4667,7 @@ JobObjectReserved25Information = 47
 MaxJobObjectInfoClass = 48
 
 class _JOBOBJECTINFOCLASS(enum.IntFlag):
-    JobObjectBasicAccountingInformation = 1,
+    JobObjectBasicAccountingInformation = 1
     JobObjectBasicLimitInformation = 2
     JobObjectBasicProcessIdList = 3
     JobObjectBasicUIRestrictions = 4
@@ -5991,128 +5959,374 @@ CORE_PARKING_POLICY_CHANGE_MAX = CORE_PARKING_POLICY_CHANGE_MULTISTEP
 POWER_DEVICE_IDLE_POLICY_PERFORMANCE = 0
 POWER_DEVICE_IDLE_POLICY_CONSERVATIVE = 1
 
-GUID_MAX_POWER_SAVINGS = DEFINE_GUID(0xa1841308, 0x3541, 0x4fab, 0xbc, 0x81, 0xf7, 0x15, 0x56, 0xf2, 0x0b, 0x4a)
-GUID_MIN_POWER_SAVINGS = DEFINE_GUID(0x8c5e7fda, 0xe8bf, 0x4a96, 0x9a, 0x85, 0xa6, 0xe2, 0x3a, 0x8c, 0x63, 0x5c)
-GUID_TYPICAL_POWER_SAVINGS = DEFINE_GUID(0x381b4222, 0xf694, 0x41f0, 0x96, 0x85, 0xff, 0x5b, 0xb2, 0x60, 0xdf, 0x2e)
-NO_SUBGROUP_GUID = DEFINE_GUID(0xfea3413e, 0x7e05, 0x4911, 0x9a, 0x71, 0x70, 0x03, 0x31, 0xf1, 0xc2, 0x94)
-ALL_POWERSCHEMES_GUID = DEFINE_GUID(0x68a1e95e, 0x13ea, 0x41e1, 0x80, 0x11, 0x0c, 0x49, 0x6c, 0xa4, 0x90, 0xb0)
-GUID_POWERSCHEME_PERSONALITY = DEFINE_GUID(0x245d8541, 0x3943, 0x4422, 0xb0, 0x25, 0x13, 0xa7, 0x84, 0xf6, 0x79, 0xb7)
-GUID_ACTIVE_POWERSCHEME = DEFINE_GUID(0x31f9f286, 0x5084, 0x42fe, 0xb7, 0x20, 0x2b, 0x02, 0x64, 0x99, 0x37, 0x63)
-GUID_IDLE_RESILIENCY_SUBGROUP = DEFINE_GUID(0x2e601130, 0x5351, 0x4d9d, 0x8e, 0x4, 0x25, 0x29, 0x66, 0xba, 0xd0, 0x54)
-GUID_IDLE_RESILIENCY_PERIOD = DEFINE_GUID(0xc42b79aa, 0xaa3a, 0x484b, 0xa9, 0x8f, 0x2c, 0xf3, 0x2a, 0xa9, 0xa, 0x28)
-GUID_DISK_COALESCING_POWERDOWN_TIMEOUT = DEFINE_GUID(0xc36f0eb4, 0x2988, 0x4a70, 0x8e, 0xee, 0x8, 0x84, 0xfc, 0x2c, 0x24, 0x33)
-GUID_EXECUTION_REQUIRED_REQUEST_TIMEOUT = DEFINE_GUID(0x3166bc41, 0x7e98, 0x4e03, 0xb3, 0x4e, 0xec, 0xf, 0x5f, 0x2b, 0x21, 0x8e)
-GUID_VIDEO_SUBGROUP = DEFINE_GUID(0x7516b95f, 0xf776, 0x4464, 0x8c, 0x53, 0x06, 0x16, 0x7f, 0x40, 0xcc, 0x99)
-GUID_VIDEO_POWERDOWN_TIMEOUT = DEFINE_GUID(0x3c0bc021, 0xc8a8, 0x4e07, 0xa9, 0x73, 0x6b, 0x14, 0xcb, 0xcb, 0x2b, 0x7e)
-GUID_VIDEO_ANNOYANCE_TIMEOUT = DEFINE_GUID(0x82dbcf2d, 0xcd67, 0x40c5, 0xbf, 0xdc, 0x9f, 0x1a, 0x5c, 0xcd, 0x46, 0x63)
-GUID_VIDEO_ADAPTIVE_PERCENT_INCREASE = DEFINE_GUID(0xeed904df, 0xb142, 0x4183, 0xb1, 0x0b, 0x5a, 0x11, 0x97, 0xa3, 0x78, 0x64)
-GUID_VIDEO_DIM_TIMEOUT = DEFINE_GUID(0x17aaa29b, 0x8b43, 0x4b94, 0xaa, 0xfe, 0x35, 0xf6, 0x4d, 0xaa, 0xf1, 0xee)
-GUID_VIDEO_ADAPTIVE_POWERDOWN = DEFINE_GUID(0x90959d22, 0xd6a1, 0x49b9, 0xaf, 0x93, 0xbc, 0xe8, 0x85, 0xad, 0x33, 0x5b)
-GUID_MONITOR_POWER_ON = DEFINE_GUID(0x02731015, 0x4510, 0x4526, 0x99, 0xe6, 0xe5, 0xa1, 0x7e, 0xbd, 0x1a, 0xea)
-GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS = DEFINE_GUID(0xaded5e82, 0xb909, 0x4619, 0x99, 0x49, 0xf5, 0xd7, 0x1d, 0xac, 0x0b, 0xcb)
-GUID_DEVICE_POWER_POLICY_VIDEO_DIM_BRIGHTNESS = DEFINE_GUID(0xf1fbfde2, 0xa960, 0x4165, 0x9f, 0x88, 0x50, 0x66, 0x79, 0x11, 0xce, 0x96)
-GUID_VIDEO_CURRENT_MONITOR_BRIGHTNESS = DEFINE_GUID(0x8ffee2c6, 0x2d01, 0x46be, 0xad, 0xb9, 0x39, 0x8a, 0xdd, 0xc5, 0xb4, 0xff)
-GUID_VIDEO_ADAPTIVE_DISPLAY_BRIGHTNESS = DEFINE_GUID(0xfbd9aa66, 0x9553, 0x4097, 0xba, 0x44, 0xed, 0x6e, 0x9d, 0x65, 0xea, 0xb8)
-GUID_CONSOLE_DISPLAY_STATE = DEFINE_GUID(0x6fe69556, 0x704a, 0x47a0, 0x8f, 0x24, 0xc2, 0x8d, 0x93, 0x6f, 0xda, 0x47)
-GUID_ALLOW_DISPLAY_REQUIRED = DEFINE_GUID(0xa9ceb8da, 0xcd46, 0x44fb, 0xa9, 0x8b, 0x02, 0xaf, 0x69, 0xde, 0x46, 0x23)
-GUID_VIDEO_CONSOLE_LOCK_TIMEOUT = DEFINE_GUID(0x8ec4b3a5, 0x6868, 0x48c2, 0xbe, 0x75, 0x4f, 0x30, 0x44, 0xbe, 0x88, 0xa7)
-GUID_ADAPTIVE_POWER_BEHAVIOR_SUBGROUP = DEFINE_GUID(0x8619b916, 0xe004, 0x4dd8, 0x9b, 0x66, 0xda, 0xe8, 0x6f, 0x80, 0x66, 0x98)
-GUID_NON_ADAPTIVE_INPUT_TIMEOUT = DEFINE_GUID(0x5adbbfbc, 0x74e, 0x4da1, 0xba, 0x38, 0xdb, 0x8b, 0x36, 0xb2, 0xc8, 0xf3)
-GUID_DISK_SUBGROUP = DEFINE_GUID(0x0012ee47, 0x9041, 0x4b5d, 0x9b, 0x77, 0x53, 0x5f, 0xba, 0x8b, 0x14, 0x42)
-GUID_DISK_POWERDOWN_TIMEOUT = DEFINE_GUID(0x6738e2c4, 0xe8a5, 0x4a42, 0xb1, 0x6a, 0xe0, 0x40, 0xe7, 0x69, 0x75, 0x6e)
-GUID_DISK_IDLE_TIMEOUT = DEFINE_GUID(0x58e39ba8, 0xb8e6, 0x4ef6, 0x90, 0xd0, 0x89, 0xae, 0x32, 0xb2, 0x58, 0xd6)
-GUID_DISK_BURST_IGNORE_THRESHOLD = DEFINE_GUID(0x80e3c60e, 0xbb94, 0x4ad8, 0xbb, 0xe0, 0x0d, 0x31, 0x95, 0xef, 0xc6, 0x63)
-GUID_DISK_ADAPTIVE_POWERDOWN = DEFINE_GUID(0x396a32e1, 0x499a, 0x40b2, 0x91, 0x24, 0xa9, 0x6a, 0xfe, 0x70, 0x76, 0x67)
-GUID_SLEEP_SUBGROUP = DEFINE_GUID(0x238c9fa8, 0x0aad, 0x41ed, 0x83, 0xf4, 0x97, 0xbe, 0x24, 0x2c, 0x8f, 0x20)
-GUID_SLEEP_IDLE_THRESHOLD = DEFINE_GUID(0x81cd32e0, 0x7833, 0x44f3, 0x87, 0x37, 0x70, 0x81, 0xf3, 0x8d, 0x1f, 0x70)
-GUID_STANDBY_TIMEOUT = DEFINE_GUID(0x29f6c1db, 0x86da, 0x48c5, 0x9f, 0xdb, 0xf2, 0xb6, 0x7b, 0x1f, 0x44, 0xda)
-GUID_UNATTEND_SLEEP_TIMEOUT = DEFINE_GUID(0x7bc4a2f9, 0xd8fc, 0x4469, 0xb0, 0x7b, 0x33, 0xeb, 0x78, 0x5a, 0xac, 0xa0)
-GUID_HIBERNATE_TIMEOUT = DEFINE_GUID(0x9d7815a6, 0x7ee4, 0x497e, 0x88, 0x88, 0x51, 0x5a, 0x05, 0xf0, 0x23, 0x64)
-GUID_HIBERNATE_FASTS4_POLICY = DEFINE_GUID(0x94ac6d29, 0x73ce, 0x41a6, 0x80, 0x9f, 0x63, 0x63, 0xba, 0x21, 0xb4, 0x7e)
-GUID_CRITICAL_POWER_TRANSITION = DEFINE_GUID(0xb7a27025, 0xe569, 0x46c2, 0xa5, 0x04, 0x2b, 0x96, 0xca, 0xd2, 0x25, 0xa1)
-GUID_SYSTEM_AWAYMODE = DEFINE_GUID(0x98a7f580, 0x01f7, 0x48aa, 0x9c, 0x0f, 0x44, 0x35, 0x2c, 0x29, 0xe5, 0xc0)
-GUID_ALLOW_AWAYMODE = DEFINE_GUID(0x25dfa149, 0x5dd1, 0x4736, 0xb5, 0xab, 0xe8, 0xa3, 0x7b, 0x5b, 0x81, 0x87)
-GUID_ALLOW_STANDBY_STATES = DEFINE_GUID(0xabfc2519, 0x3608, 0x4c2a, 0x94, 0xea, 0x17, 0x1b, 0x0e, 0xd5, 0x46, 0xab)
-GUID_ALLOW_RTC_WAKE = DEFINE_GUID(0xbd3b718a, 0x0680, 0x4d9d, 0x8a, 0xb2, 0xe1, 0xd2, 0xb4, 0xac, 0x80, 0x6d)
-GUID_ALLOW_SYSTEM_REQUIRED = DEFINE_GUID(0xa4b195f5, 0x8225, 0x47d8, 0x80, 0x12, 0x9d, 0x41, 0x36, 0x97, 0x86, 0xe2)
-GUID_SYSTEM_BUTTON_SUBGROUP = DEFINE_GUID(0x4f971e89, 0xeebd, 0x4455, 0xa8, 0xde, 0x9e, 0x59, 0x04, 0x0e, 0x73, 0x47)
-GUID_POWERBUTTON_ACTION = DEFINE_GUID(0x7648efa3, 0xdd9c, 0x4e3e, 0xb5, 0x66, 0x50, 0xf9, 0x29, 0x38, 0x62, 0x80)
-GUID_SLEEPBUTTON_ACTION = DEFINE_GUID(0x96996bc0, 0xad50, 0x47ec, 0x92, 0x3b, 0x6f, 0x41, 0x87, 0x4d, 0xd9, 0xeb)
-GUID_USERINTERFACEBUTTON_ACTION = DEFINE_GUID(0xa7066653, 0x8d6c, 0x40a8, 0x91, 0x0e, 0xa1, 0xf5, 0x4b, 0x84, 0xc7, 0xe5)
-GUID_LIDCLOSE_ACTION = DEFINE_GUID(0x5ca83367, 0x6e45, 0x459f, 0xa2, 0x7b, 0x47, 0x6b, 0x1d, 0x01, 0xc9, 0x36)
-GUID_LIDOPEN_POWERSTATE = DEFINE_GUID(0x99ff10e7, 0x23b1, 0x4c07, 0xa9, 0xd1, 0x5c, 0x32, 0x06, 0xd7, 0x41, 0xb4)
-GUID_BATTERY_SUBGROUP = DEFINE_GUID(0xe73a048d, 0xbf27, 0x4f12, 0x97, 0x31, 0x8b, 0x20, 0x76, 0xe8, 0x89, 0x1f)
-GUID_BATTERY_DISCHARGE_ACTION_0 = DEFINE_GUID(0x637ea02f, 0xbbcb, 0x4015, 0x8e, 0x2c, 0xa1, 0xc7, 0xb9, 0xc0, 0xb5, 0x46)
-GUID_BATTERY_DISCHARGE_LEVEL_0 = DEFINE_GUID(0x9a66d8d7, 0x4ff7, 0x4ef9, 0xb5, 0xa2, 0x5a, 0x32, 0x6c, 0xa2, 0xa4, 0x69)
-GUID_BATTERY_DISCHARGE_FLAGS_0 = DEFINE_GUID(0x5dbb7c9f, 0x38e9, 0x40d2, 0x97, 0x49, 0x4f, 0x8a, 0x0e, 0x9f, 0x64, 0x0f)
-GUID_BATTERY_DISCHARGE_ACTION_1 = DEFINE_GUID(0xd8742dcb, 0x3e6a, 0x4b3c, 0xb3, 0xfe, 0x37, 0x46, 0x23, 0xcd, 0xcf, 0x06)
-GUID_BATTERY_DISCHARGE_LEVEL_1 = DEFINE_GUID(0x8183ba9a, 0xe910, 0x48da, 0x87, 0x69, 0x14, 0xae, 0x6d, 0xc1, 0x17, 0x0a)
-GUID_BATTERY_DISCHARGE_FLAGS_1 = DEFINE_GUID(0xbcded951, 0x187b, 0x4d05, 0xbc, 0xcc, 0xf7, 0xe5, 0x19, 0x60, 0xc2, 0x58)
-GUID_BATTERY_DISCHARGE_ACTION_2 = DEFINE_GUID(0x421cba38, 0x1a8e, 0x4881, 0xac, 0x89, 0xe3, 0x3a, 0x8b, 0x04, 0xec, 0xe4)
-GUID_BATTERY_DISCHARGE_LEVEL_2 = DEFINE_GUID(0x07a07ca2, 0xadaf, 0x40d7, 0xb0, 0x77, 0x53, 0x3a, 0xad, 0xed, 0x1b, 0xfa)
-GUID_BATTERY_DISCHARGE_FLAGS_2 = DEFINE_GUID(0x7fd2f0c4, 0xfeb7, 0x4da3, 0x81, 0x17, 0xe3, 0xfb, 0xed, 0xc4, 0x65, 0x82)
-GUID_BATTERY_DISCHARGE_ACTION_3 = DEFINE_GUID(0x80472613, 0x9780, 0x455e, 0xb3, 0x08, 0x72, 0xd3, 0x00, 0x3c, 0xf2, 0xf8)
-GUID_BATTERY_DISCHARGE_LEVEL_3 = DEFINE_GUID(0x58afd5a6, 0xc2dd, 0x47d2, 0x9f, 0xbf, 0xef, 0x70, 0xcc, 0x5c, 0x59, 0x65)
-GUID_BATTERY_DISCHARGE_FLAGS_3 = DEFINE_GUID(0x73613ccf, 0xdbfa, 0x4279, 0x83, 0x56, 0x49, 0x35, 0xf6, 0xbf, 0x62, 0xf3)
-GUID_PROCESSOR_SETTINGS_SUBGROUP = DEFINE_GUID(0x54533251, 0x82be, 0x4824, 0x96, 0xc1, 0x47, 0xb6, 0x0b, 0x74, 0x0d, 0x00)
-GUID_PROCESSOR_THROTTLE_POLICY = DEFINE_GUID(0x57027304, 0x4af6, 0x4104, 0x92, 0x60, 0xe3, 0xd9, 0x52, 0x48, 0xfc, 0x36)
-GUID_PROCESSOR_THROTTLE_MAXIMUM = DEFINE_GUID(0xbc5038f7, 0x23e0, 0x4960, 0x96, 0xda, 0x33, 0xab, 0xaf, 0x59, 0x35, 0xec)
-GUID_PROCESSOR_THROTTLE_MINIMUM = DEFINE_GUID(0x893dee8e, 0x2bef, 0x41e0, 0x89, 0xc6, 0xb5, 0x5d, 0x09, 0x29, 0x96, 0x4c)
-GUID_PROCESSOR_ALLOW_THROTTLING = DEFINE_GUID(0x3b04d4fd, 0x1cc7, 0x4f23, 0xab, 0x1c, 0xd1, 0x33, 0x78, 0x19, 0xc4, 0xbb)
-GUID_PROCESSOR_IDLESTATE_POLICY = DEFINE_GUID(0x68f262a7, 0xf621, 0x4069, 0xb9, 0xa5, 0x48, 0x74, 0x16, 0x9b, 0xe2, 0x3c)
-GUID_PROCESSOR_PERFSTATE_POLICY = DEFINE_GUID(0xbbdc3814, 0x18e9, 0x4463, 0x8a, 0x55, 0xd1, 0x97, 0x32, 0x7c, 0x45, 0xc0)
-GUID_PROCESSOR_PERF_INCREASE_THRESHOLD = DEFINE_GUID(0x06cadf0e, 0x64ed, 0x448a, 0x89, 0x27, 0xce, 0x7b, 0xf9, 0x0e, 0xb3, 0x5d)
-GUID_PROCESSOR_PERF_DECREASE_THRESHOLD = DEFINE_GUID(0x12a0ab44, 0xfe28, 0x4fa9, 0xb3, 0xbd, 0x4b, 0x64, 0xf4, 0x49, 0x60, 0xa6)
-GUID_PROCESSOR_PERF_INCREASE_POLICY = DEFINE_GUID(0x465e1f50, 0xb610, 0x473a, 0xab, 0x58, 0x0, 0xd1, 0x7, 0x7d, 0xc4, 0x18)
-GUID_PROCESSOR_PERF_DECREASE_POLICY = DEFINE_GUID(0x40fbefc7, 0x2e9d, 0x4d25, 0xa1, 0x85, 0xc, 0xfd, 0x85, 0x74, 0xba, 0xc6)
-GUID_PROCESSOR_PERF_INCREASE_TIME = DEFINE_GUID(0x984cf492, 0x3bed, 0x4488, 0xa8, 0xf9, 0x42, 0x86, 0xc9, 0x7b, 0xf5, 0xaa)
-GUID_PROCESSOR_PERF_DECREASE_TIME = DEFINE_GUID(0xd8edeb9b, 0x95cf, 0x4f95, 0xa7, 0x3c, 0xb0, 0x61, 0x97, 0x36, 0x93, 0xc8)
-GUID_PROCESSOR_PERF_TIME_CHECK = DEFINE_GUID(0x4d2b0152, 0x7d5c, 0x498b, 0x88, 0xe2, 0x34, 0x34, 0x53, 0x92, 0xa2, 0xc5)
-GUID_PROCESSOR_PERF_BOOST_POLICY = DEFINE_GUID(0x45bcc044, 0xd885, 0x43e2, 0x86, 0x5, 0xee, 0xe, 0xc6, 0xe9, 0x6b, 0x59)
-GUID_PROCESSOR_PERF_BOOST_MODE = DEFINE_GUID(0xbe337238, 0xd82, 0x4146, 0xa9, 0x60, 0x4f, 0x37, 0x49, 0xd4, 0x70, 0xc7)
-GUID_PROCESSOR_IDLE_ALLOW_SCALING = DEFINE_GUID(0x6c2993b0, 0x8f48, 0x481f, 0xbc, 0xc6, 0x0, 0xdd, 0x27, 0x42, 0xaa, 0x6)
-GUID_PROCESSOR_IDLE_DISABLE = DEFINE_GUID(0x5d76a2ca, 0xe8c0, 0x402f, 0xa1, 0x33, 0x21, 0x58, 0x49, 0x2d, 0x58, 0xad)
-GUID_PROCESSOR_IDLE_STATE_MAXIMUM = DEFINE_GUID(0x9943e905, 0x9a30, 0x4ec1, 0x9b, 0x99, 0x44, 0xdd, 0x3b, 0x76, 0xf7, 0xa2)
-GUID_PROCESSOR_IDLE_TIME_CHECK = DEFINE_GUID(0xc4581c31, 0x89ab, 0x4597, 0x8e, 0x2b, 0x9c, 0x9c, 0xab, 0x44, 0xe, 0x6b)
-GUID_PROCESSOR_IDLE_DEMOTE_THRESHOLD = DEFINE_GUID(0x4b92d758, 0x5a24, 0x4851, 0xa4, 0x70, 0x81, 0x5d, 0x78, 0xae, 0xe1, 0x19)
-GUID_PROCESSOR_IDLE_PROMOTE_THRESHOLD = DEFINE_GUID(0x7b224883, 0xb3cc, 0x4d79, 0x81, 0x9f, 0x83, 0x74, 0x15, 0x2c, 0xbe, 0x7c)
-GUID_PROCESSOR_CORE_PARKING_INCREASE_THRESHOLD = DEFINE_GUID(0xdf142941, 0x20f3, 0x4edf, 0x9a, 0x4a, 0x9c, 0x83, 0xd3, 0xd7, 0x17, 0xd1)
-GUID_PROCESSOR_CORE_PARKING_DECREASE_THRESHOLD = DEFINE_GUID(0x68dd2f27, 0xa4ce, 0x4e11, 0x84, 0x87, 0x37, 0x94, 0xe4, 0x13, 0x5d, 0xfa)
-GUID_PROCESSOR_CORE_PARKING_INCREASE_POLICY = DEFINE_GUID(0xc7be0679, 0x2817, 0x4d69, 0x9d, 0x02, 0x51, 0x9a, 0x53, 0x7e, 0xd0, 0xc6)
-GUID_PROCESSOR_CORE_PARKING_DECREASE_POLICY = DEFINE_GUID(0x71021b41, 0xc749, 0x4d21, 0xbe, 0x74, 0xa0, 0x0f, 0x33, 0x5d, 0x58, 0x2b)
-GUID_PROCESSOR_CORE_PARKING_MAX_CORES = DEFINE_GUID(0xea062031, 0x0e34, 0x4ff1, 0x9b, 0x6d, 0xeb, 0x10, 0x59, 0x33, 0x40, 0x28)
-GUID_PROCESSOR_CORE_PARKING_MIN_CORES = DEFINE_GUID(0x0cc5b647, 0xc1df, 0x4637, 0x89, 0x1a, 0xde, 0xc3, 0x5c, 0x31, 0x85, 0x83)
-GUID_PROCESSOR_CORE_PARKING_INCREASE_TIME = DEFINE_GUID(0x2ddd5a84, 0x5a71, 0x437e, 0x91, 0x2a, 0xdb, 0x0b, 0x8c, 0x78, 0x87, 0x32)
-GUID_PROCESSOR_CORE_PARKING_DECREASE_TIME = DEFINE_GUID(0xdfd10d17, 0xd5eb, 0x45dd, 0x87, 0x7a, 0x9a, 0x34, 0xdd, 0xd1, 0x5c, 0x82)
-GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_DECREASE_FACTOR = DEFINE_GUID(0x8f7b45e3, 0xc393, 0x480a, 0x87, 0x8c, 0xf6, 0x7a, 0xc3, 0xd0, 0x70, 0x82)
-GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_THRESHOLD = DEFINE_GUID(0x5b33697b, 0xe89d, 0x4d38, 0xaa, 0x46, 0x9e, 0x7d, 0xfb, 0x7c, 0xd2, 0xf9)
-GUID_PROCESSOR_CORE_PARKING_AFFINITY_WEIGHTING = DEFINE_GUID(0xe70867f1, 0xfa2f, 0x4f4e, 0xae, 0xa1, 0x4d, 0x8a, 0x0b, 0xa2, 0x3b, 0x20)
-GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_DECREASE_FACTOR = DEFINE_GUID(0x1299023c, 0xbc28, 0x4f0a, 0x81, 0xec, 0xd3, 0x29, 0x5a, 0x8d, 0x81, 0x5d)
-GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_THRESHOLD = DEFINE_GUID(0x9ac18e92, 0xaa3c, 0x4e27, 0xb3, 0x07, 0x01, 0xae, 0x37, 0x30, 0x71, 0x29)
-GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_WEIGHTING = DEFINE_GUID(0x8809c2d8, 0xb155, 0x42d4, 0xbc, 0xda, 0x0d, 0x34, 0x56, 0x51, 0xb1, 0xdb)
-GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_THRESHOLD = DEFINE_GUID(0x943c8cb6, 0x6f93, 0x4227, 0xad, 0x87, 0xe9, 0xa3, 0xfe, 0xec, 0x08, 0xd1)
-GUID_PROCESSOR_PARKING_CORE_OVERRIDE = DEFINE_GUID(0xa55612aa, 0xf624, 0x42c6, 0xa4, 0x43, 0x73, 0x97, 0xd0, 0x64, 0xc0, 0x4f)
-GUID_PROCESSOR_PARKING_PERF_STATE = DEFINE_GUID(0x447235c7, 0x6a8d, 0x4cc0, 0x8e, 0x24, 0x9e, 0xaf, 0x70, 0xb9, 0x6e, 0x2b)
-GUID_PROCESSOR_PARKING_CONCURRENCY_THRESHOLD = DEFINE_GUID(0x2430ab6f, 0xa520, 0x44a2, 0x96, 0x01, 0xf7, 0xf2, 0x3b, 0x51, 0x34, 0xb1)
-GUID_PROCESSOR_PARKING_HEADROOM_THRESHOLD = DEFINE_GUID(0xf735a673, 0x2066, 0x4f80, 0xa0, 0xc5, 0xdd, 0xee, 0x0c, 0xf1, 0xbf, 0x5d)
-GUID_PROCESSOR_PERF_HISTORY = DEFINE_GUID(0x7d24baa7, 0x0b84, 0x480f, 0x84, 0x0c, 0x1b, 0x07, 0x43, 0xc0, 0x0f, 0x5f)
-GUID_PROCESSOR_PERF_LATENCY_HINT = DEFINE_GUID(0x0822df31, 0x9c83, 0x441c, 0xa0, 0x79, 0x0d, 0xe4, 0xcf, 0x00, 0x9c, 0x7b)
-GUID_PROCESSOR_DISTRIBUTE_UTILITY = DEFINE_GUID(0xe0007330, 0xf589, 0x42ed, 0xa4, 0x01, 0x5d, 0xdb, 0x10, 0xe7, 0x85, 0xd3)
-GUID_SYSTEM_COOLING_POLICY = DEFINE_GUID(0x94d3a615, 0xa899, 0x4ac5, 0xae, 0x2b, 0xe4, 0xd8, 0xf6, 0x34, 0x36, 0x7f)
-GUID_LOCK_CONSOLE_ON_WAKE = DEFINE_GUID(0x0e796bdb, 0x100d, 0x47d6, 0xa2, 0xd5, 0xf7, 0xd2, 0xda, 0xa5, 0x1f, 0x51)
-GUID_DEVICE_IDLE_POLICY = DEFINE_GUID(0x4faab71a, 0x92e5, 0x4726, 0xb5, 0x31, 0x22, 0x45, 0x59, 0x67, 0x2d, 0x19)
-GUID_ACDC_POWER_SOURCE = DEFINE_GUID(0x5d3e9a59, 0xe9d5, 0x4b00, 0xa6, 0xbd, 0xff, 0x34, 0xff, 0x51, 0x65, 0x48)
-GUID_LIDSWITCH_STATE_CHANGE = DEFINE_GUID(0xba3e0f4d, 0xb817, 0x4094, 0xa2, 0xd1, 0xd5, 0x63, 0x79, 0xe6, 0xa0, 0xf3)
-GUID_BATTERY_PERCENTAGE_REMAINING = DEFINE_GUID(0xa7ad8041, 0xb45a, 0x4cae, 0x87, 0xa3, 0xee, 0xcb, 0xb4, 0x68, 0xa9, 0xe1)
-GUID_GLOBAL_USER_PRESENCE = DEFINE_GUID(0x786e8a1d, 0xb427, 0x4344, 0x92, 0x7, 0x9, 0xe7, 0xb, 0xdc, 0xbe, 0xa9)
-GUID_SESSION_DISPLAY_STATUS = DEFINE_GUID(0x2b84c20e, 0xad23, 0x4ddf, 0x93, 0xdb, 0x5, 0xff, 0xbd, 0x7e, 0xfc, 0xa5)
-GUID_SESSION_USER_PRESENCE = DEFINE_GUID(0x3c0f4548, 0xc03f, 0x4c4d, 0xb9, 0xf2, 0x23, 0x7e, 0xde, 0x68, 0x63, 0x76)
-GUID_IDLE_BACKGROUND_TASK = DEFINE_GUID(0x515c31d8, 0xf734, 0x163d, 0xa0, 0xfd, 0x11, 0xa0, 0x8c, 0x91, 0xe8, 0xf1)
-GUID_BACKGROUND_TASK_NOTIFICATION = DEFINE_GUID(0xcf23f240, 0x2a54, 0x48d8, 0xb1, 0x14, 0xde, 0x15, 0x18, 0xff, 0x05, 0x2e)
-GUID_APPLAUNCH_BUTTON = DEFINE_GUID(0x1a689231, 0x7399, 0x4e9a, 0x8f, 0x99, 0xb7, 0x1f, 0x99, 0x9d, 0xb3, 0xfa)
-GUID_PCIEXPRESS_SETTINGS_SUBGROUP = DEFINE_GUID(0x501a4d13, 0x42af, 0x4429, 0x9f, 0xd1, 0xa8, 0x21, 0x8c, 0x26, 0x8e, 0x20)
-GUID_PCIEXPRESS_ASPM_POLICY = DEFINE_GUID(0xee12f906, 0xd277, 0x404b, 0xb6, 0xda, 0xe5, 0xfa, 0x1a, 0x57, 0x6d, 0xf5)
-GUID_ENABLE_SWITCH_FORCED_SHUTDOWN = DEFINE_GUID(0x833a6b62, 0xdfa4, 0x46d1, 0x82, 0xf8, 0xe0, 0x9e, 0x34, 0xd0, 0x29, 0xd6)
+_GUID_MAX_POWER_SAVINGS = DEFINE_GUID(0xa1841308, 0x3541, 0x4fab, 0xbc, 0x81, 0xf7, 0x15, 0x56, 0xf2, 0x0b, 0x4a)
+_GUID_MIN_POWER_SAVINGS = DEFINE_GUID(0x8c5e7fda, 0xe8bf, 0x4a96, 0x9a, 0x85, 0xa6, 0xe2, 0x3a, 0x8c, 0x63, 0x5c)
+_GUID_TYPICAL_POWER_SAVINGS = DEFINE_GUID(0x381b4222, 0xf694, 0x41f0, 0x96, 0x85, 0xff, 0x5b, 0xb2, 0x60, 0xdf, 0x2e)
+_NO_SUBGROUP_GUID = DEFINE_GUID(0xfea3413e, 0x7e05, 0x4911, 0x9a, 0x71, 0x70, 0x03, 0x31, 0xf1, 0xc2, 0x94)
+_ALL_POWERSCHEMES_GUID = DEFINE_GUID(0x68a1e95e, 0x13ea, 0x41e1, 0x80, 0x11, 0x0c, 0x49, 0x6c, 0xa4, 0x90, 0xb0)
+_GUID_POWERSCHEME_PERSONALITY = DEFINE_GUID(0x245d8541, 0x3943, 0x4422, 0xb0, 0x25, 0x13, 0xa7, 0x84, 0xf6, 0x79, 0xb7)
+_GUID_ACTIVE_POWERSCHEME = DEFINE_GUID(0x31f9f286, 0x5084, 0x42fe, 0xb7, 0x20, 0x2b, 0x02, 0x64, 0x99, 0x37, 0x63)
+_GUID_IDLE_RESILIENCY_SUBGROUP = DEFINE_GUID(0x2e601130, 0x5351, 0x4d9d, 0x8e, 0x4, 0x25, 0x29, 0x66, 0xba, 0xd0, 0x54)
+_GUID_IDLE_RESILIENCY_PERIOD = DEFINE_GUID(0xc42b79aa, 0xaa3a, 0x484b, 0xa9, 0x8f, 0x2c, 0xf3, 0x2a, 0xa9, 0xa, 0x28)
+_GUID_DISK_COALESCING_POWERDOWN_TIMEOUT = DEFINE_GUID(0xc36f0eb4, 0x2988, 0x4a70, 0x8e, 0xee, 0x8, 0x84, 0xfc, 0x2c, 0x24, 0x33)
+_GUID_EXECUTION_REQUIRED_REQUEST_TIMEOUT = DEFINE_GUID(0x3166bc41, 0x7e98, 0x4e03, 0xb3, 0x4e, 0xec, 0xf, 0x5f, 0x2b, 0x21, 0x8e)
+_GUID_VIDEO_SUBGROUP = DEFINE_GUID(0x7516b95f, 0xf776, 0x4464, 0x8c, 0x53, 0x06, 0x16, 0x7f, 0x40, 0xcc, 0x99)
+_GUID_VIDEO_POWERDOWN_TIMEOUT = DEFINE_GUID(0x3c0bc021, 0xc8a8, 0x4e07, 0xa9, 0x73, 0x6b, 0x14, 0xcb, 0xcb, 0x2b, 0x7e)
+_GUID_VIDEO_ANNOYANCE_TIMEOUT = DEFINE_GUID(0x82dbcf2d, 0xcd67, 0x40c5, 0xbf, 0xdc, 0x9f, 0x1a, 0x5c, 0xcd, 0x46, 0x63)
+_GUID_VIDEO_ADAPTIVE_PERCENT_INCREASE = DEFINE_GUID(0xeed904df, 0xb142, 0x4183, 0xb1, 0x0b, 0x5a, 0x11, 0x97, 0xa3, 0x78, 0x64)
+_GUID_VIDEO_DIM_TIMEOUT = DEFINE_GUID(0x17aaa29b, 0x8b43, 0x4b94, 0xaa, 0xfe, 0x35, 0xf6, 0x4d, 0xaa, 0xf1, 0xee)
+_GUID_VIDEO_ADAPTIVE_POWERDOWN = DEFINE_GUID(0x90959d22, 0xd6a1, 0x49b9, 0xaf, 0x93, 0xbc, 0xe8, 0x85, 0xad, 0x33, 0x5b)
+_GUID_MONITOR_POWER_ON = DEFINE_GUID(0x02731015, 0x4510, 0x4526, 0x99, 0xe6, 0xe5, 0xa1, 0x7e, 0xbd, 0x1a, 0xea)
+_GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS = DEFINE_GUID(0xaded5e82, 0xb909, 0x4619, 0x99, 0x49, 0xf5, 0xd7, 0x1d, 0xac, 0x0b, 0xcb)
+_GUID_DEVICE_POWER_POLICY_VIDEO_DIM_BRIGHTNESS = DEFINE_GUID(0xf1fbfde2, 0xa960, 0x4165, 0x9f, 0x88, 0x50, 0x66, 0x79, 0x11, 0xce, 0x96)
+_GUID_VIDEO_CURRENT_MONITOR_BRIGHTNESS = DEFINE_GUID(0x8ffee2c6, 0x2d01, 0x46be, 0xad, 0xb9, 0x39, 0x8a, 0xdd, 0xc5, 0xb4, 0xff)
+_GUID_VIDEO_ADAPTIVE_DISPLAY_BRIGHTNESS = DEFINE_GUID(0xfbd9aa66, 0x9553, 0x4097, 0xba, 0x44, 0xed, 0x6e, 0x9d, 0x65, 0xea, 0xb8)
+_GUID_CONSOLE_DISPLAY_STATE = DEFINE_GUID(0x6fe69556, 0x704a, 0x47a0, 0x8f, 0x24, 0xc2, 0x8d, 0x93, 0x6f, 0xda, 0x47)
+_GUID_ALLOW_DISPLAY_REQUIRED = DEFINE_GUID(0xa9ceb8da, 0xcd46, 0x44fb, 0xa9, 0x8b, 0x02, 0xaf, 0x69, 0xde, 0x46, 0x23)
+_GUID_VIDEO_CONSOLE_LOCK_TIMEOUT = DEFINE_GUID(0x8ec4b3a5, 0x6868, 0x48c2, 0xbe, 0x75, 0x4f, 0x30, 0x44, 0xbe, 0x88, 0xa7)
+_GUID_ADAPTIVE_POWER_BEHAVIOR_SUBGROUP = DEFINE_GUID(0x8619b916, 0xe004, 0x4dd8, 0x9b, 0x66, 0xda, 0xe8, 0x6f, 0x80, 0x66, 0x98)
+_GUID_NON_ADAPTIVE_INPUT_TIMEOUT = DEFINE_GUID(0x5adbbfbc, 0x74e, 0x4da1, 0xba, 0x38, 0xdb, 0x8b, 0x36, 0xb2, 0xc8, 0xf3)
+_GUID_DISK_SUBGROUP = DEFINE_GUID(0x0012ee47, 0x9041, 0x4b5d, 0x9b, 0x77, 0x53, 0x5f, 0xba, 0x8b, 0x14, 0x42)
+_GUID_DISK_POWERDOWN_TIMEOUT = DEFINE_GUID(0x6738e2c4, 0xe8a5, 0x4a42, 0xb1, 0x6a, 0xe0, 0x40, 0xe7, 0x69, 0x75, 0x6e)
+_GUID_DISK_IDLE_TIMEOUT = DEFINE_GUID(0x58e39ba8, 0xb8e6, 0x4ef6, 0x90, 0xd0, 0x89, 0xae, 0x32, 0xb2, 0x58, 0xd6)
+_GUID_DISK_BURST_IGNORE_THRESHOLD = DEFINE_GUID(0x80e3c60e, 0xbb94, 0x4ad8, 0xbb, 0xe0, 0x0d, 0x31, 0x95, 0xef, 0xc6, 0x63)
+_GUID_DISK_ADAPTIVE_POWERDOWN = DEFINE_GUID(0x396a32e1, 0x499a, 0x40b2, 0x91, 0x24, 0xa9, 0x6a, 0xfe, 0x70, 0x76, 0x67)
+_GUID_SLEEP_SUBGROUP = DEFINE_GUID(0x238c9fa8, 0x0aad, 0x41ed, 0x83, 0xf4, 0x97, 0xbe, 0x24, 0x2c, 0x8f, 0x20)
+_GUID_SLEEP_IDLE_THRESHOLD = DEFINE_GUID(0x81cd32e0, 0x7833, 0x44f3, 0x87, 0x37, 0x70, 0x81, 0xf3, 0x8d, 0x1f, 0x70)
+_GUID_STANDBY_TIMEOUT = DEFINE_GUID(0x29f6c1db, 0x86da, 0x48c5, 0x9f, 0xdb, 0xf2, 0xb6, 0x7b, 0x1f, 0x44, 0xda)
+_GUID_UNATTEND_SLEEP_TIMEOUT = DEFINE_GUID(0x7bc4a2f9, 0xd8fc, 0x4469, 0xb0, 0x7b, 0x33, 0xeb, 0x78, 0x5a, 0xac, 0xa0)
+_GUID_HIBERNATE_TIMEOUT = DEFINE_GUID(0x9d7815a6, 0x7ee4, 0x497e, 0x88, 0x88, 0x51, 0x5a, 0x05, 0xf0, 0x23, 0x64)
+_GUID_HIBERNATE_FASTS4_POLICY = DEFINE_GUID(0x94ac6d29, 0x73ce, 0x41a6, 0x80, 0x9f, 0x63, 0x63, 0xba, 0x21, 0xb4, 0x7e)
+_GUID_CRITICAL_POWER_TRANSITION = DEFINE_GUID(0xb7a27025, 0xe569, 0x46c2, 0xa5, 0x04, 0x2b, 0x96, 0xca, 0xd2, 0x25, 0xa1)
+_GUID_SYSTEM_AWAYMODE = DEFINE_GUID(0x98a7f580, 0x01f7, 0x48aa, 0x9c, 0x0f, 0x44, 0x35, 0x2c, 0x29, 0xe5, 0xc0)
+_GUID_ALLOW_AWAYMODE = DEFINE_GUID(0x25dfa149, 0x5dd1, 0x4736, 0xb5, 0xab, 0xe8, 0xa3, 0x7b, 0x5b, 0x81, 0x87)
+_GUID_ALLOW_STANDBY_STATES = DEFINE_GUID(0xabfc2519, 0x3608, 0x4c2a, 0x94, 0xea, 0x17, 0x1b, 0x0e, 0xd5, 0x46, 0xab)
+_GUID_ALLOW_RTC_WAKE = DEFINE_GUID(0xbd3b718a, 0x0680, 0x4d9d, 0x8a, 0xb2, 0xe1, 0xd2, 0xb4, 0xac, 0x80, 0x6d)
+_GUID_ALLOW_SYSTEM_REQUIRED = DEFINE_GUID(0xa4b195f5, 0x8225, 0x47d8, 0x80, 0x12, 0x9d, 0x41, 0x36, 0x97, 0x86, 0xe2)
+_GUID_SYSTEM_BUTTON_SUBGROUP = DEFINE_GUID(0x4f971e89, 0xeebd, 0x4455, 0xa8, 0xde, 0x9e, 0x59, 0x04, 0x0e, 0x73, 0x47)
+_GUID_POWERBUTTON_ACTION = DEFINE_GUID(0x7648efa3, 0xdd9c, 0x4e3e, 0xb5, 0x66, 0x50, 0xf9, 0x29, 0x38, 0x62, 0x80)
+_GUID_SLEEPBUTTON_ACTION = DEFINE_GUID(0x96996bc0, 0xad50, 0x47ec, 0x92, 0x3b, 0x6f, 0x41, 0x87, 0x4d, 0xd9, 0xeb)
+_GUID_USERINTERFACEBUTTON_ACTION = DEFINE_GUID(0xa7066653, 0x8d6c, 0x40a8, 0x91, 0x0e, 0xa1, 0xf5, 0x4b, 0x84, 0xc7, 0xe5)
+_GUID_LIDCLOSE_ACTION = DEFINE_GUID(0x5ca83367, 0x6e45, 0x459f, 0xa2, 0x7b, 0x47, 0x6b, 0x1d, 0x01, 0xc9, 0x36)
+_GUID_LIDOPEN_POWERSTATE = DEFINE_GUID(0x99ff10e7, 0x23b1, 0x4c07, 0xa9, 0xd1, 0x5c, 0x32, 0x06, 0xd7, 0x41, 0xb4)
+_GUID_BATTERY_SUBGROUP = DEFINE_GUID(0xe73a048d, 0xbf27, 0x4f12, 0x97, 0x31, 0x8b, 0x20, 0x76, 0xe8, 0x89, 0x1f)
+_GUID_BATTERY_DISCHARGE_ACTION_0 = DEFINE_GUID(0x637ea02f, 0xbbcb, 0x4015, 0x8e, 0x2c, 0xa1, 0xc7, 0xb9, 0xc0, 0xb5, 0x46)
+_GUID_BATTERY_DISCHARGE_LEVEL_0 = DEFINE_GUID(0x9a66d8d7, 0x4ff7, 0x4ef9, 0xb5, 0xa2, 0x5a, 0x32, 0x6c, 0xa2, 0xa4, 0x69)
+_GUID_BATTERY_DISCHARGE_FLAGS_0 = DEFINE_GUID(0x5dbb7c9f, 0x38e9, 0x40d2, 0x97, 0x49, 0x4f, 0x8a, 0x0e, 0x9f, 0x64, 0x0f)
+_GUID_BATTERY_DISCHARGE_ACTION_1 = DEFINE_GUID(0xd8742dcb, 0x3e6a, 0x4b3c, 0xb3, 0xfe, 0x37, 0x46, 0x23, 0xcd, 0xcf, 0x06)
+_GUID_BATTERY_DISCHARGE_LEVEL_1 = DEFINE_GUID(0x8183ba9a, 0xe910, 0x48da, 0x87, 0x69, 0x14, 0xae, 0x6d, 0xc1, 0x17, 0x0a)
+_GUID_BATTERY_DISCHARGE_FLAGS_1 = DEFINE_GUID(0xbcded951, 0x187b, 0x4d05, 0xbc, 0xcc, 0xf7, 0xe5, 0x19, 0x60, 0xc2, 0x58)
+_GUID_BATTERY_DISCHARGE_ACTION_2 = DEFINE_GUID(0x421cba38, 0x1a8e, 0x4881, 0xac, 0x89, 0xe3, 0x3a, 0x8b, 0x04, 0xec, 0xe4)
+_GUID_BATTERY_DISCHARGE_LEVEL_2 = DEFINE_GUID(0x07a07ca2, 0xadaf, 0x40d7, 0xb0, 0x77, 0x53, 0x3a, 0xad, 0xed, 0x1b, 0xfa)
+_GUID_BATTERY_DISCHARGE_FLAGS_2 = DEFINE_GUID(0x7fd2f0c4, 0xfeb7, 0x4da3, 0x81, 0x17, 0xe3, 0xfb, 0xed, 0xc4, 0x65, 0x82)
+_GUID_BATTERY_DISCHARGE_ACTION_3 = DEFINE_GUID(0x80472613, 0x9780, 0x455e, 0xb3, 0x08, 0x72, 0xd3, 0x00, 0x3c, 0xf2, 0xf8)
+_GUID_BATTERY_DISCHARGE_LEVEL_3 = DEFINE_GUID(0x58afd5a6, 0xc2dd, 0x47d2, 0x9f, 0xbf, 0xef, 0x70, 0xcc, 0x5c, 0x59, 0x65)
+_GUID_BATTERY_DISCHARGE_FLAGS_3 = DEFINE_GUID(0x73613ccf, 0xdbfa, 0x4279, 0x83, 0x56, 0x49, 0x35, 0xf6, 0xbf, 0x62, 0xf3)
+_GUID_PROCESSOR_SETTINGS_SUBGROUP = DEFINE_GUID(0x54533251, 0x82be, 0x4824, 0x96, 0xc1, 0x47, 0xb6, 0x0b, 0x74, 0x0d, 0x00)
+_GUID_PROCESSOR_THROTTLE_POLICY = DEFINE_GUID(0x57027304, 0x4af6, 0x4104, 0x92, 0x60, 0xe3, 0xd9, 0x52, 0x48, 0xfc, 0x36)
+_GUID_PROCESSOR_THROTTLE_MAXIMUM = DEFINE_GUID(0xbc5038f7, 0x23e0, 0x4960, 0x96, 0xda, 0x33, 0xab, 0xaf, 0x59, 0x35, 0xec)
+_GUID_PROCESSOR_THROTTLE_MINIMUM = DEFINE_GUID(0x893dee8e, 0x2bef, 0x41e0, 0x89, 0xc6, 0xb5, 0x5d, 0x09, 0x29, 0x96, 0x4c)
+_GUID_PROCESSOR_ALLOW_THROTTLING = DEFINE_GUID(0x3b04d4fd, 0x1cc7, 0x4f23, 0xab, 0x1c, 0xd1, 0x33, 0x78, 0x19, 0xc4, 0xbb)
+_GUID_PROCESSOR_IDLESTATE_POLICY = DEFINE_GUID(0x68f262a7, 0xf621, 0x4069, 0xb9, 0xa5, 0x48, 0x74, 0x16, 0x9b, 0xe2, 0x3c)
+_GUID_PROCESSOR_PERFSTATE_POLICY = DEFINE_GUID(0xbbdc3814, 0x18e9, 0x4463, 0x8a, 0x55, 0xd1, 0x97, 0x32, 0x7c, 0x45, 0xc0)
+_GUID_PROCESSOR_PERF_INCREASE_THRESHOLD = DEFINE_GUID(0x06cadf0e, 0x64ed, 0x448a, 0x89, 0x27, 0xce, 0x7b, 0xf9, 0x0e, 0xb3, 0x5d)
+_GUID_PROCESSOR_PERF_DECREASE_THRESHOLD = DEFINE_GUID(0x12a0ab44, 0xfe28, 0x4fa9, 0xb3, 0xbd, 0x4b, 0x64, 0xf4, 0x49, 0x60, 0xa6)
+_GUID_PROCESSOR_PERF_INCREASE_POLICY = DEFINE_GUID(0x465e1f50, 0xb610, 0x473a, 0xab, 0x58, 0x0, 0xd1, 0x7, 0x7d, 0xc4, 0x18)
+_GUID_PROCESSOR_PERF_DECREASE_POLICY = DEFINE_GUID(0x40fbefc7, 0x2e9d, 0x4d25, 0xa1, 0x85, 0xc, 0xfd, 0x85, 0x74, 0xba, 0xc6)
+_GUID_PROCESSOR_PERF_INCREASE_TIME = DEFINE_GUID(0x984cf492, 0x3bed, 0x4488, 0xa8, 0xf9, 0x42, 0x86, 0xc9, 0x7b, 0xf5, 0xaa)
+_GUID_PROCESSOR_PERF_DECREASE_TIME = DEFINE_GUID(0xd8edeb9b, 0x95cf, 0x4f95, 0xa7, 0x3c, 0xb0, 0x61, 0x97, 0x36, 0x93, 0xc8)
+_GUID_PROCESSOR_PERF_TIME_CHECK = DEFINE_GUID(0x4d2b0152, 0x7d5c, 0x498b, 0x88, 0xe2, 0x34, 0x34, 0x53, 0x92, 0xa2, 0xc5)
+_GUID_PROCESSOR_PERF_BOOST_POLICY = DEFINE_GUID(0x45bcc044, 0xd885, 0x43e2, 0x86, 0x5, 0xee, 0xe, 0xc6, 0xe9, 0x6b, 0x59)
+_GUID_PROCESSOR_PERF_BOOST_MODE = DEFINE_GUID(0xbe337238, 0xd82, 0x4146, 0xa9, 0x60, 0x4f, 0x37, 0x49, 0xd4, 0x70, 0xc7)
+_GUID_PROCESSOR_IDLE_ALLOW_SCALING = DEFINE_GUID(0x6c2993b0, 0x8f48, 0x481f, 0xbc, 0xc6, 0x0, 0xdd, 0x27, 0x42, 0xaa, 0x6)
+_GUID_PROCESSOR_IDLE_DISABLE = DEFINE_GUID(0x5d76a2ca, 0xe8c0, 0x402f, 0xa1, 0x33, 0x21, 0x58, 0x49, 0x2d, 0x58, 0xad)
+_GUID_PROCESSOR_IDLE_STATE_MAXIMUM = DEFINE_GUID(0x9943e905, 0x9a30, 0x4ec1, 0x9b, 0x99, 0x44, 0xdd, 0x3b, 0x76, 0xf7, 0xa2)
+_GUID_PROCESSOR_IDLE_TIME_CHECK = DEFINE_GUID(0xc4581c31, 0x89ab, 0x4597, 0x8e, 0x2b, 0x9c, 0x9c, 0xab, 0x44, 0xe, 0x6b)
+_GUID_PROCESSOR_IDLE_DEMOTE_THRESHOLD = DEFINE_GUID(0x4b92d758, 0x5a24, 0x4851, 0xa4, 0x70, 0x81, 0x5d, 0x78, 0xae, 0xe1, 0x19)
+_GUID_PROCESSOR_IDLE_PROMOTE_THRESHOLD = DEFINE_GUID(0x7b224883, 0xb3cc, 0x4d79, 0x81, 0x9f, 0x83, 0x74, 0x15, 0x2c, 0xbe, 0x7c)
+_GUID_PROCESSOR_CORE_PARKING_INCREASE_THRESHOLD = DEFINE_GUID(0xdf142941, 0x20f3, 0x4edf, 0x9a, 0x4a, 0x9c, 0x83, 0xd3, 0xd7, 0x17, 0xd1)
+_GUID_PROCESSOR_CORE_PARKING_DECREASE_THRESHOLD = DEFINE_GUID(0x68dd2f27, 0xa4ce, 0x4e11, 0x84, 0x87, 0x37, 0x94, 0xe4, 0x13, 0x5d, 0xfa)
+_GUID_PROCESSOR_CORE_PARKING_INCREASE_POLICY = DEFINE_GUID(0xc7be0679, 0x2817, 0x4d69, 0x9d, 0x02, 0x51, 0x9a, 0x53, 0x7e, 0xd0, 0xc6)
+_GUID_PROCESSOR_CORE_PARKING_DECREASE_POLICY = DEFINE_GUID(0x71021b41, 0xc749, 0x4d21, 0xbe, 0x74, 0xa0, 0x0f, 0x33, 0x5d, 0x58, 0x2b)
+_GUID_PROCESSOR_CORE_PARKING_MAX_CORES = DEFINE_GUID(0xea062031, 0x0e34, 0x4ff1, 0x9b, 0x6d, 0xeb, 0x10, 0x59, 0x33, 0x40, 0x28)
+_GUID_PROCESSOR_CORE_PARKING_MIN_CORES = DEFINE_GUID(0x0cc5b647, 0xc1df, 0x4637, 0x89, 0x1a, 0xde, 0xc3, 0x5c, 0x31, 0x85, 0x83)
+_GUID_PROCESSOR_CORE_PARKING_INCREASE_TIME = DEFINE_GUID(0x2ddd5a84, 0x5a71, 0x437e, 0x91, 0x2a, 0xdb, 0x0b, 0x8c, 0x78, 0x87, 0x32)
+_GUID_PROCESSOR_CORE_PARKING_DECREASE_TIME = DEFINE_GUID(0xdfd10d17, 0xd5eb, 0x45dd, 0x87, 0x7a, 0x9a, 0x34, 0xdd, 0xd1, 0x5c, 0x82)
+_GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_DECREASE_FACTOR = DEFINE_GUID(0x8f7b45e3, 0xc393, 0x480a, 0x87, 0x8c, 0xf6, 0x7a, 0xc3, 0xd0, 0x70, 0x82)
+_GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_THRESHOLD = DEFINE_GUID(0x5b33697b, 0xe89d, 0x4d38, 0xaa, 0x46, 0x9e, 0x7d, 0xfb, 0x7c, 0xd2, 0xf9)
+_GUID_PROCESSOR_CORE_PARKING_AFFINITY_WEIGHTING = DEFINE_GUID(0xe70867f1, 0xfa2f, 0x4f4e, 0xae, 0xa1, 0x4d, 0x8a, 0x0b, 0xa2, 0x3b, 0x20)
+_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_DECREASE_FACTOR = DEFINE_GUID(0x1299023c, 0xbc28, 0x4f0a, 0x81, 0xec, 0xd3, 0x29, 0x5a, 0x8d, 0x81, 0x5d)
+_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_THRESHOLD = DEFINE_GUID(0x9ac18e92, 0xaa3c, 0x4e27, 0xb3, 0x07, 0x01, 0xae, 0x37, 0x30, 0x71, 0x29)
+_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_WEIGHTING = DEFINE_GUID(0x8809c2d8, 0xb155, 0x42d4, 0xbc, 0xda, 0x0d, 0x34, 0x56, 0x51, 0xb1, 0xdb)
+_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_THRESHOLD = DEFINE_GUID(0x943c8cb6, 0x6f93, 0x4227, 0xad, 0x87, 0xe9, 0xa3, 0xfe, 0xec, 0x08, 0xd1)
+_GUID_PROCESSOR_PARKING_CORE_OVERRIDE = DEFINE_GUID(0xa55612aa, 0xf624, 0x42c6, 0xa4, 0x43, 0x73, 0x97, 0xd0, 0x64, 0xc0, 0x4f)
+_GUID_PROCESSOR_PARKING_PERF_STATE = DEFINE_GUID(0x447235c7, 0x6a8d, 0x4cc0, 0x8e, 0x24, 0x9e, 0xaf, 0x70, 0xb9, 0x6e, 0x2b)
+_GUID_PROCESSOR_PARKING_CONCURRENCY_THRESHOLD = DEFINE_GUID(0x2430ab6f, 0xa520, 0x44a2, 0x96, 0x01, 0xf7, 0xf2, 0x3b, 0x51, 0x34, 0xb1)
+_GUID_PROCESSOR_PARKING_HEADROOM_THRESHOLD = DEFINE_GUID(0xf735a673, 0x2066, 0x4f80, 0xa0, 0xc5, 0xdd, 0xee, 0x0c, 0xf1, 0xbf, 0x5d)
+_GUID_PROCESSOR_PERF_HISTORY = DEFINE_GUID(0x7d24baa7, 0x0b84, 0x480f, 0x84, 0x0c, 0x1b, 0x07, 0x43, 0xc0, 0x0f, 0x5f)
+_GUID_PROCESSOR_PERF_LATENCY_HINT = DEFINE_GUID(0x0822df31, 0x9c83, 0x441c, 0xa0, 0x79, 0x0d, 0xe4, 0xcf, 0x00, 0x9c, 0x7b)
+_GUID_PROCESSOR_DISTRIBUTE_UTILITY = DEFINE_GUID(0xe0007330, 0xf589, 0x42ed, 0xa4, 0x01, 0x5d, 0xdb, 0x10, 0xe7, 0x85, 0xd3)
+_GUID_SYSTEM_COOLING_POLICY = DEFINE_GUID(0x94d3a615, 0xa899, 0x4ac5, 0xae, 0x2b, 0xe4, 0xd8, 0xf6, 0x34, 0x36, 0x7f)
+_GUID_LOCK_CONSOLE_ON_WAKE = DEFINE_GUID(0x0e796bdb, 0x100d, 0x47d6, 0xa2, 0xd5, 0xf7, 0xd2, 0xda, 0xa5, 0x1f, 0x51)
+_GUID_DEVICE_IDLE_POLICY = DEFINE_GUID(0x4faab71a, 0x92e5, 0x4726, 0xb5, 0x31, 0x22, 0x45, 0x59, 0x67, 0x2d, 0x19)
+_GUID_ACDC_POWER_SOURCE = DEFINE_GUID(0x5d3e9a59, 0xe9d5, 0x4b00, 0xa6, 0xbd, 0xff, 0x34, 0xff, 0x51, 0x65, 0x48)
+_GUID_LIDSWITCH_STATE_CHANGE = DEFINE_GUID(0xba3e0f4d, 0xb817, 0x4094, 0xa2, 0xd1, 0xd5, 0x63, 0x79, 0xe6, 0xa0, 0xf3)
+_GUID_BATTERY_PERCENTAGE_REMAINING = DEFINE_GUID(0xa7ad8041, 0xb45a, 0x4cae, 0x87, 0xa3, 0xee, 0xcb, 0xb4, 0x68, 0xa9, 0xe1)
+_GUID_GLOBAL_USER_PRESENCE = DEFINE_GUID(0x786e8a1d, 0xb427, 0x4344, 0x92, 0x7, 0x9, 0xe7, 0xb, 0xdc, 0xbe, 0xa9)
+_GUID_SESSION_DISPLAY_STATUS = DEFINE_GUID(0x2b84c20e, 0xad23, 0x4ddf, 0x93, 0xdb, 0x5, 0xff, 0xbd, 0x7e, 0xfc, 0xa5)
+_GUID_SESSION_USER_PRESENCE = DEFINE_GUID(0x3c0f4548, 0xc03f, 0x4c4d, 0xb9, 0xf2, 0x23, 0x7e, 0xde, 0x68, 0x63, 0x76)
+_GUID_IDLE_BACKGROUND_TASK = DEFINE_GUID(0x515c31d8, 0xf734, 0x163d, 0xa0, 0xfd, 0x11, 0xa0, 0x8c, 0x91, 0xe8, 0xf1)
+_GUID_BACKGROUND_TASK_NOTIFICATION = DEFINE_GUID(0xcf23f240, 0x2a54, 0x48d8, 0xb1, 0x14, 0xde, 0x15, 0x18, 0xff, 0x05, 0x2e)
+_GUID_APPLAUNCH_BUTTON = DEFINE_GUID(0x1a689231, 0x7399, 0x4e9a, 0x8f, 0x99, 0xb7, 0x1f, 0x99, 0x9d, 0xb3, 0xfa)
+_GUID_PCIEXPRESS_SETTINGS_SUBGROUP = DEFINE_GUID(0x501a4d13, 0x42af, 0x4429, 0x9f, 0xd1, 0xa8, 0x21, 0x8c, 0x26, 0x8e, 0x20)
+_GUID_PCIEXPRESS_ASPM_POLICY = DEFINE_GUID(0xee12f906, 0xd277, 0x404b, 0xb6, 0xda, 0xe5, 0xfa, 0x1a, 0x57, 0x6d, 0xf5)
+_GUID_ENABLE_SWITCH_FORCED_SHUTDOWN = DEFINE_GUID(0x833a6b62, 0xdfa4, 0x46d1, 0x82, 0xf8, 0xe0, 0x9e, 0x34, 0xd0, 0x29, 0xd6)
+
+GUID_MAX_POWER_SAVINGS = GUID()
+GUID_MIN_POWER_SAVINGS = GUID()
+GUID_TYPICAL_POWER_SAVINGS = GUID()
+NO_SUBGROUP_GUID = GUID()
+ALL_POWERSCHEMES_GUID = GUID()
+GUID_POWERSCHEME_PERSONALITY = GUID()
+GUID_ACTIVE_POWERSCHEME = GUID()
+GUID_IDLE_RESILIENCY_SUBGROUP = GUID()
+GUID_IDLE_RESILIENCY_PERIOD = GUID()
+GUID_DISK_COALESCING_POWERDOWN_TIMEOUT = GUID()
+GUID_EXECUTION_REQUIRED_REQUEST_TIMEOUT = GUID()
+GUID_VIDEO_SUBGROUP = GUID()
+GUID_VIDEO_POWERDOWN_TIMEOUT = GUID()
+GUID_VIDEO_ANNOYANCE_TIMEOUT = GUID()
+GUID_VIDEO_ADAPTIVE_PERCENT_INCREASE = GUID()
+GUID_VIDEO_DIM_TIMEOUT = GUID()
+GUID_VIDEO_ADAPTIVE_POWERDOWN = GUID()
+GUID_MONITOR_POWER_ON = GUID()
+GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS = GUID()
+GUID_DEVICE_POWER_POLICY_VIDEO_DIM_BRIGHTNESS = GUID()
+GUID_VIDEO_CURRENT_MONITOR_BRIGHTNESS = GUID()
+GUID_VIDEO_ADAPTIVE_DISPLAY_BRIGHTNESS = GUID()
+GUID_CONSOLE_DISPLAY_STATE = GUID()
+GUID_ALLOW_DISPLAY_REQUIRED = GUID()
+GUID_VIDEO_CONSOLE_LOCK_TIMEOUT = GUID()
+GUID_ADAPTIVE_POWER_BEHAVIOR_SUBGROUP = GUID()
+GUID_NON_ADAPTIVE_INPUT_TIMEOUT = GUID()
+GUID_DISK_SUBGROUP = GUID()
+GUID_DISK_POWERDOWN_TIMEOUT = GUID()
+GUID_DISK_IDLE_TIMEOUT = GUID()
+GUID_DISK_BURST_IGNORE_THRESHOLD = GUID()
+GUID_DISK_ADAPTIVE_POWERDOWN = GUID()
+GUID_SLEEP_SUBGROUP = GUID()
+GUID_SLEEP_IDLE_THRESHOLD = GUID()
+GUID_STANDBY_TIMEOUT = GUID()
+GUID_UNATTEND_SLEEP_TIMEOUT = GUID()
+GUID_HIBERNATE_TIMEOUT = GUID()
+GUID_HIBERNATE_FASTS4_POLICY = GUID()
+GUID_CRITICAL_POWER_TRANSITION = GUID()
+GUID_SYSTEM_AWAYMODE = GUID()
+GUID_ALLOW_AWAYMODE = GUID()
+GUID_ALLOW_STANDBY_STATES = GUID()
+GUID_ALLOW_RTC_WAKE = GUID()
+GUID_ALLOW_SYSTEM_REQUIRED = GUID()
+GUID_SYSTEM_BUTTON_SUBGROUP = GUID()
+GUID_POWERBUTTON_ACTION = GUID()
+GUID_SLEEPBUTTON_ACTION = GUID()
+GUID_USERINTERFACEBUTTON_ACTION = GUID()
+GUID_LIDCLOSE_ACTION = GUID()
+GUID_LIDOPEN_POWERSTATE = GUID()
+GUID_BATTERY_SUBGROUP = GUID()
+GUID_BATTERY_DISCHARGE_ACTION_0 = GUID()
+GUID_BATTERY_DISCHARGE_LEVEL_0 = GUID()
+GUID_BATTERY_DISCHARGE_FLAGS_0 = GUID()
+GUID_BATTERY_DISCHARGE_ACTION_1 = GUID()
+GUID_BATTERY_DISCHARGE_LEVEL_1 = GUID()
+GUID_BATTERY_DISCHARGE_FLAGS_1 = GUID()
+GUID_BATTERY_DISCHARGE_ACTION_2 = GUID()
+GUID_BATTERY_DISCHARGE_LEVEL_2 = GUID()
+GUID_BATTERY_DISCHARGE_FLAGS_2 = GUID()
+GUID_BATTERY_DISCHARGE_ACTION_3 = GUID()
+GUID_BATTERY_DISCHARGE_LEVEL_3 = GUID()
+GUID_BATTERY_DISCHARGE_FLAGS_3 = GUID()
+GUID_PROCESSOR_SETTINGS_SUBGROUP = GUID()
+GUID_PROCESSOR_THROTTLE_POLICY = GUID()
+GUID_PROCESSOR_THROTTLE_MAXIMUM = GUID()
+GUID_PROCESSOR_THROTTLE_MINIMUM = GUID()
+GUID_PROCESSOR_ALLOW_THROTTLING = GUID()
+GUID_PROCESSOR_IDLESTATE_POLICY = GUID()
+GUID_PROCESSOR_PERFSTATE_POLICY = GUID()
+GUID_PROCESSOR_PERF_INCREASE_THRESHOLD = GUID()
+GUID_PROCESSOR_PERF_DECREASE_THRESHOLD = GUID()
+GUID_PROCESSOR_PERF_INCREASE_POLICY = GUID()
+GUID_PROCESSOR_PERF_DECREASE_POLICY = GUID()
+GUID_PROCESSOR_PERF_INCREASE_TIME = GUID()
+GUID_PROCESSOR_PERF_DECREASE_TIME = GUID()
+GUID_PROCESSOR_PERF_TIME_CHECK = GUID()
+GUID_PROCESSOR_PERF_BOOST_POLICY = GUID()
+GUID_PROCESSOR_PERF_BOOST_MODE = GUID()
+GUID_PROCESSOR_IDLE_ALLOW_SCALING = GUID()
+GUID_PROCESSOR_IDLE_DISABLE = GUID()
+GUID_PROCESSOR_IDLE_STATE_MAXIMUM = GUID()
+GUID_PROCESSOR_IDLE_TIME_CHECK = GUID()
+GUID_PROCESSOR_IDLE_DEMOTE_THRESHOLD = GUID()
+GUID_PROCESSOR_IDLE_PROMOTE_THRESHOLD = GUID()
+GUID_PROCESSOR_CORE_PARKING_INCREASE_THRESHOLD = GUID()
+GUID_PROCESSOR_CORE_PARKING_DECREASE_THRESHOLD = GUID()
+GUID_PROCESSOR_CORE_PARKING_INCREASE_POLICY = GUID()
+GUID_PROCESSOR_CORE_PARKING_DECREASE_POLICY = GUID()
+GUID_PROCESSOR_CORE_PARKING_MAX_CORES = GUID()
+GUID_PROCESSOR_CORE_PARKING_MIN_CORES = GUID()
+GUID_PROCESSOR_CORE_PARKING_INCREASE_TIME = GUID()
+GUID_PROCESSOR_CORE_PARKING_DECREASE_TIME = GUID()
+GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_DECREASE_FACTOR = GUID()
+GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_THRESHOLD = GUID()
+GUID_PROCESSOR_CORE_PARKING_AFFINITY_WEIGHTING = GUID()
+GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_DECREASE_FACTOR = GUID()
+GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_THRESHOLD = GUID()
+GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_WEIGHTING = GUID()
+GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_THRESHOLD = GUID()
+GUID_PROCESSOR_PARKING_CORE_OVERRIDE = GUID()
+GUID_PROCESSOR_PARKING_PERF_STATE = GUID()
+GUID_PROCESSOR_PARKING_CONCURRENCY_THRESHOLD = GUID()
+GUID_PROCESSOR_PARKING_HEADROOM_THRESHOLD = GUID()
+GUID_PROCESSOR_PERF_HISTORY = GUID()
+GUID_PROCESSOR_PERF_LATENCY_HINT = GUID()
+GUID_PROCESSOR_DISTRIBUTE_UTILITY = GUID()
+GUID_SYSTEM_COOLING_POLICY = GUID()
+GUID_LOCK_CONSOLE_ON_WAKE = GUID()
+GUID_DEVICE_IDLE_POLICY = GUID()
+GUID_ACDC_POWER_SOURCE = GUID()
+GUID_LIDSWITCH_STATE_CHANGE = GUID()
+GUID_BATTERY_PERCENTAGE_REMAINING = GUID()
+GUID_GLOBAL_USER_PRESENCE = GUID()
+GUID_SESSION_DISPLAY_STATUS = GUID()
+GUID_SESSION_USER_PRESENCE = GUID()
+GUID_IDLE_BACKGROUND_TASK = GUID()
+GUID_BACKGROUND_TASK_NOTIFICATION = GUID()
+GUID_APPLAUNCH_BUTTON = GUID()
+GUID_PCIEXPRESS_SETTINGS_SUBGROUP = GUID()
+GUID_PCIEXPRESS_ASPM_POLICY = GUID()
+GUID_ENABLE_SWITCH_FORCED_SHUTDOWN = GUID()
+
+_CLSIDFromString(_GUID_MAX_POWER_SAVINGS, byref(GUID_MAX_POWER_SAVINGS))
+_CLSIDFromString(_GUID_MIN_POWER_SAVINGS, byref(GUID_MIN_POWER_SAVINGS))
+_CLSIDFromString(_GUID_TYPICAL_POWER_SAVINGS, byref(GUID_TYPICAL_POWER_SAVINGS))
+_CLSIDFromString(_NO_SUBGROUP_GUID, byref(NO_SUBGROUP_GUID))
+_CLSIDFromString(_ALL_POWERSCHEMES_GUID, byref(ALL_POWERSCHEMES_GUID))
+_CLSIDFromString(_GUID_POWERSCHEME_PERSONALITY, byref(GUID_POWERSCHEME_PERSONALITY))
+_CLSIDFromString(_GUID_ACTIVE_POWERSCHEME, byref(GUID_ACTIVE_POWERSCHEME))
+_CLSIDFromString(_GUID_IDLE_RESILIENCY_SUBGROUP, byref(GUID_IDLE_RESILIENCY_SUBGROUP))
+_CLSIDFromString(_GUID_IDLE_RESILIENCY_PERIOD, byref(GUID_IDLE_RESILIENCY_PERIOD))
+_CLSIDFromString(_GUID_DISK_COALESCING_POWERDOWN_TIMEOUT, byref(GUID_DISK_COALESCING_POWERDOWN_TIMEOUT))
+_CLSIDFromString(_GUID_EXECUTION_REQUIRED_REQUEST_TIMEOUT, byref(GUID_EXECUTION_REQUIRED_REQUEST_TIMEOUT))
+_CLSIDFromString(_GUID_VIDEO_SUBGROUP, byref(GUID_VIDEO_SUBGROUP))
+_CLSIDFromString(_GUID_VIDEO_POWERDOWN_TIMEOUT, byref(GUID_VIDEO_POWERDOWN_TIMEOUT))
+_CLSIDFromString(_GUID_VIDEO_ANNOYANCE_TIMEOUT, byref(GUID_VIDEO_ANNOYANCE_TIMEOUT))
+_CLSIDFromString(_GUID_VIDEO_ADAPTIVE_PERCENT_INCREASE, byref(GUID_VIDEO_ADAPTIVE_PERCENT_INCREASE))
+_CLSIDFromString(_GUID_VIDEO_DIM_TIMEOUT, byref(GUID_VIDEO_DIM_TIMEOUT))
+_CLSIDFromString(_GUID_VIDEO_ADAPTIVE_POWERDOWN, byref(GUID_VIDEO_ADAPTIVE_POWERDOWN))
+_CLSIDFromString(_GUID_MONITOR_POWER_ON, byref(GUID_MONITOR_POWER_ON))
+_CLSIDFromString(_GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS, byref(GUID_DEVICE_POWER_POLICY_VIDEO_BRIGHTNESS))
+_CLSIDFromString(_GUID_DEVICE_POWER_POLICY_VIDEO_DIM_BRIGHTNESS, byref(GUID_DEVICE_POWER_POLICY_VIDEO_DIM_BRIGHTNESS))
+_CLSIDFromString(_GUID_VIDEO_CURRENT_MONITOR_BRIGHTNESS, byref(GUID_VIDEO_CURRENT_MONITOR_BRIGHTNESS))
+_CLSIDFromString(_GUID_VIDEO_ADAPTIVE_DISPLAY_BRIGHTNESS, byref(GUID_VIDEO_ADAPTIVE_DISPLAY_BRIGHTNESS))
+_CLSIDFromString(_GUID_CONSOLE_DISPLAY_STATE, byref(GUID_CONSOLE_DISPLAY_STATE))
+_CLSIDFromString(_GUID_ALLOW_DISPLAY_REQUIRED, byref(GUID_ALLOW_DISPLAY_REQUIRED))
+_CLSIDFromString(_GUID_VIDEO_CONSOLE_LOCK_TIMEOUT, byref(GUID_VIDEO_CONSOLE_LOCK_TIMEOUT))
+_CLSIDFromString(_GUID_ADAPTIVE_POWER_BEHAVIOR_SUBGROUP, byref(GUID_ADAPTIVE_POWER_BEHAVIOR_SUBGROUP))
+_CLSIDFromString(_GUID_NON_ADAPTIVE_INPUT_TIMEOUT, byref(GUID_NON_ADAPTIVE_INPUT_TIMEOUT))
+_CLSIDFromString(_GUID_DISK_SUBGROUP, byref(GUID_DISK_SUBGROUP))
+_CLSIDFromString(_GUID_DISK_POWERDOWN_TIMEOUT, byref(GUID_DISK_POWERDOWN_TIMEOUT))
+_CLSIDFromString(_GUID_DISK_IDLE_TIMEOUT, byref(GUID_DISK_IDLE_TIMEOUT))
+_CLSIDFromString(_GUID_DISK_BURST_IGNORE_THRESHOLD, byref(GUID_DISK_BURST_IGNORE_THRESHOLD))
+_CLSIDFromString(_GUID_DISK_ADAPTIVE_POWERDOWN, byref(GUID_DISK_ADAPTIVE_POWERDOWN))
+_CLSIDFromString(_GUID_SLEEP_SUBGROUP, byref(GUID_SLEEP_SUBGROUP))
+_CLSIDFromString(_GUID_SLEEP_IDLE_THRESHOLD, byref(GUID_SLEEP_IDLE_THRESHOLD))
+_CLSIDFromString(_GUID_STANDBY_TIMEOUT, byref(GUID_STANDBY_TIMEOUT))
+_CLSIDFromString(_GUID_UNATTEND_SLEEP_TIMEOUT, byref(GUID_UNATTEND_SLEEP_TIMEOUT))
+_CLSIDFromString(_GUID_HIBERNATE_TIMEOUT, byref(GUID_HIBERNATE_TIMEOUT))
+_CLSIDFromString(_GUID_HIBERNATE_FASTS4_POLICY, byref(GUID_HIBERNATE_FASTS4_POLICY))
+_CLSIDFromString(_GUID_CRITICAL_POWER_TRANSITION, byref(GUID_CRITICAL_POWER_TRANSITION))
+_CLSIDFromString(_GUID_SYSTEM_AWAYMODE, byref(GUID_SYSTEM_AWAYMODE))
+_CLSIDFromString(_GUID_ALLOW_AWAYMODE, byref(GUID_ALLOW_AWAYMODE))
+_CLSIDFromString(_GUID_ALLOW_STANDBY_STATES, byref(GUID_ALLOW_STANDBY_STATES))
+_CLSIDFromString(_GUID_ALLOW_RTC_WAKE, byref(GUID_ALLOW_RTC_WAKE))
+_CLSIDFromString(_GUID_ALLOW_SYSTEM_REQUIRED, byref(GUID_ALLOW_SYSTEM_REQUIRED))
+_CLSIDFromString(_GUID_SYSTEM_BUTTON_SUBGROUP, byref(GUID_SYSTEM_BUTTON_SUBGROUP))
+_CLSIDFromString(_GUID_POWERBUTTON_ACTION, byref(GUID_POWERBUTTON_ACTION))
+_CLSIDFromString(_GUID_SLEEPBUTTON_ACTION, byref(GUID_SLEEPBUTTON_ACTION))
+_CLSIDFromString(_GUID_USERINTERFACEBUTTON_ACTION, byref(GUID_USERINTERFACEBUTTON_ACTION))
+_CLSIDFromString(_GUID_LIDCLOSE_ACTION, byref(GUID_LIDCLOSE_ACTION))
+_CLSIDFromString(_GUID_LIDOPEN_POWERSTATE, byref(GUID_LIDOPEN_POWERSTATE))
+_CLSIDFromString(_GUID_BATTERY_SUBGROUP, byref(GUID_BATTERY_SUBGROUP))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_ACTION_0, byref(GUID_BATTERY_DISCHARGE_ACTION_0))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_LEVEL_0, byref(GUID_BATTERY_DISCHARGE_LEVEL_0))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_FLAGS_0, byref(GUID_BATTERY_DISCHARGE_FLAGS_0))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_ACTION_1, byref(GUID_BATTERY_DISCHARGE_ACTION_1))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_LEVEL_1, byref(GUID_BATTERY_DISCHARGE_LEVEL_1))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_FLAGS_1, byref(GUID_BATTERY_DISCHARGE_FLAGS_1))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_ACTION_2, byref(GUID_BATTERY_DISCHARGE_ACTION_2))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_LEVEL_2, byref(GUID_BATTERY_DISCHARGE_LEVEL_2))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_FLAGS_2, byref(GUID_BATTERY_DISCHARGE_FLAGS_2))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_ACTION_3, byref(GUID_BATTERY_DISCHARGE_ACTION_3))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_LEVEL_3, byref(GUID_BATTERY_DISCHARGE_LEVEL_3))
+_CLSIDFromString(_GUID_BATTERY_DISCHARGE_FLAGS_3, byref(GUID_BATTERY_DISCHARGE_FLAGS_3))
+_CLSIDFromString(_GUID_PROCESSOR_SETTINGS_SUBGROUP, byref(GUID_PROCESSOR_SETTINGS_SUBGROUP))
+_CLSIDFromString(_GUID_PROCESSOR_THROTTLE_POLICY, byref(GUID_PROCESSOR_THROTTLE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_THROTTLE_MAXIMUM, byref(GUID_PROCESSOR_THROTTLE_MAXIMUM))
+_CLSIDFromString(_GUID_PROCESSOR_THROTTLE_MINIMUM, byref(GUID_PROCESSOR_THROTTLE_MINIMUM))
+_CLSIDFromString(_GUID_PROCESSOR_ALLOW_THROTTLING, byref(GUID_PROCESSOR_ALLOW_THROTTLING))
+_CLSIDFromString(_GUID_PROCESSOR_IDLESTATE_POLICY, byref(GUID_PROCESSOR_IDLESTATE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_PERFSTATE_POLICY, byref(GUID_PROCESSOR_PERFSTATE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_INCREASE_THRESHOLD, byref(GUID_PROCESSOR_PERF_INCREASE_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_DECREASE_THRESHOLD, byref(GUID_PROCESSOR_PERF_DECREASE_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_INCREASE_POLICY, byref(GUID_PROCESSOR_PERF_INCREASE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_DECREASE_POLICY, byref(GUID_PROCESSOR_PERF_DECREASE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_INCREASE_TIME, byref(GUID_PROCESSOR_PERF_INCREASE_TIME))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_DECREASE_TIME, byref(GUID_PROCESSOR_PERF_DECREASE_TIME))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_TIME_CHECK, byref(GUID_PROCESSOR_PERF_TIME_CHECK))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_BOOST_POLICY, byref(GUID_PROCESSOR_PERF_BOOST_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_BOOST_MODE, byref(GUID_PROCESSOR_PERF_BOOST_MODE))
+_CLSIDFromString(_GUID_PROCESSOR_IDLE_ALLOW_SCALING, byref(GUID_PROCESSOR_IDLE_ALLOW_SCALING))
+_CLSIDFromString(_GUID_PROCESSOR_IDLE_DISABLE, byref(GUID_PROCESSOR_IDLE_DISABLE))
+_CLSIDFromString(_GUID_PROCESSOR_IDLE_STATE_MAXIMUM, byref(GUID_PROCESSOR_IDLE_STATE_MAXIMUM))
+_CLSIDFromString(_GUID_PROCESSOR_IDLE_TIME_CHECK, byref(GUID_PROCESSOR_IDLE_TIME_CHECK))
+_CLSIDFromString(_GUID_PROCESSOR_IDLE_DEMOTE_THRESHOLD, byref(GUID_PROCESSOR_IDLE_DEMOTE_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_IDLE_PROMOTE_THRESHOLD, byref(GUID_PROCESSOR_IDLE_PROMOTE_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_INCREASE_THRESHOLD, byref(GUID_PROCESSOR_CORE_PARKING_INCREASE_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_DECREASE_THRESHOLD, byref(GUID_PROCESSOR_CORE_PARKING_DECREASE_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_INCREASE_POLICY, byref(GUID_PROCESSOR_CORE_PARKING_INCREASE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_DECREASE_POLICY, byref(GUID_PROCESSOR_CORE_PARKING_DECREASE_POLICY))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_MAX_CORES, byref(GUID_PROCESSOR_CORE_PARKING_MAX_CORES))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_MIN_CORES, byref(GUID_PROCESSOR_CORE_PARKING_MIN_CORES))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_INCREASE_TIME, byref(GUID_PROCESSOR_CORE_PARKING_INCREASE_TIME))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_DECREASE_TIME, byref(GUID_PROCESSOR_CORE_PARKING_DECREASE_TIME))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_DECREASE_FACTOR, byref(GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_DECREASE_FACTOR))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_THRESHOLD, byref(GUID_PROCESSOR_CORE_PARKING_AFFINITY_HISTORY_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_AFFINITY_WEIGHTING, byref(GUID_PROCESSOR_CORE_PARKING_AFFINITY_WEIGHTING))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_DECREASE_FACTOR, byref(GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_DECREASE_FACTOR))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_THRESHOLD, byref(GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_HISTORY_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_WEIGHTING, byref(GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_WEIGHTING))
+_CLSIDFromString(_GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_THRESHOLD, byref(GUID_PROCESSOR_CORE_PARKING_OVER_UTILIZATION_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_PARKING_CORE_OVERRIDE, byref(GUID_PROCESSOR_PARKING_CORE_OVERRIDE))
+_CLSIDFromString(_GUID_PROCESSOR_PARKING_PERF_STATE, byref(GUID_PROCESSOR_PARKING_PERF_STATE))
+_CLSIDFromString(_GUID_PROCESSOR_PARKING_CONCURRENCY_THRESHOLD, byref(GUID_PROCESSOR_PARKING_CONCURRENCY_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_PARKING_HEADROOM_THRESHOLD, byref(GUID_PROCESSOR_PARKING_HEADROOM_THRESHOLD))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_HISTORY, byref(GUID_PROCESSOR_PERF_HISTORY))
+_CLSIDFromString(_GUID_PROCESSOR_PERF_LATENCY_HINT, byref(GUID_PROCESSOR_PERF_LATENCY_HINT))
+_CLSIDFromString(_GUID_PROCESSOR_DISTRIBUTE_UTILITY, byref(GUID_PROCESSOR_DISTRIBUTE_UTILITY))
+_CLSIDFromString(_GUID_SYSTEM_COOLING_POLICY, byref(GUID_SYSTEM_COOLING_POLICY))
+_CLSIDFromString(_GUID_LOCK_CONSOLE_ON_WAKE, byref(GUID_LOCK_CONSOLE_ON_WAKE))
+_CLSIDFromString(_GUID_DEVICE_IDLE_POLICY, byref(GUID_DEVICE_IDLE_POLICY))
+_CLSIDFromString(_GUID_ACDC_POWER_SOURCE, byref(GUID_ACDC_POWER_SOURCE))
+_CLSIDFromString(_GUID_LIDSWITCH_STATE_CHANGE, byref(GUID_LIDSWITCH_STATE_CHANGE))
+_CLSIDFromString(_GUID_BATTERY_PERCENTAGE_REMAINING, byref(GUID_BATTERY_PERCENTAGE_REMAINING))
+_CLSIDFromString(_GUID_GLOBAL_USER_PRESENCE, byref(GUID_GLOBAL_USER_PRESENCE))
+_CLSIDFromString(_GUID_SESSION_DISPLAY_STATUS, byref(GUID_SESSION_DISPLAY_STATUS))
+_CLSIDFromString(_GUID_SESSION_USER_PRESENCE, byref(GUID_SESSION_USER_PRESENCE))
+_CLSIDFromString(_GUID_IDLE_BACKGROUND_TASK, byref(GUID_IDLE_BACKGROUND_TASK))
+_CLSIDFromString(_GUID_BACKGROUND_TASK_NOTIFICATION, byref(GUID_BACKGROUND_TASK_NOTIFICATION))
+_CLSIDFromString(_GUID_APPLAUNCH_BUTTON, byref(GUID_APPLAUNCH_BUTTON))
+_CLSIDFromString(_GUID_PCIEXPRESS_SETTINGS_SUBGROUP, byref(GUID_PCIEXPRESS_SETTINGS_SUBGROUP))
+_CLSIDFromString(_GUID_PCIEXPRESS_ASPM_POLICY, byref(GUID_PCIEXPRESS_ASPM_POLICY))
+_CLSIDFromString(_GUID_ENABLE_SWITCH_FORCED_SHUTDOWN, byref(GUID_ENABLE_SWITCH_FORCED_SHUTDOWN))
 
 PowerSystemUnspecified = 0
 PowerSystemWorking = 1
@@ -6883,16 +7097,38 @@ class PPM_THERMAL_POLICY_EVENT(Structure):
 
 PPPM_THERMAL_POLICY_EVENT = POINTER(PPM_THERMAL_POLICY_EVENT)
 
-PPM_PERFSTATE_CHANGE_GUID = DEFINE_GUID(0xa5b32ddd, 0x7f39, 0x4abc, 0xb8, 0x92, 0x90, 0xe, 0x43, 0xb5, 0x9e, 0xbb)
-PPM_PERFSTATE_DOMAIN_CHANGE_GUID = DEFINE_GUID(0x995e6b7f, 0xd653, 0x497a, 0xb9, 0x78, 0x36, 0xa3, 0xc, 0x29, 0xbf, 0x1)
-PPM_IDLESTATE_CHANGE_GUID = DEFINE_GUID(0x4838fe4f, 0xf71c, 0x4e51, 0x9e, 0xcc, 0x84, 0x30, 0xa7, 0xac, 0x4c, 0x6c)
-PPM_PERFSTATES_DATA_GUID = DEFINE_GUID(0x5708cc20, 0x7d40, 0x4bf4, 0xb4, 0xaa, 0x2b, 0x01, 0x33, 0x8d, 0x01, 0x26)
-PPM_IDLESTATES_DATA_GUID = DEFINE_GUID(0xba138e10, 0xe250, 0x4ad7, 0x86, 0x16, 0xcf, 0x1a, 0x7a, 0xd4, 0x10, 0xe7)
-PPM_IDLE_ACCOUNTING_GUID = DEFINE_GUID(0xe2a26f78, 0xae07, 0x4ee0, 0xa3, 0x0f, 0xce, 0x54, 0xf5, 0x5a, 0x94, 0xcd)
-PPM_IDLE_ACCOUNTING_EX_GUID = DEFINE_GUID(0xd67abd39, 0x81f8, 0x4a5e, 0x81, 0x52, 0x72, 0xe3, 0x1e, 0xc9, 0x12, 0xee)
-PPM_THERMALCONSTRAINT_GUID = DEFINE_GUID(0xa852c2c8, 0x1a4c, 0x423b, 0x8c, 0x2c, 0xf3, 0x0d, 0x82, 0x93, 0x1a, 0x88)
-PPM_PERFMON_PERFSTATE_GUID = DEFINE_GUID(0x7fd18652, 0xcfe, 0x40d2, 0xb0, 0xa1, 0xb, 0x6, 0x6a, 0x87, 0x75, 0x9e)
-PPM_THERMAL_POLICY_CHANGE_GUID = DEFINE_GUID(0x48f377b8, 0x6880, 0x4c7b, 0x8b, 0xdc, 0x38, 0x1, 0x76, 0xc6, 0x65, 0x4d)
+_PPM_PERFSTATE_CHANGE_GUID = DEFINE_GUID(0xa5b32ddd, 0x7f39, 0x4abc, 0xb8, 0x92, 0x90, 0xe, 0x43, 0xb5, 0x9e, 0xbb)
+_PPM_PERFSTATE_DOMAIN_CHANGE_GUID = DEFINE_GUID(0x995e6b7f, 0xd653, 0x497a, 0xb9, 0x78, 0x36, 0xa3, 0xc, 0x29, 0xbf, 0x1)
+_PPM_IDLESTATE_CHANGE_GUID = DEFINE_GUID(0x4838fe4f, 0xf71c, 0x4e51, 0x9e, 0xcc, 0x84, 0x30, 0xa7, 0xac, 0x4c, 0x6c)
+_PPM_PERFSTATES_DATA_GUID = DEFINE_GUID(0x5708cc20, 0x7d40, 0x4bf4, 0xb4, 0xaa, 0x2b, 0x01, 0x33, 0x8d, 0x01, 0x26)
+_PPM_IDLESTATES_DATA_GUID = DEFINE_GUID(0xba138e10, 0xe250, 0x4ad7, 0x86, 0x16, 0xcf, 0x1a, 0x7a, 0xd4, 0x10, 0xe7)
+_PPM_IDLE_ACCOUNTING_GUID = DEFINE_GUID(0xe2a26f78, 0xae07, 0x4ee0, 0xa3, 0x0f, 0xce, 0x54, 0xf5, 0x5a, 0x94, 0xcd)
+_PPM_IDLE_ACCOUNTING_EX_GUID = DEFINE_GUID(0xd67abd39, 0x81f8, 0x4a5e, 0x81, 0x52, 0x72, 0xe3, 0x1e, 0xc9, 0x12, 0xee)
+_PPM_THERMALCONSTRAINT_GUID = DEFINE_GUID(0xa852c2c8, 0x1a4c, 0x423b, 0x8c, 0x2c, 0xf3, 0x0d, 0x82, 0x93, 0x1a, 0x88)
+_PPM_PERFMON_PERFSTATE_GUID = DEFINE_GUID(0x7fd18652, 0xcfe, 0x40d2, 0xb0, 0xa1, 0xb, 0x6, 0x6a, 0x87, 0x75, 0x9e)
+_PPM_THERMAL_POLICY_CHANGE_GUID = DEFINE_GUID(0x48f377b8, 0x6880, 0x4c7b, 0x8b, 0xdc, 0x38, 0x1, 0x76, 0xc6, 0x65, 0x4d)
+
+PPM_PERFSTATE_CHANGE_GUID = GUID()
+PPM_PERFSTATE_DOMAIN_CHANGE_GUID = GUID()
+PPM_IDLESTATE_CHANGE_GUID = GUID()
+PPM_PERFSTATES_DATA_GUID = GUID()
+PPM_IDLESTATES_DATA_GUID = GUID()
+PPM_IDLE_ACCOUNTING_GUID = GUID()
+PPM_IDLE_ACCOUNTING_EX_GUID = GUID()
+PPM_THERMALCONSTRAINT_GUID = GUID()
+PPM_PERFMON_PERFSTATE_GUID = GUID()
+PPM_THERMAL_POLICY_CHANGE_GUID = GUID()
+
+_CLSIDFromString(_PPM_PERFSTATE_CHANGE_GUID, byref(PPM_PERFSTATE_CHANGE_GUID))
+_CLSIDFromString(_PPM_PERFSTATE_DOMAIN_CHANGE_GUID, byref(PPM_PERFSTATE_DOMAIN_CHANGE_GUID))
+_CLSIDFromString(_PPM_IDLESTATE_CHANGE_GUID, byref(PPM_IDLESTATE_CHANGE_GUID))
+_CLSIDFromString(_PPM_PERFSTATES_DATA_GUID, byref(PPM_PERFSTATES_DATA_GUID))
+_CLSIDFromString(_PPM_IDLESTATES_DATA_GUID, byref(PPM_IDLESTATES_DATA_GUID))
+_CLSIDFromString(_PPM_IDLE_ACCOUNTING_GUID, byref(PPM_IDLE_ACCOUNTING_GUID))
+_CLSIDFromString(_PPM_IDLE_ACCOUNTING_EX_GUID, byref(PPM_IDLE_ACCOUNTING_EX_GUID))
+_CLSIDFromString(_PPM_THERMALCONSTRAINT_GUID, byref(PPM_THERMALCONSTRAINT_GUID))
+_CLSIDFromString(_PPM_PERFMON_PERFSTATE_GUID, byref(PPM_PERFMON_PERFSTATE_GUID))
+_CLSIDFromString(_PPM_THERMAL_POLICY_CHANGE_GUID, byref(PPM_THERMAL_POLICY_CHANGE_GUID))
 
 class POWER_ACTION_POLICY(Structure):
     _fields_ = [('Action', UINT),
@@ -8898,35 +9134,41 @@ class IMAGE_COR20_HEADER(Structure):
 PIMAGE_COR20_HEADER = POINTER(IMAGE_COR20_HEADER)
 
 
-def RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTraceHash = PDWORD()):
-    res = {}
-    ntdll.RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTraceHash)
-    res['FramesToSkip'] = FramesToSkip
-    res['FramesToCapture'] = FramesToCapture
-    return res
+def RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTraceHash):
+    RtlCaptureStackBackTrace = ntdll.RtlCaptureStackBackTrace
+    RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTraceHash)
 
+
+def RtlSecureZeroMemory(Destination, Length):
+    memset(Destination, 0, Length)
+
+SecureZeroMemory = RtlSecureZeroMemory
+CaptureStackBackTrace = RtlCaptureStackBackTrace
 
 if WIN32_WINNT >= 0x0602:
-    def RtlAddGrowableFunctionTable(FunctionTable, MaximumEntryCount, RangeBase, RangeEnd):
-        DynamicTable = POINTER(PVOID())
-        ntdll.RtlAddGrowableFunctionTable(byref(DynamicTable), FunctionTable, MaximumEntryCount, RangeBase, RangeEnd)
-        return DynamicTable
+    def RtlAddGrowableFunctionTable(DynamicTable, FunctionTable, MaximumEntryCount, RangeBase, RangeEnd):
+        RtlAddGrowableFunctionTable = ntdll.RtlAddGrowableFunctionTable
+        RtlAddGrowableFunctionTable(DynamicTable, FunctionTable, MaximumEntryCount, RangeBase, RangeEnd)
         
 
     def RtlGrowFunctionTable(DynamicTable, NewEntryCount):
-        return ntdll.RtlGrowFunctionTable(DynamicTable, NewEntryCount)
+        RtlGrowFunctionTable = ntdll.RtlGrowFunctionTable
+        return RtlGrowFunctionTable(DynamicTable, NewEntryCount)
 
 
     def RtlDeleteGrowableFunctionTable(DynamicTable):
-        return ntdll.RtlDeleteGrowableFunctionTable(DynamicTable)
+        RtlDeleteGrowableFunctionTable = ntdll.RtlDeleteGrowableFunctionTable
+        return RtlDeleteGrowableFunctionTable(DynamicTable)
 
 
 def RtlAddFunctionTable(DynamicTable):
-    return ntdll.RtlAddFunctionTable(DynamicTable)
+    RtlAddFunctionTable = ntdll.RtlAddFunctionTable
+    return RtlAddFunctionTable(DynamicTable)
 
 
 def RtlDeleteFunctionTable(FunctionTable):
-    return Kernel32.RtlDeleteFunctionTable(FunctionTable)
+    RtlDeleteFunctionTable = Kernel32.RtlDeleteFunctionTable
+    return RtlDeleteFunctionTable(FunctionTable)
 
 
 def RtlInstallFunctionTableCallback(TableIdentifier, 
@@ -8936,17 +9178,19 @@ def RtlInstallFunctionTableCallback(TableIdentifier,
                                     Context, 
                                     OutOfProcessCallbackDll):
     
-    return Kernel32.RtlInstallFunctionTableCallback(TableIdentifier, 
-                                                    BaseAddress, 
-                                                    Length, 
-                                                    Callback, 
-                                                    Context, 
-                                                    OutOfProcessCallbackDll
+    RtlInstallFunctionTableCallback = Kernel32.RtlInstallFunctionTableCallback
+    return RtlInstallFunctionTableCallback(TableIdentifier, 
+                                            BaseAddress, 
+                                            Length, 
+                                            Callback, 
+                                            Context, 
+                                            OutOfProcessCallbackDll
     )
 
 
 def RtlRestoreContext(ContextRecord, ExceptionRecord):
-    return Kernel32.RtlRestoreContext(ContextRecord, ExceptionRecord)
+    RtlRestoreContext = Kernel32.RtlRestoreContext
+    return RtlRestoreContext(ContextRecord, ExceptionRecord)
 
 
 def RtlUnwind(TargetFrame, 
@@ -8954,22 +9198,25 @@ def RtlUnwind(TargetFrame,
               ExceptionRecord, 
               ReturnValue):
     
-    Kernel32.RtlUnwind(TargetFrame, 
-                       TargetIp, 
-                       ExceptionRecord, 
-                       ReturnValue
+    RtlUnwind = Kernel32.RtlUnwind
+    RtlUnwind(TargetFrame, 
+            TargetIp, 
+            ExceptionRecord, 
+            ReturnValue
     )
 
 
 def RtlPcToFileHeader(PcValue, BaseOfImage):
-    return Kernel32.RtlPcToFileHeader(PcValue, BaseOfImage)
+    RtlPcToFileHeader = Kernel32.RtlPcToFileHeader
+    return RtlPcToFileHeader(PcValue, BaseOfImage)
 
 
 
 # _x86_64
 
 def RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable):
-    return Kernel32.RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable)
+    RtlLookupFunctionEntry = Kernel32.RtlLookupFunctionEntry
+    return RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable)
 
 
 def RtlUnwindEx(TargetFrame, 
@@ -8979,12 +9226,13 @@ def RtlUnwindEx(TargetFrame,
                 ContextRecord, 
                 HistoryTable):
     
-    Kernel32.RtlUnwindEx(TargetFrame, 
-                         TargetIp, 
-                         ExceptionRecord, 
-                         ReturnValue, 
-                         ContextRecord, 
-                         HistoryTable
+    RtlUnwindEx = Kernel32.RtlUnwindEx
+    RtlUnwindEx(TargetFrame, 
+                TargetIp, 
+                ExceptionRecord, 
+                ReturnValue, 
+                ContextRecord, 
+                HistoryTable
     )
 
 
@@ -8993,24 +9241,20 @@ def RtlVirtualUnwind(HandlerType,
                      ControlPc, 
                      FunctionEntry, 
                      ContextRecord,
-                     ContextPointers = PKNONVOLATILE_CONTEXT_POINTERS()) -> dict:
+                     HandlerData,
+                     EstablisherFrame,
+                     ContextPointers):
     
-    HandlerData = PVOID()
-    EstablisherFrame = PDWORD64()
-    Kernel32.RtlVirtualUnwind(HandlerType, 
-                              ImageBase, 
-                              ControlPc, 
-                              FunctionEntry, 
-                              ContextRecord,
-                              ctypes.byref(HandlerData),
-                              ctypes.byref(EstablisherFrame),
-                              ctypes.byref(ContextPointers)
+    RtlVirtualUnwind = Kernel32.RtlVirtualUnwind
+    RtlVirtualUnwind(HandlerType, 
+                    ImageBase, 
+                    ControlPc, 
+                    FunctionEntry, 
+                    ContextRecord,
+                    HandlerData,
+                    EstablisherFrame,
+                    ContextPointers
     )
-
-    return {'HandlerData': HandlerData, 
-            'EstablisherFrame': EstablisherFrame,
-            'ContextPointers': ContextPointers
-    }
 
 
 # WIN64
@@ -9058,31 +9302,38 @@ PSLIST_HEADER = POINTER(SLIST_HEADER)
 
 
 def RtlInitializeSListHead(ListHead):
-    ntdll.RtlInitializeSListHead(ListHead)
+    RtlInitializeSListHead = ntdll.RtlInitializeSListHead
+    RtlInitializeSListHead(ListHead)
 
 
 def RtlFirstEntrySList(ListHead):
-    return ntdll.RtlFirstEntrySList(ListHead)
+    RtlFirstEntrySList = ntdll.RtlFirstEntrySList
+    return RtlFirstEntrySList(ListHead)
 
 
 def RtlInterlockedPopEntrySList(ListHead):
-    return ntdll.RtlInterlockedPopEntrySList(ListHead)
+    RtlInterlockedPopEntrySList = ntdll.RtlInterlockedPopEntrySList
+    return RtlInterlockedPopEntrySList(ListHead)
 
 
 def RtlInterlockedPushEntrySList(ListHead, ListEntry):
-    return ntdll.RtlInterlockedPushEntrySList(ListHead, ListEntry)
+    RtlInterlockedPushEntrySList = ntdll.RtlInterlockedPushEntrySList
+    return RtlInterlockedPushEntrySList(ListHead, ListEntry)
 
 
 def RtlInterlockedPushListSListEx(ListHead, List, ListEnd, Count):
-    return ntdll.RtlInterlockedPushListSListEx(ListHead, List, ListEnd, Count)
+    RtlInterlockedPushListSListEx = ntdll.RtlInterlockedPushListSListEx
+    return RtlInterlockedPushListSListEx(ListHead, List, ListEnd, Count)
 
 
 def RtlInterlockedFlushSList(ListHead):
-    return ntdll.RtlInterlockedFlushSList(ListHead)
+    RtlInterlockedFlushSList = ntdll.RtlInterlockedFlushSList
+    return RtlInterlockedFlushSList(ListHead)
 
 
 def RtlQueryDepthSList(ListHead):
-    return ntdll.RtlQueryDepthSList(ListHead)
+    RtlQueryDepthSList = ntdll.RtlQueryDepthSList
+    return RtlQueryDepthSList(ListHead)
 
 
 class _RTL_RUN_ONCE(Structure):
@@ -9190,6 +9441,7 @@ def RtlFillMemory(Destination, Length, Fill):
 def RtlZeroMemory(Destination, Length) :
     return memset(Destination, 0, Length)
 
+ZeroMemory = RtlZeroMemory
 
 class _MESSAGE_RESOURCE_ENTRY(Structure):
     _fields_ = [('Length', WORD),
@@ -10910,10 +11162,12 @@ class _WOW64_LDT_ENTRY(Structure):
                         ('BaseHi', DWORD, 8)
             ]
         
+        _anonymous_ = ['Bytes', 'Bits']
         _fields_ = [('Bytes', Bytes),
                     ('Bits', Bits)
         ]
     
+    _anonymous_ = ['HighWord']
     _fields_ = [('LimitLow', WORD),
                 ('BaseLow', WORD),
                 ('HighWord', HighWord),

@@ -1,14 +1,19 @@
 # coding = 'utf-8'
 
-from sys import getwindowsversion
+import sys
+from struct import calcsize
 
 
 def _nt_to_hex() -> int:
-    major = getwindowsversion().major
-    minor = getwindowsversion().minor
+    major = sys.getwindowsversion().major
+    minor = sys.getwindowsversion().minor
     return (major << 8) | minor
 
 
+WIN64 = True if calcsize('P') * 8 == 64 else False
+UNICODE = True if sys.maxunicode > 0xffff else False
+
+####################################################################
 # sdkddkver.h
 
 try:

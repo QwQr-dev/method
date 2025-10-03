@@ -89,7 +89,7 @@ LPBYTE = wintypes.LPBYTE
 LPCOLORREF = wintypes.LPCOLORREF
 LPCSTR = wintypes.LPCSTR
 LPCTSTR = (wintypes.LPCWSTR 
-           if sys.version_info.major == 3 else wintypes.LPCSTR
+           if sys.maxunicode > 0xffff else wintypes.LPCSTR
 )
 LPCVOID = wintypes.LPCVOID
 LPCWSTR = wintypes.LPCWSTR
@@ -99,7 +99,7 @@ LPINT = wintypes.LPINT
 LPLONG = wintypes.LPLONG
 LPSTR = wintypes.LPSTR
 LPTSTR = (wintypes.LPWSTR 
-          if sys.version_info.major == 3 else wintypes.LPSTR
+          if sys.maxunicode > 0xffff else wintypes.LPSTR
 )
 LPVOID = wintypes.LPVOID
 LPWORD = wintypes.LPWORD
@@ -111,7 +111,7 @@ PBYTE = wintypes.PBYTE
 PCHAR = wintypes.PCHAR
 PCSTR = wintypes.CHAR
 PCTSTR = (wintypes.LPCWSTR 
-          if sys.version_info.major == 3 else wintypes.LPCSTR
+          if sys.maxunicode > 0xffff else wintypes.LPCSTR
 )
 PCWSTR = ctypes.c_wchar_p
 PDWORD = wintypes.PDWORD
@@ -144,14 +144,14 @@ POINTER_64 = ctypes.POINTER(ctypes.c_uint64
 
 try:
     POINTER_SIGNID = ctypes.POINTER(ctypes.c_ssize_t)
-except Exception:
+except:
     POINTER_SIGNID = ctypes.POINTER(ctypes.c_int32 
                                     if ctypes.sizeof(ctypes.c_void_p) == 4 else ctypes.c_int64
     )
 
 try:  
     POINTER_UNSINGID = ctypes.POINTER(ctypes.c_size_t)
-except Exception:
+except:
     POINTER_UNSINGID = ctypes.POINTER(ctypes.c_uint32 
                                       if ctypes.sizeof(ctypes.c_void_p) == 4 else ctypes.c_uint64
     )
@@ -163,13 +163,13 @@ PSIZE_T = ctypes.POINTER(ctypes.c_int64
 PSSIZE_T = ctypes.POINTER(LONG_PTR)
 PSTR = ctypes.POINTER(wintypes.CHAR)
 PTBYTE = ctypes.POINTER(wintypes.WCHAR 
-                        if sys.version_info.major == 3 else ctypes.c_char
+                        if sys.maxunicode > 0xffff else ctypes.c_char
 )
 PTCHAR = ctypes.POINTER(wintypes.WCHAR 
-                        if sys.version_info.major == 3 else ctypes.c_char
+                        if sys.maxunicode > 0xffff else ctypes.c_char
 )
 PTSTR = ctypes.POINTER(wintypes.LPWSTR 
-                       if sys.version_info == 3 else wintypes.LPSTR
+                       if sys.maxunicode > 0xffff else wintypes.LPSTR
 )
 PUCHAR = ctypes.POINTER(ctypes.c_ubyte)
 PUHALF_PTR = ctypes.POINTER(ctypes.c_uint 
@@ -207,11 +207,12 @@ SIZE_T = (ctypes.c_uint64
 )
 SSIZE_T = LONG_PTR
 TBYTE = (wintypes.WCHAR 
-         if sys.version_info.major == 3 else c_uchar
+         if sys.maxunicode > 0xffff else c_uchar
 )
 TCHAR = (wintypes.WCHAR 
-         if sys.version_info.major == 3 else ctypes.c_char
+         if sys.maxunicode > 0xffff else ctypes.c_char
 )
+UBYTE = ctypes.c_ubyte
 UCHAR = ctypes.c_ubyte
 UHALF_PTR = (ctypes.c_uint 
             if sys.maxsize > 2**32 else ctypes.c_ushort
@@ -236,6 +237,7 @@ ULONG64 = ctypes.c_uint64
 USHORT = wintypes.USHORT
 USN = LONGLONG
 VOID = ctypes.c_void_p
+WINBOOL = LONG
 WCHAR = wintypes.WCHAR
 WINAPI = WINFUNCTYPE
 WORD = wintypes.WORD
@@ -252,3 +254,4 @@ class _UNICODE_STRING(ctypes.Structure):
 UNICODE_STRING = _UNICODE_STRING
 PUNICODE_STRING = ctypes.POINTER(_UNICODE_STRING)
 
+MAX_PATH = 260

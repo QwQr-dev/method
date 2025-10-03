@@ -9,7 +9,7 @@ from core.taskdialog import *
 # messagebox
 
 print(MessageBox(HWND(), 'abc', 'abc', MB_ICONINFORMATION)) 
-print(MessageBoxEx(HWND(), 'hello world', 'News', MB_ICONINFORMATION))
+print(MessageBoxEx(HWND(), 'hello world', 'News', MB_ICONINFORMATION, NULL))
 print("info", showinfo("Spam", "Egg Information"))
 print("warning", showwarning("Spam", "Egg Warning"))
 print("error", showerror("Spam", "Egg Alert"))

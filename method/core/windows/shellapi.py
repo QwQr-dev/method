@@ -10,22 +10,24 @@ from ctypes import Structure, POINTER, WinError
 
 try:
     from sdkddkver import *
-    from win_NT import GUID
+    from guiddef import GUID
     from public_dll import *
     from win_cbasictypes import *
     from error import GetLastError
     from windef import POINT, RECT
     from processthreadsapi import *
     from winuser import WM_USER, SendMessageW
+    from wtypesbase import LPSECURITY_ATTRIBUTES
 except ImportError:
     from .sdkddkver import *
-    from .win_NT import GUID
+    from .guiddef import GUID
     from .public_dll import *
     from .win_cbasictypes import *
     from .error import GetLastError
     from .windef import POINT, RECT
     from .processthreadsapi import *
     from .winuser import WM_USER, SendMessageW
+    from .wtypesbase import LPSECURITY_ATTRIBUTES
 
 NULL = 0
 
@@ -328,16 +330,6 @@ LPSHELLEXECUTEINFOW = ctypes.POINTER(SHELLEXECUTEINFOW)
 
 SHELLEXECUTEINFOA = _SHELLEXECUTEINFOA
 LPSHELLEXECUTEINFOA = ctypes.POINTER(SHELLEXECUTEINFOA)
-
-class _SECURITY_ATTRIBUTES(Structure):      # from wtypebase.h
-    _fields_ = [('nLength', DWORD),
-                ('lpSecurityDescriptor', LPVOID),
-                ('bInheritHandle', WINBOOL),
-    ]
-
-SECURITY_ATTRIBUTES = _SECURITY_ATTRIBUTES
-PSECURITY_ATTRIBUTES = POINTER(SECURITY_ATTRIBUTES)
-LPSECURITY_ATTRIBUTES = POINTER(SECURITY_ATTRIBUTES)
 
 class _SHCREATEPROCESSINFOW(Structure):
     _fields_ = [('cbSize', DWORD),
@@ -959,7 +951,7 @@ def ShellExecuteEx(fMask: int = SEE_MASK_FLAG_NO_UI | SEE_MASK_FORCENOIDLIST,
     if hInstApp is not None and hInstApp <= 32:
         raise WinError(GetLastError()) 
     
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError()) 
     
     return hProcess
@@ -969,9 +961,10 @@ def OpenProcess(dwDesiredAccess: int,
                 bInheritHandle: bool, 
                 dwProcessId: int) -> int:
     
-    handle = Kernel32.OpenProcess(dwDesiredAccess, 
-                                  bInheritHandle, 
-                                  dwProcessId
+    OpenProcess = Kernel32.OpenProcess
+    handle = OpenProcess(dwDesiredAccess, 
+                        bInheritHandle, 
+                        dwProcessId
     )
 
     if handle == NULL:
@@ -990,28 +983,17 @@ def CloseHandle(hObject: int) -> None:
 
 def QueryFullProcessImageName(hProcess: int, 
                               dwFlags: int, 
-                              lpExeName: Any = MAX_PATH,
+                              lpExeName: Any,
+                              lpdwSize: Any,
                               unicode: bool = True) -> str:
     
-    lpExeName = ctypes.create_unicode_buffer(lpExeName)
-    lpdwSize = DWORD(ctypes.sizeof(lpExeName))
-
-    if unicode:
-        error_code = Kernel32.QueryFullProcessImageNameW(hProcess, 
-                                                         dwFlags, 
-                                                         ctypes.byref(lpExeName), 
-                                                         ctypes.byref(lpdwSize)
-        )
-    else:
-        error_code = Kernel32.QueryFullProcessImageNameA(hProcess,
-                                                         dwFlags,
-                                                         ctypes.byref(lpExeName), 
-                                                         ctypes.byref(lpdwSize)
-        )
-
+    QueryFullProcessImageName = (Kernel32.QueryFullProcessImageNameW 
+                                 if unicode else Kernel32.QueryFullProcessImageNameA
+    )
+    
+    error_code = QueryFullProcessImageName(hProcess, dwFlags, lpExeName, lpdwSize)
     if error_code == NULL:
         raise WinError(GetLastError())
-    return lpExeName.value
 
 
 def ShellAbout(hwnd: int, 

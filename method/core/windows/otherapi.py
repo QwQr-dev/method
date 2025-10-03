@@ -6,21 +6,15 @@ from typing import NoReturn, Any
 from ctypes import sizeof, Structure, Union, byref, WinError
 
 try:
-    from win_NT import *
+    from shiobj import *
     from ntstatus import *
-    from sdkddkver import *
     from winuser import WM_USER
-    from win_cbasictypes import *
-    from winerror import S_OK, ERROR_INSUFFICIENT_BUFFER, FAILED
     from public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 except ImportError:
-    from .win_NT import *
+    from .shiobj import *
     from .ntstatus import *
-    from .sdkddkver import *
     from .winuser import WM_USER
-    from .win_cbasictypes import *
-    from .winerror import S_OK, ERROR_INSUFFICIENT_BUFFER, FAILED
     from .public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from .error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 
@@ -28,8 +22,7 @@ MAX_PATH = 260
 FARPROC = INT_PTR
 _WIN32_WINNT = WIN32_WINNT
 
-ZeroMemory = RtlZeroMemory
-
+################################################################
 # winbase.h
 
 FILE_BEGIN = 0
@@ -43,9 +36,6 @@ WAIT_ABANDONED = STATUS_ABANDONED_WAIT_0 + 0
 WAIT_ABANDONED_0 = STATUS_ABANDONED_WAIT_0 + 0
 
 WAIT_IO_COMPLETION = STATUS_USER_APC
-
-# SecureZeroMemory = RtlSecureZeroMemory
-CaptureStackBackTrace = RtlCaptureStackBackTrace
 
 FILE_FLAG_WRITE_THROUGH = 0x80000000
 FILE_FLAG_OVERLAPPED = 0x40000000
@@ -98,6 +88,18 @@ PROFILE_SERVER = 0x40000000
 CREATE_IGNORE_SYSTEM_DEFAULT = 0x80000000
 
 STACK_SIZE_PARAM_IS_A_RESERVATION = 0x10000
+
+THREAD_DYNAMIC_CODE_ALLOW = 1
+
+THREAD_BASE_PRIORITY_LOWRT = 15
+THREAD_BASE_PRIORITY_MAX = 2
+THREAD_BASE_PRIORITY_MIN = -2
+THREAD_BASE_PRIORITY_IDLE = -15
+
+MAXLONG = 0x7fffffff
+MAXULONG64 = 18446744073709551615
+MAXLONG64 = 9223372036854775807
+MINLONG64 = -9223372036854775808
 
 THREAD_PRIORITY_LOWEST = THREAD_BASE_PRIORITY_MIN
 THREAD_PRIORITY_BELOW_NORMAL = THREAD_PRIORITY_LOWEST+1
@@ -175,20 +177,22 @@ def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True) -> 
 
 
 def AssignProcessToJobObject(hJob: int, hProcess: int) -> int:
-    res = Kernel32.AssignProcessToJobObject(hJob, hProcess)
+    AssignProcessToJobObject = Kernel32.AssignProcessToJobObject
+    res = AssignProcessToJobObject(hJob, hProcess)
     if res == NULL:
         raise WinError(GetLastError())
     return res
 
 
 def TerminateJobObject(hJob: int, uExitCode: int) -> int:
-    res = Kernel32.TerminateJobObject(hJob, uExitCode)
+    TerminateJobObject = Kernel32.TerminateJobObject
+    res = TerminateJobObject(hJob, uExitCode)
     if res == NULL:
         raise WinError(GetLastError())
     return res
 
 
-# ==========================================================================================
+#################################################################
 # wdm.h
 
 SE_MIN_WELL_KNOWN_PRIVILEGE         = 2
@@ -228,8 +232,19 @@ SE_TIME_ZONE_PRIVILEGE              = 34
 SE_CREATE_SYMBOLIC_LINK_PRIVILEGE   = 35
 SE_MAX_WELL_KNOWN_PRIVILEGE         = SE_CREATE_SYMBOLIC_LINK_PRIVILEGE
 
-# =====================================================================
+#######################################################################
 # tlhelp32.h
+
+MAX_MODULE_NAME32 = 255
+
+
+def CreateToolhelp32Snapshot(dwFlags: int, th32ProcessID: int) -> int:
+    CreateToolhelp32Snapshot = Kernel32.CreateToolhelp32Snapshot
+    res = CreateToolhelp32Snapshot(dwFlags, th32ProcessID)
+    if res == INVALID_HANDLE_VALUE:
+        raise WinError(GetLastError())
+    return res
+
 
 INVALID_HANDLE_VALUE = HANDLE(LONG_PTR(-1).value).value
 
@@ -246,19 +261,150 @@ TH32CS_SNAPALL =      (TH32CS_SNAPHEAPLIST |
 
 TH32CS_INHERIT =      0x80000000
 
+class tagHEAPLIST32(Structure):
+    _fields_ = [('dwSize', SIZE_T),
+                ('th32ProcessID', DWORD),
+                ('th32HeapID', ULONG_PTR),
+                ('dwFlags', DWORD)
+    ]
 
-def CreateToolhelp32Snapshot(dwFlags: int, th32ProcessID: int) -> int:
-    res = Kernel32.CreateToolhelp32Snapshot(dwFlags, th32ProcessID)
-    if res == INVALID_HANDLE_VALUE:
+HEAPLIST32 = tagHEAPLIST32
+PHEAPLIST32 = POINTER(HEAPLIST32)
+LPHEAPLIST32 = PHEAPLIST32
+
+HF32_DEFAULT = 1
+HF32_SHARED = 2
+
+
+def Heap32ListFirst(hSnapshot, lphl):
+    Heap32ListFirst = Kernel32.Heap32ListFirst
+    res = Heap32ListFirst(hSnapshot, lphl)
+    if res not in [1]:
         raise WinError(GetLastError())
     return res
 
 
-def Thread32First(hSnapshot, lpte):
-    res = Kernel32.Thread32First(hSnapshot, lpte)
-    if res not in [0, 1]:
+def Heap32ListNext(hSnapshot, lphl):
+    Heap32ListNext = Kernel32.Heap32ListNext
+    res = Heap32ListNext(hSnapshot, lphl)
+    if res not in [1]:
         raise WinError(GetLastError())
     return res
+
+
+class tagHEAPENTRY32(Structure):
+    _fields_ = [('dwSize', SIZE_T),
+                ('hHandle', HANDLE),
+                ('dwAddress', ULONG_PTR),
+                ('dwBlockSize', SIZE_T),
+                ('dwFlags', DWORD),
+                ('dwLockCount', DWORD),
+                ('dwResvd', DWORD),
+                ('th32ProcessID', DWORD),
+                ('th32HeapID', ULONG_PTR),
+    ]
+
+HEAPENTRY32 = tagHEAPENTRY32
+PHEAPENTRY32 = POINTER(HEAPENTRY32)
+LPHEAPENTRY32 = PHEAPENTRY32
+
+LF32_FIXED = 0x00000001
+LF32_FREE = 0x00000002
+LF32_MOVEABLE = 0x00000004
+
+
+def Heap32First(lphe, th32ProcessID, th32HeapID):
+    Heap32First = Kernel32.Heap32First
+    res = Heap32First(lphe, th32ProcessID, th32HeapID)
+    if res not in [1]:
+        raise WinError(GetLastError())
+    return res
+
+
+def Heap32Next(lphe):
+    Heap32Next = Kernel32.Heap32Next
+    res = Heap32Next(lphe)
+    if res not in [1]:
+        raise WinError(GetLastError())
+    return res
+
+
+def Toolhelp32ReadProcessMemory(th32ProcessID, 
+                                lpBaseAddress, 
+                                lpBuffer, 
+                                cbRead, 
+                                lpNumberOfBytesRead):
+    
+    Toolhelp32ReadProcessMemory = Kernel32.Toolhelp32ReadProcessMemory
+    res = Toolhelp32ReadProcessMemory(th32ProcessID, 
+                                      lpBaseAddress, 
+                                      lpBuffer, 
+                                      cbRead, 
+                                      lpNumberOfBytesRead
+    )
+
+    if not res:
+        raise WinError(GetLastError())
+
+
+class tagPROCESSENTRY32(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('cntUsage', DWORD),
+                ('th32ProcessID', DWORD),
+                ('th32DefaultHeapID', ULONG_PTR),
+                ('th32ModuleID', DWORD),
+                ('cntThreads', DWORD),
+                ('th32ParentProcessID', DWORD),
+                ('pcPriClassBase', LONG),
+                ('dwFlags', DWORD),
+                ('szExeFile', CHAR * MAX_PATH),
+    ]
+
+PROCESSENTRY32 = tagPROCESSENTRY32
+PPROCESSENTRY32 = POINTER(PROCESSENTRY32)
+LPPPROCESSENTRY32 = PPROCESSENTRY32
+
+class tagPROCESSENTRY32W(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('cntUsage', DWORD),
+                ('th32ProcessID', DWORD),
+                ('th32DefaultHeapID', ULONG_PTR),
+                ('th32ModuleID', DWORD),
+                ('cntThreads', DWORD),
+                ('th32ParentProcessID', DWORD),
+                ('pcPriClassBase', LONG),
+                ('dwFlags', DWORD),
+                ('szExeFile', WCHAR * MAX_PATH),
+    ]
+
+PROCESSENTRY32W = tagPROCESSENTRY32W
+PPROCESSENTRY32W = POINTER(PROCESSENTRY32W)
+LPPROCESSENTRY32W = PPROCESSENTRY32W
+
+if UNICODE:
+    PROCESSENTRY32 = PROCESSENTRY32W
+    PPROCESSENTRY32 = PPROCESSENTRY32W
+    LPPROCESSENTRY32 = LPPROCESSENTRY32W
+
+
+def Process32First(hSnapshot: int, lppe: Any, unicode: bool = True):
+    Process32First = (Kernel32.Process32FirstW 
+                      if unicode else Kernel32.Process32First
+    )
+
+    res = Process32First(hSnapshot, lppe)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def Process32Next(hSnapshot: int, lppe: Any, unicode: bool = True):
+    Process32Next = (Kernel32.Process32NextW 
+                      if unicode else Kernel32.Process32Next
+    )
+
+    res = Process32Next(hSnapshot, lppe)
+    if not res:
+        raise WinError(GetLastError())
 
 
 class tagTHREADENTRY32(Structure):
@@ -272,11 +418,78 @@ class tagTHREADENTRY32(Structure):
     ]
 
 THREADENTRY32 = tagTHREADENTRY32
+PTHREADENTRY32 = POINTER(THREADENTRY32)
+LPTHREADENTRY32 = PTHREADENTRY32
+
+
+def Thread32First(hSnapshot, lpte):
+    Thread32First = Kernel32.Thread32First
+    res = Thread32First(hSnapshot, lpte)
+    if res not in [0, 1]:
+        raise WinError(GetLastError())
+    return res
 
 
 def Thread32Next(hSnapshot, lpte):
-    res = Kernel32.Thread32Next(hSnapshot, lpte)
+    Thread32Next = Kernel32.Thread32Next
+    res = Thread32Next(hSnapshot, lpte)
     if res not in [0, 1]:
+        raise WinError(GetLastError())
+    return res
+
+
+class tagMODULEENTRY32W(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('th32ModuleID', DWORD),
+                ('th32ProcessID', DWORD),
+                ('GlblcntUsage', DWORD),
+                ('ProccntUsage', DWORD),
+                ('modBaseAddr', PBYTE),
+                ('modBaseSize', DWORD),
+                ('hModule', HMODULE),
+                ('szModule', WCHAR * (MAX_MODULE_NAME32 + 1)),
+                ('szExePath', WCHAR * MAX_PATH)
+    ]
+
+MODULEENTRY32W = tagMODULEENTRY32W
+PMODULEENTRY32W = POINTER(MODULEENTRY32W)
+LPMODULEENTRY32W = PMODULEENTRY32W
+
+class tagMODULEENTRY32(Structure):
+    _fields_ = [('dwSize', DWORD),
+                ('th32ModuleID', DWORD),
+                ('th32ProcessID', DWORD),
+                ('GlblcntUsage', DWORD),
+                ('ProccntUsage', DWORD),
+                ('modBaseAddr', PBYTE),
+                ('modBaseSize', DWORD),
+                ('hModule', HMODULE),
+                ('szModule', CHAR * (MAX_MODULE_NAME32 + 1)),
+                ('szExePath', CHAR * MAX_PATH)
+    ]
+
+MODULEENTRY32 = tagMODULEENTRY32
+PMODULEENTRY32 = POINTER(MODULEENTRY32)
+LPMODULEENTRY32 = PMODULEENTRY32
+
+if UNICODE:
+    MODULEENTRY32 = MODULEENTRY32W
+    PMODULEENTRY32 = PMODULEENTRY32W
+    LPMODULEENTRY32 = LPMODULEENTRY32W
+
+
+def Module32First(hSnapshot, lpme, unicode: bool = True):
+    Module32First = Kernel32.Module32FirstW if unicode else Kernel32.Module32First
+    res = Module32First(hSnapshot, lpme)
+    if res not in [1]:
+        raise WinError(GetLastError())
+    return res
+
+
+def Module32Next(hSnapshot, lpme, unicode: bool = True):
+    Module32Next = Kernel32.Module32NextW if unicode else Kernel32.Module32Next
+    res = Module32Next(hSnapshot, lpme)
+    if res not in [1]:
         raise WinError(GetLastError())
     return res
 
@@ -284,18 +497,18 @@ def Thread32Next(hSnapshot, lpte):
 # =================================================================
 # ???
 
-def WinStationTerminateProcess(ServerHandle = HANDLE(), 
-                               ProcessId = ULONG(), 
-                               ExitCode = ULONG()):
+def WinStationTerminateProcess(ServerHandle: int, 
+                               ProcessId: int, 
+                               ExitCode: int):
     
-    res = winsta.WinStationTerminateProcess(ServerHandle, 
-                                            ProcessId, 
-                                            ExitCode
+    WinStationTerminateProcess = winsta.WinStationTerminateProcess
+    res = WinStationTerminateProcess(ServerHandle, 
+                                    ProcessId, 
+                                    ExitCode
     )
 
     if res == NULL:
         raise WinError(GetLastError())
-    return res
 
 
 # =================================================================
@@ -306,50 +519,52 @@ def RtlAdjustPrivilege(Privilege: int,
                        CurrentThread: int, 
                        OldValue: int) -> None:
     
-    res = ntdll.RtlAdjustPrivilege(Privilege, 
-                                   Enable, 
-                                   CurrentThread, 
-                                   OldValue
+    RtlAdjustPrivilege = ntdll.RtlAdjustPrivilege
+    res = RtlAdjustPrivilege(Privilege, 
+                             Enable, 
+                             CurrentThread, 
+                             OldValue
     )
 
     if res != STATUS_SUCCESS:
         raise WinError(RtlNtStatusToDosError(res))
 
 
-# ==================================================================
+##################################################################
 # ???
 # BSOD function
 
-def NtRaiseHardError(ErrorStatus: int = LONG(), 
-                     NumberOfParameters: int = ULONG(), 
-                     UnicodeStringParameterMask: int = ULONG(), 
-                     Parameters: int = PULONG_PTR(), 
-                     ValidResponseOptions: int = ULONG(), 
-                     Response: int = PULONG()) -> NoReturn:
+def NtRaiseHardError(ErrorStatus: int, 
+                     NumberOfParameters: int, 
+                     UnicodeStringParameterMask: int, 
+                     Parameters: int, 
+                     ValidResponseOptions: int, 
+                     Response: int) -> NoReturn:
     
-    res = ntdll.NtRaiseHardError(ErrorStatus, 
-                                 NumberOfParameters, 
-                                 UnicodeStringParameterMask, 
-                                 Parameters, 
-                                 ValidResponseOptions, 
-                                 Response
+    NtRaiseHardError = ntdll.NtRaiseHardError
+    res = NtRaiseHardError(ErrorStatus, 
+                        NumberOfParameters, 
+                        UnicodeStringParameterMask, 
+                        Parameters, 
+                        ValidResponseOptions, 
+                        Response
     )
 
     if res != STATUS_SUCCESS:
         raise WinError(RtlNtStatusToDosError(res))
 
 
-# ==========================================================================
+##################################################################========
 
-# ==========================================================================
+##################################################################========
 # 蓝屏（BSOD）示例代码（请勿在实体机上使用，以免造成数据丢失）
 #
 # RtlAdjustPrivilege(SE_SHUTDOWN_PRIVILEGE, TRUE, FALSE, byref(BOOLEAN()))
 # NtRaiseHardError(STATUS_ASSERTION_FAILURE, NULL, NULL, NULL, 6, byref(ULONG()))
 # 
-# ==========================================================================
+##################################################################========
 
-# ==========================================================================
+##################################################################========
 # libloaderapi.h
 
 DONT_RESOLVE_DLL_REFERENCES = 0x1
@@ -376,21 +591,24 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS2:
 
 
 def AddDllDirectory(NewDirectory):
-    res = Kernel32.AddDllDirectory(NewDirectory)
+    AddDllDirectory = Kernel32.AddDllDirectory
+    res = AddDllDirectory(NewDirectory)
     if res == NULL:
         raise WinError(GetLastError())
     return res
 
 
 def DisableThreadLibraryCalls(hLibModule):
-    res = Kernel32.DisableThreadLibraryCalls(hLibModule)
+    DisableThreadLibraryCalls = Kernel32.DisableThreadLibraryCalls
+    res = DisableThreadLibraryCalls(hLibModule)
     if res == NULL:
         raise WinError(GetLastError())
     return res
 
 
 def FreeLibrary(hLibModule):
-    res = Kernel32.FreeLibrary(hLibModule)
+    FreeLibrary = Kernel32.FreeLibrary
+    res = FreeLibrary(hLibModule)
     if res == NULL:
         raise WinError(GetLastError())
     return res
@@ -401,14 +619,10 @@ def FreeLibraryAndExitThread(hLibModule, dwExitCode) -> None:
 
 
 def GetModuleFileName(hModule, lpFilename, nSize, unicode: bool = True):
-    if unicode:
-        res = Kernel32.GetModuleFileNameW(hModule, lpFilename, nSize)
-    else:
-        res = Kernel32.GetModuleFileNameA(hModule, lpFilename, nSize)
-    
+    GetModuleFileName = Kernel32.GetModuleFileNameW if unicode else Kernel32.GetModuleFileNameA
+    res = GetModuleFileName(hModule, lpFilename, nSize)
     if res == NULL:
         raise WinError(GetLastError())
-    return lpFilename
 
 
 def GetModuleHandle(lpModuleName: str, unicode: bool = True) -> int:
@@ -425,7 +639,7 @@ def GetModuleHandle(lpModuleName: str, unicode: bool = True) -> int:
     return res
 
 
-def GetModuleHandleEx(dwFlags: int, lpModuleName: str, unicode: bool = True) -> int:
+def GetModuleHandleEx(dwFlags: int, lpModuleName: str, phModule: Any, unicode: bool = True) -> int:
     GetModuleHandleEx = (Kernel32.GetModuleHandleExW 
                          if unicode else Kernel32.GetModuleHandleExA
     )
@@ -436,12 +650,9 @@ def GetModuleHandleEx(dwFlags: int, lpModuleName: str, unicode: bool = True) -> 
     ]
 
     GetModuleHandleEx.restype = BOOL
-    phModule = HMODULE()
-    res = GetModuleHandleEx(dwFlags, lpModuleName, byref(phModule))
-
+    res = GetModuleHandleEx(dwFlags, lpModuleName, phModule)
     if res == NULL:
         raise WinError(GetLastError())
-    return phModule.value
     
 
 def GetProcAddress(hModule: int, lpProcName: str | int, encoding: str = 'ansi') -> int:
@@ -490,18 +701,20 @@ def LoadLibraryEx(lpLibFileName: str,
 
 
 def RemoveDllDirectory(Cookie):
-    res = Kernel32.RemoveDllDirectory(Cookie)
+    RemoveDllDirectory = Kernel32.RemoveDllDirectory
+    res = RemoveDllDirectory(Cookie)
     if res == NULL:
         raise WinError(GetLastError())
     
 
 def SetDefaultDllDirectories(DirectoryFlags):
-    res = Kernel32.SetDefaultDllDirectories(DirectoryFlags)
+    SetDefaultDllDirectories = Kernel32.SetDefaultDllDirectories
+    res = SetDefaultDllDirectories(DirectoryFlags)
     if res == NULL:
         raise WinError(GetLastError())
 
 
-# ===================================================================
+################################################################
 # ???
 
 RFD_NOBROWSE            = 0x00000001
@@ -527,7 +740,7 @@ def RunfileDlg(hwndOwner: int,
     RunfileDlg(hwndOwner, hIcon, lpszDirectory, lpszTitle, lpszDescription, uFlags)
 
 
-# ==================================================================
+##################################################################
 # synchapi.h
 
 def WaitForSingleObject(hHandle: int, dwMilliseconds: int) -> int:
@@ -538,7 +751,7 @@ def WaitForSingleObject(hHandle: int, dwMilliseconds: int) -> int:
     return res
 
 
-# ===============================================================================
+##################################################################
 # reason.h
 
 SHTDN_REASON_FLAG_COMMENT_REQUIRED = 0x01000000
@@ -613,7 +826,7 @@ SNAPSHOT_POLICY_UNPLANNED = 2
 
 MAX_NUM_REASONS = 256
 
-# ===================================================================================
+##################################################################
 # winreg.h
 
 REASON_SWINSTALL = SHTDN_REASON_MAJOR_SOFTWARE | SHTDN_REASON_MINOR_INSTALLATION
@@ -690,84 +903,7 @@ def InitiateSystemShutdownEx(lpMachineName: str,
         raise WinError(GetLastError())
 
 
-# ============================================================================
-# ???
-
-class _SHITEMID(Structure):
-    _fields_ = [('cb', USHORT),
-                ('abID', BYTE * 1)
-    ]
-
-SHITEMID = _SHITEMID
-
-class _ITEMIDLIST(Structure):
-    _fields_ = [('mkid', SHITEMID)]
-
-ITEMIDLIST = _ITEMIDLIST
-
-PCIDLIST_ABSOLUTE = ITEMIDLIST
-
-PCUITEMID_CHILD_ARRAY = ITEMIDLIST
-
-
-def SHOpenFolderAndSelectItems(pidlFolder: int, 
-                               cidl: int, 
-                               apidl: Any, 
-                               dwFlags: int) -> None:
-    
-    SHOpenFolderAndSelectItems = shell32.SHOpenFolderAndSelectItems
-    SHOpenFolderAndSelectItems.argtypes = [VOID, UINT, VOID, DWORD]
-    SHOpenFolderAndSelectItems.restype = HRESULT
-    res = SHOpenFolderAndSelectItems(pidlFolder, cidl, apidl, dwFlags)
-
-    if res != S_OK:
-        raise WinError(GetLastError())
-    
-
-def ILFindLastID(pidl: int):
-    res = shell32.ILFindLastID(pidl)
-    return res
-
-
-def ILCreateFromPath(pszPath: str, unicode: bool = True) -> int:
-    ILCreateFromPath = (shell32.ILCreateFromPathW 
-                        if unicode else shell32.ILCreateFromPathA
-    )
-
-    ILCreateFromPath.argtypes = [(LPCWSTR if unicode else LPCSTR)]
-    ILCreateFromPath.restype = VOID
-
-    res = ILCreateFromPath(pszPath)
-    return res
-
-
-def CoInitialize(pvReserved: int = NULL) -> None:
-    res = ole32.CoInitialize(pvReserved)
-    if FAILED(res):
-        raise WinError(res)
-
-
-def CoInitializeEx(pvReserved: int, dwCoInit: int) -> None:
-    CoInitializeEx = ole32.CoInitializeEx
-    res = CoInitializeEx(pvReserved, dwCoInit)
-    if FAILED(res):
-        raise WinError(res)
-
-
-def CoUninitialize() -> None:
-    res =  ole32.CoUninitialize()
-    if FAILED(res):
-        raise WinError(res)
-
-
-def ILFree(pidl) -> None:
-    ILFree = shell32.ILFree
-    ILFree.argtypes = [VOID]
-    ILFree.restype = None
-    ILFree(pidl)
-
-
-# ================================================================================
+##################################################################
 # ???
 
 BIF_RETURNONLYFSDIRS =     0x00000001   # For finding a folder to start document searching
@@ -947,8 +1083,6 @@ class tagOFNW(Structure):
 OPENFILENAMEW = tagOFNW
 LPOPENFILENAMEW = POINTER(OPENFILENAMEW)
 
-LPCITEMIDLIST = ITEMIDLIST
-
 PCIDLIST_ABSOLUT = LPCITEMIDLIST
 
 class _browseinfoA(Structure):
@@ -1055,7 +1189,7 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
     return pszPath
 
 
-# ==============================================================================
+##################################################################
 # sysinfoapi.h
 
 
@@ -1087,69 +1221,15 @@ class _SMBIOS_HEADER(Structure):
 
 SMBIOS_HEADER = _SMBIOS_HEADER
 
-# ==================================================================================
+##################################################################
 # ConsoleApi3.h
 
 def GetConsoleWindow() -> int:
     return Kernel32.GetConsoleWindow()
 
 
-# =================================================================================
+##################################################################
 # ???
-
-class tagPROCESSENTRY32(Structure):
-    _fields_ = [('dwSize', DWORD),
-                ('cntUsage', DWORD),
-                ('th32ProcessID', DWORD),
-                ('th32DefaultHeapID', ULONG_PTR),
-                ('th32ModuleID', DWORD),
-                ('cntThreads', DWORD),
-                ('th32ParentProcessID', DWORD),
-                ('pcPriClassBase', LONG),
-                ('dwFlags', DWORD),
-                ('szExeFile', CHAR * MAX_PATH),
-    ]
-
-tagPROCESSENTRY32A = tagPROCESSENTRY32
-PROCESSENTRY32A = tagPROCESSENTRY32A
-
-class tagPROCESSENTRY32W(Structure):
-    _fields_ = [('dwSize', DWORD),
-                ('cntUsage', DWORD),
-                ('th32ProcessID', DWORD),
-                ('th32DefaultHeapID', ULONG_PTR),
-                ('th32ModuleID', DWORD),
-                ('cntThreads', DWORD),
-                ('th32ParentProcessID', DWORD),
-                ('pcPriClassBase', LONG),
-                ('dwFlags', DWORD),
-                ('szExeFile', WCHAR * MAX_PATH),
-    ]
-
-PROCESSENTRY32W = tagPROCESSENTRY32W
-
-
-def Process32First(hSnapshot, lppe, unicode: bool = True):
-    Process32First = (Kernel32.Process32FirstW 
-                      if unicode else Kernel32.Process32First
-    )
-
-    res = Process32First(hSnapshot, lppe)
-    if not res:
-        raise WinError(GetLastError())
-    return lppe
-
-
-def Process32Next(hSnapshot, lppe, unicode: bool = True):
-    Process32Next = (Kernel32.Process32NextW 
-                      if unicode else Kernel32.Process32Next
-    )
-
-    res = Process32Next(hSnapshot, lppe)
-    if not res:
-        raise WinError(GetLastError())
-    return lppe
-
 
 def LookupPrivilegeValue(lpSystemName: str | bytes, 
                          lpName: str | bytes, 
@@ -1243,7 +1323,7 @@ def GetCommandLine(unicode: bool = True) -> (str | bytes):
     return res
 
 
-# ==================================================================================
+##################################################################
 # ???
 
 def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True) -> int:
@@ -1290,7 +1370,7 @@ def CheckDlgButton(hDlg, nIDButton, uCheck):
         raise WinError(GetLastError())
     
 
-# =====================================================================
+##################################################################
 # ???
 
 def SetWindowPos(hwnd: int, 
@@ -1314,7 +1394,7 @@ def SetForegroundWindow(hwnd: int) -> bool:
     return bool(res)
 
 
-# =======================================================================
+##################################################################
 # ???
 
 def GetWindowBand(hwnd: int, pdwBand: int) -> None:
@@ -1474,7 +1554,7 @@ def zorder_band_names(zbid: int = NULL) -> str:
     raise IndexError('Dict index out of range')
 
 
-# ========================================================================
+##################################################################
 # ???
 
 class DLGITEMTEMPLATE(ctypes.Structure):
@@ -1503,3 +1583,101 @@ def BringWindowToTop(hwnd: int) -> None:
     res = BringWindowToTop(hwnd)
     if not res:
         raise WinError(GetLastError())
+
+
+###################################################################
+# combaseapi.h
+
+
+##################################################################
+# ???
+
+def IsWow64Process(hProcess, Wow64Process):
+    IsWow64Process = Kernel32.IsWow64Process
+    IsWow64Process.argtypes = [HANDLE, PBOOL]
+    res = IsWow64Process(hProcess, Wow64Process)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def IsWow64Process2(hProcess, pProcessMachine, pNativeMachine):
+    IsWow64Process2 = Kernel32.IsWow64Process2
+    IsWow64Process2.argtypes = [HANDLE, PUSHORT, PUSHORT]
+    res = IsWow64Process2(hProcess, pProcessMachine, pNativeMachine)
+    if not res:
+        raise WinError(GetLastError())
+
+
+###################################################################
+# wchar.h
+
+def memchr(buffer, c, count):
+    memchr = ntdll.memchr
+    res = memchr(buffer, c, count)
+    return res
+
+def wmemchr(buffer, c, count):
+    wmemchr = ntdll.wmemchr
+    res = wmemchr(buffer, c, count)
+    return res
+
+def memcmp(buffer1, buffer2, count):
+    memcmp = ntdll.memcmp
+    res = memcmp(buffer1, buffer2, count)
+    return res
+
+def wmemcmp(buffer1, buffer2, count):
+    wmemcmp = ntdll.wmemcmp
+    res = wmemcmp(buffer1, buffer2, count)
+    return res
+
+def memcpy(dest, src, count):
+    memcpy = ntdll.memcpy
+    res = memcpy(dest, src, count)
+    return res
+
+def wmemcpy(dest, src, count):
+    wmemcpy = ntdll.wmemcpy
+    res = wmemcpy(dest, src, count)
+    return res
+
+def memcpy_s(dest, destSize, src, count):
+    memcpy_s = ntdll.memcpy_s
+    res = memcpy_s(dest, destSize, src, count)
+    return res
+
+def wmemcpy_s(dest, destSize, src, count):
+    wmemcpy_s = ntdll.wmemcpy_s
+    res = wmemcpy_s(dest, destSize, src, count)
+    return res
+
+def memmove(dest, src, count):
+    memmove = ntdll.memmove
+    res = memmove(dest, src, count)
+    return res
+
+def wmemmove(dest, src, count):
+    wmemmove = ntdll.wmemmove
+    res = wmemmove(dest, src, count)
+    return res
+
+def memmove_s(dest, numberOfElements, src, count):
+    memmove_s = ntdll.memmove_s
+    res = memmove_s(dest, numberOfElements, src, count)
+    return res
+
+def wmemmove_s(dest, numberOfElements, src, count):
+    wmemmove_s = ntdll.wmemmove_s
+    res = wmemmove_s(dest, numberOfElements, src, count)
+    return res
+
+def memset(dest, c, count):
+    memset = ntdll.memset
+    res = memset(dest, c, count)
+    return res
+
+def wmemset(dest, c, count):
+    wmemset = ntdll.wmemset
+    res = wmemset(dest, c, count)
+    return res
+

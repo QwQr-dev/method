@@ -13,8 +13,14 @@ def OpenTerminateProcess(pid: int) -> None:
 
 def TerminateProcessViaJob(pid: int) -> None:
     hJob = CreateJobObject(NULL, NULL)
-    hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
-    AssignProcessToJobObject(hJob, hProcess)
-    TerminateJobObject(hJob, 0)
-    CloseHandle(hJob)
-    CloseHandle(hProcess)
+    try:
+        hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid)
+        try:
+            AssignProcessToJobObject(hJob, hProcess)
+            TerminateJobObject(hJob, 0)
+        finally:
+            CloseHandle(hJob)
+            CloseHandle(hProcess)
+    finally:
+        CloseHandle(hJob)
+        CloseHandle(hProcess)

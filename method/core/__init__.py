@@ -27,8 +27,6 @@ from .sys_win import (get_proc_path,
                       USERNAME,
                       USERPROFILE,
                       HOME,
-                      User_Shell_Folders,
-                      System_Shell_Folders,
                       Desktop,
                       Roaming,
                       INetCache,
@@ -51,7 +49,9 @@ from .sys_win import (get_proc_path,
                       Downloads,
                       Administrative_Tools,
                       ProgramData,
-                      Links
+                      Links,
+                      Program_Files,
+                      Common_Files
 )
 
 from .filedialog import *

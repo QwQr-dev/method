@@ -5,15 +5,14 @@ import sys
 try:
     from error import *
     from fltwinerror import *
-    from win_cbasictypes import HRESULT, LONG, INT
-    from win_NT import ERROR_SEVERITY_ERROR, APPLICATION_ERROR_MASK
 except ImportError:
     from .error import *
     from .fltwinerror import *
-    from .win_cbasictypes import HRESULT, LONG, INT
-    from .win_NT import ERROR_SEVERITY_ERROR, APPLICATION_ERROR_MASK
 
 SCODE = LONG
+
+ERROR_SEVERITY_ERROR = 0xC0000000
+APPLICATION_ERROR_MASK = 0x20000000
 
 __LONG32 = LONG if sys.maxsize > 2**32 else INT
 

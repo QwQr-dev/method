@@ -2,26 +2,23 @@
 
 import sys
 import enum
-import platform
-from ctypes import *
 
 try:
     from windef import *
     from winuser import *
     from sdkddkver import *
-    from win_NT import GUID
     from win_cbasictypes import *
+    from .guiddef import GUID, IID
 except ImportError:
     from .windef import *
     from .winuser import *
     from .sdkddkver import *
-    from .win_NT import GUID
     from .win_cbasictypes import *
+    from .guiddef import GUID, IID
 
 _WIN32_IE = WIN32_IE
 
 WINBOOL = BOOL
-UNICODE = True      # Choose true or false
 
 class tagINITCOMMONCONTROLSEX(Structure):
     _fields_ = [('dwSize', DWORD),
@@ -199,7 +196,6 @@ NMCLICK = NMMOUSE
 LPNMCLICK = LPNMMOUSE
 
 __IID_DEFINED__ = False
-IID = GUID  # from guiddef.h
 
 class tagNMOBJECTNOTIFY(Structure):
     _fields_ = [('hdr', NMHDR),
@@ -823,7 +819,7 @@ class _TBBUTTON(Structure):
                 ('iString', INT_PTR)
     ]
 
-    if platform.machine().lower() == 'amd64' and sys.maxsize > 2 ** 32:
+    if sys.maxsize > 2 ** 32:
         _fields_.append(('bReserved', BYTE * 6))
     else:
         _fields_.append(('bReserved', BYTE * 2))

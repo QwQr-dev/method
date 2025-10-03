@@ -4,16 +4,19 @@ import sys
 import enum
 import platform
 from ctypes import *
+from typing import Any
 
 try:
     from error import *
     from win_NT import *
     from ntstatus import *
+    from guiddef import GUID
     from public_dll import *
 except ImportError:
     from .error import *
     from .win_NT import *
     from .ntstatus import *
+    from .guiddef import GUID
     from .public_dll import *
 
 # ntddk.h
@@ -338,10 +341,10 @@ DRVO_BOOTREINIT_REGISTERED =      0x00000020
 DRVO_LEGACY_RESOURCES =           0x00000040
 
 
-def NtOpenProcess(ProcessHandle = HANDLE(),
-                  DesiredAccess: int = ACCESS_MASK(), 
-                  ObjectAttributes = OBJECT_ATTRIBUTES(), 
-                  ClientId = CLIENT_ID()) -> int:
+def NtOpenProcess(ProcessHandle: Any,
+                  DesiredAccess: int, 
+                  ObjectAttributes: Any, 
+                  ClientId: Any) -> int:
 
     NtOpenProcess = ntdll.NtOpenProcess
     NtOpenProcess.argtypes = [PHANDLE, 
@@ -351,21 +354,21 @@ def NtOpenProcess(ProcessHandle = HANDLE(),
     ]
 
     NtOpenProcess.restype = VOID
-    res = NtOpenProcess(byref(ProcessHandle), 
+    res = NtOpenProcess(ProcessHandle, 
                         DesiredAccess, 
-                        byref(ObjectAttributes), 
-                        byref(ClientId)
+                        ObjectAttributes, 
+                        ClientId
     )
 
     if not NT_SUCCESS(res):
         raise WinError(RtlNtStatusToDosError(res))
-    return ProcessHandle
 
 
-def ZwOpenProcess(ProcessHandle = HANDLE(),
-                  DesiredAccess: int = ACCESS_MASK(), 
-                  ObjectAttributes = OBJECT_ATTRIBUTES(), 
-                  ClientId = CLIENT_ID()) -> int:
+
+def ZwOpenProcess(ProcessHandle: Any,
+                  DesiredAccess: int, 
+                  ObjectAttributes: Any, 
+                  ClientId: Any) -> int:
 
     ZwOpenProcess = ntdll.ZwOpenProcess
     ZwOpenProcess.argtypes = [PHANDLE, 
@@ -375,15 +378,15 @@ def ZwOpenProcess(ProcessHandle = HANDLE(),
     ]
 
     ZwOpenProcess.restype = VOID
-    res = ZwOpenProcess(byref(ProcessHandle), 
+    res = ZwOpenProcess(ProcessHandle, 
                         DesiredAccess, 
-                        byref(ObjectAttributes), 
-                        byref(ClientId)
+                        ObjectAttributes, 
+                        ClientId
     )
 
     if not NT_SUCCESS(res):
         raise WinError(RtlNtStatusToDosError(res))
-    return ProcessHandle
+
 
 
 def NtTerminateProcess(ProcessHandle: int, ExitStatus: int) -> None:
