@@ -1,8 +1,9 @@
 # coding = 'utf-8'
+# combaseapi.h
 
 import enum
 from typing import Any
-from ctypes import Structure, Union, POINTER, byref, WinError
+from ctypes import Structure, POINTER, WinError
 
 try:
     from wtypesbase import *

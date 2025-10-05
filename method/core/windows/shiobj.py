@@ -1,22 +1,23 @@
 # coding = 'utf-8'
+# shlobj.h
 
 import enum
 from ctypes import *
 from typing import Any
 
 try:
-    from error import *
     from winerror import *
     from sdkddkver import *
     from public_dll import *
     from win_cbasictypes import *
+    from error import GetLastError
     from wingdi import LF_FACESIZE
 except ImportError:
-    from .error import *
     from .winerror import *
     from .sdkddkver import *
     from .public_dll import *
     from .win_cbasictypes import *
+    from .error import GetLastError
     from .wingdi import LF_FACESIZE
 
 WINBOOL = BOOL
@@ -78,7 +79,7 @@ SHGFP_TYPE_DEFAULT = 1
 def SHGetMalloc(ppMalloc: Any):
     SHGetMalloc = shell32.SHGetMalloc
     res = SHGetMalloc(ppMalloc)
-    if res != S_OK:
+    if res:
         raise WinError(res)
 
 
@@ -417,18 +418,24 @@ def ILIsParent(pidl1, pidl2):
 
 def ILSaveToStream(pstm, pidl):
     ILSaveToStream = shell32.ILSaveToStream
-    return ILSaveToStream(pstm, pidl)
+    res = ILSaveToStream(pstm, pidl)
+    if res:
+        raise WinError(res)
 
 
 def ILLoadFromStream(pstm, pidl):
     ILLoadFromStream = shell32.ILLoadFromStream
-    return ILLoadFromStream(pstm, pidl)
+    res = ILLoadFromStream(pstm, pidl)
+    if res:
+        raise WinError(res)
 
 
 if NTDDI_VERSION >= 0x06000000:
     def ILLoadFromStreamEx(pstm, pidl):
         ILLoadFromStreamEx = shell32.ILLoadFromStreamEx
-        return ILLoadFromStreamEx(pstm, pidl)
+        res = ILLoadFromStreamEx(pstm, pidl)
+        if res:
+            raise WinError(res)
 
 
 def ILCreateFromPath(pszPath: str, unicode: bool = True) -> int:
@@ -441,6 +448,13 @@ def ILCreateFromPath(pszPath: str, unicode: bool = True) -> int:
     res = ILCreateFromPath(pszPath)
     return res
 
+
+def SHILCreateFromPath(pszPath, ppidl, rgfInOut):
+    SHILCreateFromPath = Kernel32.SHILCreateFromPath
+    res = SHILCreateFromPath(pszPath, ppidl, rgfInOut)
+    if res:
+        raise WinError(res)
+    
 
 def VOID_OFFSET(pv, cb):
     return VOID(BYTE(pv).value + cb).value
@@ -488,7 +502,9 @@ if NTDDI_VERSION >= 0x06000000:
 
     def SHGetPathFromIDListEx(pidl, pszPath, cchPath, uOpts):
         SHGetPathFromIDListEx = shell32.SHGetPathFromIDListEx
-        return SHGetPathFromIDListEx(pidl, pszPath, cchPath, uOpts)
+        res = SHGetPathFromIDListEx(pidl, pszPath, cchPath, uOpts)
+        if not res:
+            raise WinError(GetLastError())
     
 
 def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
@@ -496,12 +512,16 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
                            if unicode else shell32.SHGetPathFromIDListA
     )
 
-    return SHGetPathFromIDList(pidl, pszPath)
+    res = SHGetPathFromIDList(pidl, pszPath)
+    if not res:
+        raise WinError(GetLastError())
 
 
 def SHCreateDirectory(hwnd, pszPath):
     SHCreateDirectory = shell32.SHCreateDirectory
-    return SHCreateDirectory(hwnd, pszPath)
+    res = SHCreateDirectory(hwnd, pszPath)
+    if res:
+        raise WinError(res)
 
 
 def SHCreateDirectoryEx(hwnd, pszPath, psa, unicode: bool = True):
@@ -509,7 +529,9 @@ def SHCreateDirectoryEx(hwnd, pszPath, psa, unicode: bool = True):
                            if unicode else shell32.SHCreateDirectoryExA
     )
 
-    return SHCreateDirectoryEx(hwnd, pszPath, psa)
+    res = SHCreateDirectoryEx(hwnd, pszPath, psa)
+    if res:
+        raise WinError(res)
 
 
 def SHOpenFolderAndSelectItems(pidlFolder: int, 
@@ -521,14 +543,15 @@ def SHOpenFolderAndSelectItems(pidlFolder: int,
     SHOpenFolderAndSelectItems.argtypes = [VOID, UINT, VOID, DWORD]
     SHOpenFolderAndSelectItems.restype = HRESULT
     res = SHOpenFolderAndSelectItems(pidlFolder, cidl, apidl, dwFlags)
-
-    if res != S_OK:
-        raise WinError(GetLastError())
+    if res:
+        raise WinError(res)
     
 
 def SHCreateShellItem(pidlParent, psfParent, pidl, ppsi):
     SHCreateShellItem = shell32.SHCreateShellItem
-    return SHCreateShellItem(pidlParent, psfParent, pidl, ppsi)
+    res = SHCreateShellItem(pidlParent, psfParent, pidl, ppsi)
+    if res:
+        raise WinError(res)
 
 
 CSIDL_DESKTOP = 0x0000
@@ -604,7 +627,9 @@ CSIDL_FLAG_MASK = 0xff00
 
 def SHGetSpecialFolderLocation(hwnd, csidl, ppidl):
     SHGetSpecialFolderLocation = shell32.SHGetSpecialFolderLocation
-    return SHGetSpecialFolderLocation(hwnd, csidl, ppidl)
+    res = SHGetSpecialFolderLocation(hwnd, csidl, ppidl)
+    if res:
+        raise WinError(res)
     
 
 def SHCloneSpecialIDList(hwnd, csidl, fCreate):
@@ -614,7 +639,9 @@ def SHCloneSpecialIDList(hwnd, csidl, fCreate):
 
 def SHGetSpecialFolderPath(hwnd, pszPath, csidl, fCreate, unicode: bool = True):
     SHGetSpecialFolderPath = shell32.SHGetSpecialFolderPathW if unicode else shell32.SHGetSpecialFolderPathA
-    return SHGetSpecialFolderPath(hwnd, pszPath, csidl, fCreate)
+    res = SHGetSpecialFolderPath(hwnd, pszPath, csidl, fCreate)
+    if not res:
+        raise WinError(GetLastError())
 
 
 def SHFlushSFCache():
@@ -634,18 +661,22 @@ def SHGetFolderPath(hwnd: int,
     )
 
     res = SHGetFolderPath(hwnd, csidl, hToken, dwFlags, pszPath)
-    if res != S_OK:
+    if res:
         raise WinError(res)
 
 
 def SHSetFolderPath(csidl, hToken, dwFlags, pszPath, unicode: bool = True):
     SHSetFolderPath = shell32.SHSetFolderPathW if unicode else shell32.SHSetFolderPathA
-    return SHSetFolderPath(csidl, hToken, dwFlags, pszPath)
+    res = SHSetFolderPath(csidl, hToken, dwFlags, pszPath)
+    if res:
+        raise WinError(res)
 
 
 def SHGetFolderLocation(hwnd, csidl, hToken, dwFlags, ppidl):
     SHGetFolderLocation = shell32.SHGetFolderLocation
-    return SHGetFolderLocation(hwnd, csidl, hToken, dwFlags, ppidl)
+    res = SHGetFolderLocation(hwnd, csidl, hToken, dwFlags, ppidl)
+    if res:
+        raise WinError(res)
 
 
 def SHGetFolderPathAndSubDir(hwnd, csidl, hToken, dwFlags, pszSubDir, pszPath, unicode: bool = True):
@@ -653,7 +684,10 @@ def SHGetFolderPathAndSubDir(hwnd, csidl, hToken, dwFlags, pszSubDir, pszPath, u
                                 if unicode else shell32.SHGetFolderPathAndSubDirA
     )
     
-    return SHGetFolderPathAndSubDir(hwnd, csidl, hToken, dwFlags, pszSubDir, pszPath)
+    res = SHGetFolderPathAndSubDir(hwnd, csidl, hToken, dwFlags, pszSubDir, pszPath)
+    if res:
+        raise WinError(res)
+    
 
 if NTDDI_VERSION >= 0x06000000:
     KF_FLAG_DEFAULT = 0x00000000
@@ -709,27 +743,32 @@ if NTDDI_VERSION >= 0x06000000:
 
     def SHGetKnownFolderIDList(rfid, dwFlags, hToken, ppidl):
         SHGetKnownFolderIDList = shell32.SHGetKnownFolderIDList
-        return SHGetKnownFolderIDList(rfid, dwFlags, hToken, ppidl)
+        res = SHGetKnownFolderIDList(rfid, dwFlags, hToken, ppidl)
+        if res:
+            raise WinError(res)
+
 
 
     def SHSetKnownFolderPath(rfid, dwFlags, hToken, pszPath):
         SHSetKnownFolderPath = shell32.SHSetKnownFolderPath
         res = SHSetKnownFolderPath(rfid, dwFlags, hToken, pszPath)
-        if res != S_OK:
+        if res:
             raise WinError(res)
         
 
-    def SHGetKnownFolderPath(rfid: str, dwFlags: int, hToken: int, ppszPath: Any):
+    def SHGetKnownFolderPath(rfid: Any, dwFlags: int, hToken: int, ppszPath: Any):
         SHGetKnownFolderPath = shell32.SHGetKnownFolderPath
         res = SHGetKnownFolderPath(rfid, dwFlags, hToken, ppszPath)
-        if res != S_OK:
+        if res:
             raise WinError(res)
         
 
 if NTDDI_VERSION >= 0x06010000:
     def SHGetKnownFolderItem(rfid, flags, hToken, riid, ppv):
         SHGetKnownFolderItem = shell32.SHGetKnownFolderItem
-        return SHGetKnownFolderItem(rfid, flags, hToken, riid, ppv)
+        res = SHGetKnownFolderItem(rfid, flags, hToken, riid, ppv)
+        if res:
+            raise WinError(res)
     
 
 FCS_READ = 0x00000001

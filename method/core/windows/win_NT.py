@@ -9,14 +9,18 @@ from typing import Any
 
 try:
     from sdkddkver import *
-    from public_dll import *
     from win_cbasictypes import *
     from guiddef import DEFINE_GUID, GUID
+    from public_dll import ole32, Kernel32, ntdll
+    from error import GetLastError, RtlNtStatusToDosError
 except ImportError:
     from .sdkddkver import *
-    from .public_dll import *
     from .win_cbasictypes import *
     from .guiddef import DEFINE_GUID, GUID
+    from .public_dll import ole32, Kernel32, ntdll
+    from .error import GetLastError, RtlNtStatusToDosError
+
+S_OK = 0
 
 ###################################################################
 # wchar.h
@@ -134,7 +138,7 @@ CLIENT_ID = _CLIENT_ID
 PCLIENT_ID = ctypes.POINTER(CLIENT_ID)
 
 
-def offsetof(Type: CDataType, Field: str) -> int:       # from stddef.h
+def offsetof(Type: Structure | Union, Field: str) -> int:       # from stddef.h
     return getattr(Type, Field).offset
 
 
@@ -5856,15 +5860,15 @@ IO_REPARSE_TAG_RESERVED_TWO = 2
 
 IO_REPARSE_TAG_RESERVED_RANGE = IO_REPARSE_TAG_RESERVED_TWO
 
-def IsReparseTagMicrosoft(_tag):
+def IsReparseTagMicrosoft(_tag: int) -> int:
     return _tag & 0x80000000
 
 
-def IsReparseTagNameSurrogate(_tag):
+def IsReparseTagNameSurrogate(_tag: int) -> int:
     return _tag & 0x20000000
 
 
-def IsReparseTagDirectory(_tag):
+def IsReparseTagDirectory(_tag: int) -> int:
     return _tag & 0x10000000
 
 
@@ -7283,14 +7287,17 @@ class PROCESSOR_PERFSTATE_POLICY(Structure):
                             ('Reserved', BYTE, 3)
                 ]
             
+            _anonymous_ = ['NoIncDecResLittleStruct']
             _fields_ = [('AsBYTE', BYTE),
                         ('NoIncDecResLittleStruct', NoIncDecResLittleStruct)
             ]
         
+        _anonymous_ = ['Flags']
         _fields_ = [('Spare', BYTE), 
                     ('Flags', Flags)
         ]
     
+    _anonymous_ = ['DUMMYUNIONNAME']
     _fields_ = [('Revision', DWORD),
                 ('MaxThrottle', BYTE),
                 ('MinThrottle', BYTE),
@@ -7958,19 +7965,19 @@ def BTYPE(x: int) -> int:
     return x & N_BTMASK
 
 
-def ISPTR(x: int) -> int:
+def ISPTR(x: int) -> bool:
     return (x & N_TMASK)==(IMAGE_SYM_DTYPE_POINTER << N_BTSHFT)
 
 
-def ISFCN(x: int) -> int:
+def ISFCN(x: int) -> bool:
     return (x & N_TMASK)==(IMAGE_SYM_DTYPE_FUNCTION << N_BTSHFT)
 
 
-def ISARY(x: int) -> int:
+def ISARY(x: int) -> bool:
     return (x & N_TMASK)==(IMAGE_SYM_DTYPE_ARRAY << N_BTSHFT)
 
 
-def ISTAG(x: int) -> int:
+def ISTAG(x: int) -> bool:
     return ((x==IMAGE_SYM_CLASS_STRUCT_TAG) or 
             (x==IMAGE_SYM_CLASS_UNION_TAG) or 
             (x==IMAGE_SYM_CLASS_ENUM_TAG)
@@ -8006,6 +8013,7 @@ class _IMAGE_AUX_SYMBOL(Union):
                             ('Size', WORD)
                 ]
             
+            _anonymous_ = ['LnSz']
             _fields_ = [('LnSz', LnSz),
                         ('TotalSize', DWORD)
             ]
@@ -8019,10 +8027,12 @@ class _IMAGE_AUX_SYMBOL(Union):
             class Array(Structure):
                 _fields_ = [('Dimension', WORD * 4)]
             
+            _anonymous_ = ['Function', 'Array']
             _fields_=  [('Function', Function),
                         ('Array', Array)
             ]
         
+        _anonymous_ = ['Misc', 'FcnAry']
         _fields_ = [('TagIndex', DWORD),
                     ('Misc', Misc),
                     ('FcnAry', FcnAry),
@@ -8046,6 +8056,12 @@ class _IMAGE_AUX_SYMBOL(Union):
                     ('rgbReserved', BYTE * 14)
         ]
     
+    _anonymous_ = ['Sym',
+                    'File',
+                    'Section',
+                    'CRC'
+    ]
+
     _fields_ = [('Sym', Sym),
                 ('File', File),
                 ('Section', Section),
@@ -8087,6 +8103,13 @@ class _IMAGE_AUX_SYMBOL_EX(Union):
                     ('rgbReserved', BYTE * 16)
         ]
     
+    _anonymous_ = ['Sym',
+                    'File',
+                    'Section',
+                    'Tokenrgb',
+                    'CRC'
+    ]
+
     _fields_ = [('Sym', Sym),
                 ('File', File),
                 ('Section', Section),
@@ -9148,27 +9171,33 @@ CaptureStackBackTrace = RtlCaptureStackBackTrace
 if WIN32_WINNT >= 0x0602:
     def RtlAddGrowableFunctionTable(DynamicTable, FunctionTable, MaximumEntryCount, RangeBase, RangeEnd):
         RtlAddGrowableFunctionTable = ntdll.RtlAddGrowableFunctionTable
-        RtlAddGrowableFunctionTable(DynamicTable, FunctionTable, MaximumEntryCount, RangeBase, RangeEnd)
+        res = RtlAddGrowableFunctionTable(DynamicTable, FunctionTable, MaximumEntryCount, RangeBase, RangeEnd)
+        if res != S_OK:
+            raise WinError(GetLastError())
         
 
     def RtlGrowFunctionTable(DynamicTable, NewEntryCount):
         RtlGrowFunctionTable = ntdll.RtlGrowFunctionTable
-        return RtlGrowFunctionTable(DynamicTable, NewEntryCount)
+        RtlGrowFunctionTable(DynamicTable, NewEntryCount)
 
 
     def RtlDeleteGrowableFunctionTable(DynamicTable):
         RtlDeleteGrowableFunctionTable = ntdll.RtlDeleteGrowableFunctionTable
-        return RtlDeleteGrowableFunctionTable(DynamicTable)
+        RtlDeleteGrowableFunctionTable(DynamicTable)
 
 
 def RtlAddFunctionTable(DynamicTable):
     RtlAddFunctionTable = ntdll.RtlAddFunctionTable
-    return RtlAddFunctionTable(DynamicTable)
+    res = RtlAddFunctionTable(DynamicTable)
+    if not res:
+        raise WinError(GetLastError())
 
 
 def RtlDeleteFunctionTable(FunctionTable):
     RtlDeleteFunctionTable = Kernel32.RtlDeleteFunctionTable
-    return RtlDeleteFunctionTable(FunctionTable)
+    res = RtlDeleteFunctionTable(FunctionTable)
+    if not res:
+        raise WinError(GetLastError())
 
 
 def RtlInstallFunctionTableCallback(TableIdentifier, 
@@ -9179,7 +9208,7 @@ def RtlInstallFunctionTableCallback(TableIdentifier,
                                     OutOfProcessCallbackDll):
     
     RtlInstallFunctionTableCallback = Kernel32.RtlInstallFunctionTableCallback
-    return RtlInstallFunctionTableCallback(TableIdentifier, 
+    res = RtlInstallFunctionTableCallback(TableIdentifier, 
                                             BaseAddress, 
                                             Length, 
                                             Callback, 
@@ -9187,10 +9216,13 @@ def RtlInstallFunctionTableCallback(TableIdentifier,
                                             OutOfProcessCallbackDll
     )
 
+    if not res:
+        raise WinError(GetLastError())
+
 
 def RtlRestoreContext(ContextRecord, ExceptionRecord):
     RtlRestoreContext = Kernel32.RtlRestoreContext
-    return RtlRestoreContext(ContextRecord, ExceptionRecord)
+    RtlRestoreContext(ContextRecord, ExceptionRecord)
 
 
 def RtlUnwind(TargetFrame, 

@@ -1,16 +1,27 @@
 # coding = 'utf-8'
+# guiddef.h
 
 from ctypes import POINTER, Structure, byref, sizeof
 
 try:
-    from otherapi import memcmp
+    from public_dll import ntdll
     from win_cbasictypes import *
 except ImportError:
-    from .otherapi import memcmp
+    from .public_dll import ntdll
     from .win_cbasictypes import *
 
 _LONG32 = ULONG
 
+#################################################################
+# from wchar.h
+
+def memcmp(buffer1, buffer2, count):
+    memcmp = ntdll.memcmp
+    res = memcmp(buffer1, buffer2, count)
+    return res
+
+
+##################################################################
 class _GUID(Structure):
     _fields_ = [('Data1', _LONG32),
                 ('Data2', USHORT),

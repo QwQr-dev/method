@@ -100,7 +100,6 @@ def askopenfilename(title: str | bytes = '',
     ofn.Flags = Flags
 
     GetOpenFileName(byref(ofn), unicode=unicode)
-    lstrcpyn(szPath, szOpenFileNames, ofn.nFileOffset, unicode=unicode)
     return szOpenFileNames.value
 
 
@@ -129,7 +128,6 @@ def asksavefilename(title: str | bytes = '',
     ofn.Flags = Flags
 
     GetSaveFileName(byref(ofn), unicode=unicode)
-    lstrcpyn(szPath, szOpenFileNames, ofn.nFileOffset, unicode=unicode)
     return szOpenFileNames.value
 
 
@@ -233,7 +231,7 @@ def asksavefilenames(title: str | bytes = '',
         path = os.path.dirname(res[0])
         res.append(os.path.basename(res[0]))
         res.remove(res[0])
-
+        
     return path, res
 
 

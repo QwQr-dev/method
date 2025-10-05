@@ -23,13 +23,70 @@ def get_self_directory(temp_dir: bool = False) -> str:
         __file__ if temp_dir else sys.argv[0]))
 
 
-def enum_reg_value(root: int, path: str) -> dict:
+def enum_reg_value(root: int, path: str) -> dict[str, Any]:
     res = {}
     with winreg.OpenKey(root, path) as key:
         for j in range(winreg.QueryInfoKey(key)[1]):
             value_name, value_data, *_ = winreg.EnumValue(key, j)
             res[value_name] = value_data
         return res
+    
+
+def get_user_info() -> tuple[str, str, str]:
+    ''' 
+    获取当前用户的信息以及安全标识符 (SID) 
+
+    （即为 whoami /user 的结果）
+    '''
+
+    token = HANDLE()
+    return_length = DWORD()
+    OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, byref(token))
+    
+    try:
+        try:
+            GetTokenInformation(token, TokenUser, NULL, NULL, byref(return_length))
+        except:
+            if GetLastError() != 122:
+                raise WinError(GetLastError())
+
+        buffer = (CHAR * return_length.value)()
+        GetTokenInformation(token, TokenUser, buffer, return_length, byref(return_length))
+
+        token_user = cast(buffer, PTOKEN_USER).contents
+        user_sid = token_user.User.Sid
+
+        if not IsValidSid(user_sid):
+            raise WindowsError("Invalid SID")
+
+        sid_string_ptr = LPWSTR()
+        ConvertSidToStringSid(user_sid, byref(sid_string_ptr))
+
+        sid_string = sid_string_ptr.value
+        LocalFree(sid_string_ptr)
+
+        username_buffer = (WCHAR * 256)()
+        domain_buffer = (WCHAR * 256)()
+        username_size = DWORD(256)
+        domain_size = DWORD(256)
+        sid_name_use = DWORD()
+
+        LookupAccountSid(
+            None,  # 本地计算机
+            user_sid,
+            username_buffer,
+            byref(username_size),
+            domain_buffer,
+            byref(domain_size),
+            byref(sid_name_use)
+        )
+            
+        username = username_buffer.value
+        domain = domain_buffer.value
+    finally:
+        CloseHandle(token)
+
+    return sid_string, domain, username
 
 
 def get_device_UUID() -> (str | None):
@@ -62,7 +119,6 @@ def get_device_UUID() -> (str | None):
                     return None
 
                 uuid_bytes = smbios_data[uuid_start:uuid_start + 16]
-
                 if not all(b == 0 for b in uuid_bytes):
                     break
 
@@ -233,7 +289,7 @@ def get_serv_or_proc_path(pid: int,
                           unicode: bool = True) -> (str | bytes | None):
     
     '''
-    Get the location of the file by using the process ID of the running program or service.
+    Get the location of the file by using the PID of the running program or service.
     （通过已运行的程序或服务的进程ID来获取文件位置）
     '''
     path = ((WCHAR if unicode else CHAR) * lpExeName)()
@@ -248,6 +304,51 @@ def get_serv_or_proc_path(pid: int,
         QueryFullProcessImageName(handle, dwFlags, byref(path), byref(lpdwSize), unicode)
         CloseHandle(handle)
         return path.value
+    except:
+        return None
+
+
+def get_all_windows_hwnd(get_invisible_window_hwnd: bool = False) -> list[int]:
+    '''枚举程序的 hwnd'''
+
+    window_hwnds = []
+    def foreach_window(hWnd, lParam):
+        if IsWindowVisible(hWnd) or get_invisible_window_hwnd:
+            window_hwnds.append(hWnd)
+        return True
+    EnumWindows(EnumWindowsProc(foreach_window), 0)
+    return window_hwnds
+
+
+def get_goal_exec_pid_to_hwnd(pid: int) -> (int | None):
+    '''通过目标程序的 PID 来获取 hwnd'''
+
+    if not isinstance(pid, int):
+        raise TypeError(f"The object should be of int, not '{type(pid).__name__}'")
+    
+    hwnds = get_all_windows_hwnd(True)
+    for hwnd in hwnds:
+        process_id = HANDLE()
+        
+        try:
+            GetWindowThreadProcessId(hwnd, byref(process_id))
+        except:
+            return None
+        
+        if process_id.value == pid:
+            return hwnd   
+
+
+def get_goal_exec_hwnd_to_pid(hwnd: int) -> (int | None):
+    '''通过目标程序的 hwnd 来获取 PID'''
+
+    if not isinstance(hwnd, int):
+        raise TypeError(f"The object should be of int, not '{type(hwnd).__name__}'")
+    
+    try:
+        pid = HANDLE()
+        GetWindowThreadProcessId(hwnd, byref(pid))
+        return pid.value
     except:
         return None
 
@@ -363,20 +464,38 @@ def RunAsAdmin2(hwnd: int = HWND(),
     sys.exit(0)
 
 
-SYSTEMROOT: str = os.environ['SYSTEMROOT']
+def _SYSTEM32() -> str:
+    path = (TCHAR * MAX_PATH)()
+    GetSystemDirectory(path, MAX_PATH, UNICODE)
+    if UNICODE:
+        return path.value
+    return path.value.decode(sys.getdefaultencoding())
+
+
+def _WINDOWS() -> str:
+    path = (TCHAR * MAX_PATH)()
+    GetWindowsDirectory(path, MAX_PATH, UNICODE)
+    if UNICODE:
+        return path.value
+    return path.value.decode(sys.getdefaultencoding())
+
+
+WINDOWS: str = _WINDOWS()
+SYSTEMROOT: str = _WINDOWS()
+SYSTEM32: str = _SYSTEM32()
 APPDATA: str = os.environ['APPDATA']
 HOMEDRIVE: str = os.environ['HOMEDRIVE']
 HOMEPATH: str = os.environ['HOMEPATH']
 LOCALAPPDATA: str = os.environ['LOCALAPPDATA']
-LOGONSERVER: str = os.environ['LOGONSERVER']
+LOGONSERVER = os.environ['LOGONSERVER'] if 'system' != get_user_info()[2].lower() else None     # 在具有 System 令牌的情况下，没有 LOGONSERVER 这个值
 USERDOMAIN: str = os.environ['USERDOMAIN']
-USERDOMAIN_ROAMINGPROFILE: str = os.environ['USERDOMAIN_ROAMINGPROFILE']
+USERDOMAIN_ROAMINGPROFILE = os.environ['USERDOMAIN_ROAMINGPROFILE'] if 'system' != get_user_info()[2].lower() else None     # 同上
 USERNAME: str = os.environ['USERNAME']
 USERPROFILE: str = os.environ['USERPROFILE']
 HOME: str = HOMEDRIVE + HOMEPATH
 TEMP: str = os.environ['TEMP']
 TMP: str = os.environ['TMP']
-WBEM: str = f'{SYSTEMROOT}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\wbem'     # WMI path
+WBEM: str = f'{WINDOWS}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\wbem'     # WMI path
 
 
 def _get_folder(csidl: int) -> str:
@@ -384,7 +503,7 @@ def _get_folder(csidl: int) -> str:
     SHGetFolderPath(NULL, csidl | CSIDL_FLAG_NO_ALIAS, NULL, SHGFP_TYPE_CURRENT, path, UNICODE)
     if UNICODE:
         return path.value
-    return path.value.decode('utf-8')
+    return path.value.decode(sys.getdefaultencoding())
 
 
 ##############################################################################

@@ -94,6 +94,8 @@ class tagCREATESTRUCTW(Structure):
 CREATESTRUCTW = tagCREATESTRUCTW
 LPCREATESTRUCTW = POINTER(tagCREATESTRUCTW)
 
+CREATESTRUCT = CREATESTRUCTW if UNICODE else CREATESTRUCTA
+
 class tagWINDOWPLACEMENT(Structure):
     _fields_ = [('length', UINT),
                 ('flags', UINT),
@@ -964,16 +966,65 @@ UOI_TIMERPROC_EXCEPTION_SUPPRESSION = 7
 class tagUSEROBJECTFLAGS(Structure):
     pass
 
-GetUserObjectInformationA = CALLBACK(BOOL, HANDLE, INT, PVOID, DWORD, LPDWORD)
-GetUserObjectInformationW = CALLBACK(BOOL, HANDLE, INT, PVOID, DWORD, LPDWORD)
-SetUserObjectInformationA = CALLBACK(BOOL, HANDLE, INT, PVOID, DWORD)
-SetUserObjectInformationW = CALLBACK(BOOL, HANDLE, INT, PVOID, DWORD)
+
+def GetUserObjectInformation(hObj, nIndex, pvInfo, nLength, lpnLengthNeeded, unicode: bool = True):
+    GetUserObjectInformation = User32.GetUserObjectInformationW if unicode else User32.GetUserObjectInformationA
+    res = GetUserObjectInformation(hObj, nIndex, pvInfo, nLength, lpnLengthNeeded)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def SetUserObjectInformation(hObj, nIndex, pvInfo, nLength, unicode: bool = True):
+    SetUserObjectInformation = User32.SetUserObjectInformationW if unicode else User32.SetUserObjectInformationA
+    res = SetUserObjectInformation(hObj, nIndex, pvInfo, nLength)
+    if not res:
+        raise WinError(GetLastError())
+
 
 class tagWNDCLASSEXA(Structure):
-    pass
+    _fields_ = [('cbSize', UINT),
+                ('style', UINT),
+                ('lpfnWndProc', WNDPROC),
+                ('cbClsExtra', INT),
+                ('cbWndExtra', INT),
+                ('hInstance', HINSTANCE),
+                ('hIcon', HICON),
+                ('hCursor', HCURSOR),
+                ('hbrBackground', HBRUSH),
+                ('lpszMenuName', LPCSTR),
+                ('lpszClassName', LPCSTR),
+                ('hIconSm', HICON)
+    ]
+
+WNDCLASSEXA = tagWNDCLASSEXA
+PWNDCLASSEXA = POINTER(WNDCLASSEXA)
+NPWNDCLASSEXA = PWNDCLASSEXA
+LPWNDCLASSEXA = PWNDCLASSEXA
 
 class tagWNDCLASSEXW(Structure):
-    pass
+    _fields_ = [('cbSize', UINT),
+                ('style', UINT),
+                ('lpfnWndProc', WNDPROC),
+                ('cbClsExtra', INT),
+                ('cbWndExtra', INT),
+                ('hInstance', HINSTANCE),
+                ('hIcon', HICON),
+                ('hCursor', HCURSOR),
+                ('hbrBackground', HBRUSH),
+                ('lpszMenuName', LPCWSTR),
+                ('lpszClassName', LPCWSTR),
+                ('hIconSm', HICON)
+    ]
+
+WNDCLASSEXW = tagWNDCLASSEXW
+PWNDCLASSEXW = POINTER(WNDCLASSEXW)
+NPWNDCLASSEXW = PWNDCLASSEXW
+LPWNDCLASSEXW = PWNDCLASSEXW
+
+WNDCLASSEX = WNDCLASSEXW if UNICODE else WNDCLASSEXA
+PWNDCLASSEX = PWNDCLASSEXW if UNICODE else PWNDCLASSEXA
+NPWNDCLASSEX = NPWNDCLASSEXW if UNICODE else NPWNDCLASSEXA
+LPWNDCLASSEX = LPWNDCLASSEXW if UNICODE else LPWNDCLASSEXA
 
 class tagWNDCLASSW(Structure):
     _fields_ = [('style', UINT),
@@ -1012,9 +1063,22 @@ NPWNDCLASSA = PWNDCLASSA
 LPWNDCLASSA = PWNDCLASSA
 
 WNDCLASS = WNDCLASSW if UNICODE else WNDCLASSA
+PWNDCLASS = PWNDCLASSW if UNICODE else PWNDCLASSA
+NPWNDCLASS = NPWNDCLASSW if UNICODE else NPWNDCLASSA
+LPWNDCLASS = LPWNDCLASSW if UNICODE else LPWNDCLASSA
 
-IsHungAppWindow = CALLBACK(BOOL, HWND)
-DisableProcessWindowsGhosting = CALLBACK(VOID, VOID)
+
+def IsHungAppWindow(hwnd):
+    IsHungAppWindow = User32.IsHungAppWindow
+    res = IsHungAppWindow(hwnd)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def DisableProcessWindowsGhosting():
+    DisableProcessWindowsGhosting = User32.DisableProcessWindowsGhosting
+    DisableProcessWindowsGhosting()
+
 
 class tagMSG(Structure):
     _fields_ = [("hWnd", HWND),
@@ -1022,7 +1086,7 @@ class tagMSG(Structure):
                 ("wParam", WPARAM),
                 ("lParam", LPARAM),
                 ("time", DWORD),
-                ("pt", wintypes.POINT)
+                ("pt", POINT)
     ]
 
 
@@ -1865,12 +1929,9 @@ EWX_ARSO = 0x04000000
 EWX_CHECK_SAFE_FOR_SERVER = 0x08000000
 
 
-def SendMessageA(hwnd, msg, wparam, lparam):
-    return User32.SendMessageA(hwnd, msg, wparam, lparam)
-
-
-def SendMessageW(hwnd, msg, wparam, lparam):
-    return User32.SendMessageW(hwnd, msg, wparam, lparam)
+def SendMessage(hwnd, msg, wparam, lparam, unicode: bool = True):
+    SendMessage = User32.SendMessageW if unicode else User32.SendMessageA
+    return SendMessage(hwnd, msg, wparam, lparam)
 
 
 BSM_ALLCOMPONENTS = 0x00000000
@@ -4074,6 +4135,40 @@ def GetForegroundWindow() -> int:
 EnumWindowsProc = CALLBACK(BOOL, HWND, LPARAM)
 
 
+def GetWindowTextLength(hwnd: int, unicode: bool = True) -> int:
+    GetWindowTextLength = (User32.GetWindowTextLengthW 
+                           if unicode else User32.GetWindowTextLengthA
+    )
+
+    res = GetWindowTextLength(hwnd)
+    return res
+
+
+def GetWindowText(hwnd, lpString, nMaxCount, unicode: bool = True) -> int:
+    GetWindowText = User32.GetWindowTextW if unicode else User32.GetWindowTextA
+    GetWindowText.argtypes = [HWND, 
+                              (LPWSTR if unicode else LPSTR), 
+                              INT
+    ]
+
+    res = GetWindowText(hwnd, lpString, nMaxCount)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def EnumWindows(lpEnumFunc, lParam) -> None:
+    EnumWindows = User32.EnumWindows
+    res = EnumWindows(lpEnumFunc, lParam)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def IsWindowVisible(hwnd) -> bool:
+    IsWindowVisible = User32.IsWindowVisible
+    return bool(IsWindowVisible(hwnd))
+
+
 def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any) -> None:
     GetWindowThreadProcessId = User32.GetWindowThreadProcessId
     res = GetWindowThreadProcessId(hwnd, lpdwProcessId)
@@ -4303,9 +4398,24 @@ def CreateWindowEx(dwExStyle,
                    hMenu, 
                    hInstance, 
                    lpParam, 
-                   unicode: bool = True):
+                   unicode: bool = True) -> int:
     
     CreateWindowEx = User32.CreateWindowExW if unicode else User32.CreateWindowExA
+    CreateWindowEx.argtypes = [DWORD, 
+                               (LPCWSTR if unicode else LPCSTR),
+                               (LPCWSTR if unicode else LPCSTR),
+                               DWORD,
+                               INT,
+                               INT,
+                               INT,
+                               INT,
+                               HWND,
+                               HMENU,
+                               HINSTANCE,
+                               LPVOID
+    ]
+
+    CreateWindowEx.restype = HWND
     res = CreateWindowEx(dwExStyle, 
                          lpClassName, 
                          lpWindowName, 
@@ -4321,6 +4431,43 @@ def CreateWindowEx(dwExStyle,
     )
 
     if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def CreateWindow(lpClassName, 
+                 lpWindowName, 
+                 dwStyle, 
+                 x, 
+                 y, 
+                 nWidth, 
+                 nHeight, 
+                 hWndParent, 
+                 hMenu, 
+                 hInstance, 
+                 lpParam,
+                 unicode: bool = True):
+    
+    return CreateWindowEx(NULL,
+                          lpClassName, 
+                          lpWindowName, 
+                          dwStyle, 
+                          x, 
+                          y, 
+                          nWidth, 
+                          nHeight, 
+                          hWndParent, 
+                          hMenu, 
+                          hInstance, 
+                          lpParam,
+                          unicode=unicode
+    )
+
+
+def LoadCursor(hInstance, lpCursorName, unicode: bool = True):
+    LoadCursor = User32.LoadCursorW if unicode else User32.LoadCursorA
+    res = LoadCursor(hInstance, lpCursorName)
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -4468,3 +4615,48 @@ def SendInput(cInputs: int,
     if not res:
         raise WinError(GetLastError())
     return res
+
+
+def GetWindowDisplayAffinity(hwnd: int, pdwAffinity: Any) -> None:
+    GetWindowDisplayAffinity = User32.GetWindowDisplayAffinity
+    res = GetWindowDisplayAffinity(hwnd, pdwAffinity)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def SetWindowDisplayAffinity(hwnd: int, dwAffinity: int) -> None:
+    SetWindowDisplayAffinity = User32.SetWindowDisplayAffinity
+    res = SetWindowDisplayAffinity(hwnd, dwAffinity)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def SetWindowLongPtr(hwnd, nIndex, dwNewLong, unicode: bool = True):
+    SetWindowLongPtr = User32.SetWindowLongPtrW if unicode else User32.SetWindowLongPtrA
+    res = SetWindowLongPtr(hwnd, nIndex, dwNewLong)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def DestroyWindow(hwnd):
+    DestroyWindow = User32.DestroyWindow
+    res = DestroyWindow(hwnd)
+    if not res:
+        raise WinError(GetLastError())
+
+
+def GetWindowRect(hwnd, lpRect):
+    GetWindowRect = User32.GetWindowRect
+    res = GetWindowRect(hwnd, lpRect)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def SetLayeredWindowAttributes(hwnd, crKey, bAlpha, dwFlags):
+    SetLayeredWindowAttributes = User32.SetLayeredWindowAttributes
+    res = SetLayeredWindowAttributes(hwnd, crKey, bAlpha, dwFlags)
+    if not res:
+        raise WinError(GetLastError())
+    
+    

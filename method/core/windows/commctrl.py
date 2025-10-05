@@ -1,14 +1,14 @@
 # coding = 'utf-8'
 
-import sys
 import enum
+from ctypes import Structure, Union
 
 try:
     from windef import *
     from winuser import *
     from sdkddkver import *
     from win_cbasictypes import *
-    from .guiddef import GUID, IID
+    from guiddef import GUID, IID
 except ImportError:
     from .windef import *
     from .winuser import *
@@ -17,8 +17,15 @@ except ImportError:
     from .guiddef import GUID, IID
 
 _WIN32_IE = WIN32_IE
-
 WINBOOL = BOOL
+SNDMSG = SendMessage
+
+
+def InitCommonControls():
+    InitCommonControls = comctl32.InitCommonControls
+    InitCommonControls()
+
+
 
 class tagINITCOMMONCONTROLSEX(Structure):
     _fields_ = [('dwSize', DWORD),
@@ -45,6 +52,14 @@ ICC_PAGESCROLLER_CLASS = 0x1000
 ICC_NATIVEFNTCTL_CLASS = 0x2000
 ICC_STANDARD_CLASSES = 0x4000
 ICC_LINK_CLASS = 0x8000
+
+
+def InitCommonControlsEx(picce):
+    InitCommonControlsEx = comctl32.InitCommonControlsEx
+    res = InitCommonControlsEx(picce)
+    if not res:
+        raise WinError(GetLastError())
+    
 
 LVM_FIRST = 0x1000
 TV_FIRST = 0x1100
@@ -171,6 +186,26 @@ if NTDDI_VERSION >= 0x06000000:
     NM_FONTCHANGED = (NM_FIRST-23)
     NM_CUSTOMTEXT = (NM_FIRST-24)
     NM_TVSTATEIMAGECHANGING = (NM_FIRST-24)
+
+
+def CCSIZEOF_STRUCT(structname: Structure | Union, member: str) -> int:
+    if not hasattr(structname, member):
+        try:
+            _structname = structname()
+        except:
+            _structname = structname
+        raise AttributeError(f"type object '{type(_structname).__name__}' has no attribute '{member}'")
+    
+    memset_offset = getattr(structname, member).offset
+    field_type = None
+
+    for field_name, field_type in structname._fields_:
+        if field_name == member:
+            field_type = field_type
+            break
+
+    title_offset = memset_offset + sizeof(field_type)
+    return title_offset
 
 
 class tagNMTOOLTIPSCREATED(Structure):
@@ -367,20 +402,81 @@ if NTDDI_VERSION >= 0x06000000:
     ILC_ORIGINALSIZE = 0x00010000
     ILC_HIGHQUALITYSCALE = 0x00020000
 
-'''
-ImageList_Create = WINAPI(HIMAGELIST, INT, INT, UINT, INT, INT)
-ImageList_Destroy = WINAPI(WINBOOL, HIMAGELIST)
-ImageList_GetImageCount = WINAPI(INT, HIMAGELIST)
-ImageList_SetImageCount = WINAPI(WINBOOL, HIMAGELIST, UINT)
-ImageList_Add = WINAPI(INT, HIMAGELIST, HBITMAP, HBITMAP)
-ImageList_ReplaceIcon = WINAPI(INT, HIMAGELIST, INT, HICON)
-ImageList_SetBkColor = WINAPI(COLORREF, HIMAGELIST, COLORREF)
-ImageList_GetBkColor = WINAPI(COLORREF, HIMAGELIST)
-ImageList_SetOverlayImage = WINAPI(WINBOOL, HIMAGELIST, INT, INT)
+
+def ImageList_Create(cx, cy, flags, cInitial, cGrow):
+    ImageList_Create = comctl32.ImageList_Create
+    res = ImageList_Create(cx, cy, flags, cInitial, cGrow)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_Destroy(himl):
+    ImageList_Destroy = comctl32.ImageList_Destroy
+    res = ImageList_Destroy(himl)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_GetImageCount(himl):
+    ImageList_GetImageCount = comctl32.ImageList_GetImageCount
+    res = ImageList_GetImageCount(himl)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_SetImageCount(himl, uNewCount):
+    ImageList_SetImageCount = comctl32.ImageList_SetImageCount
+    res = ImageList_SetImageCount(himl, uNewCount)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_Add(himl, hbmImage, hbmMask):
+    ImageList_Add = comctl32.ImageList_Add
+    res = ImageList_Add(himl, hbmImage, hbmMask)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_ReplaceIcon(himl, i, hicon):
+    ImageList_ReplaceIcon = comctl32.ImageList_ReplaceIcon
+    res = ImageList_ReplaceIcon(himl, i, hicon)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+  
+def ImageList_SetBkColor(himl, clrBk):
+    ImageList_SetBkColor = comctl32.ImageList_SetBkColor
+    res = ImageList_SetBkColor(himl, clrBk)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_GetBkColor(himl):
+    ImageList_GetBkColor = comctl32.ImageList_GetBkColor
+    res = ImageList_GetBkColor(himl)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+  
+def ImageList_SetOverlayImage(himl, iImage, iOverlay):
+    ImageList_SetOverlayImage = comctl32.ImageList_SetOverlayImage
+    res = ImageList_SetOverlayImage(himl, iImage, iOverlay)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+    
 
 def ImageList_AddIcon(himl,hicon):
     return ImageList_ReplaceIcon(himl, -1, hicon)
-'''
 
 
 ILD_NORMAL =  0x0
@@ -420,33 +516,143 @@ if NTDDI_VERSION >= 0x06000000:
 
     HBITMAP_CALLBACK = HBITMAP(-1).value
 
-'''
-ImageList_Draw = WINAPI(WINBOOL, HIMAGELIST, INT, HDC, INT, INT, UINT)
-ImageList_Replace = WINAPI(WINBOOL, HIMAGELIST ,INT ,HBITMAP ,HBITMAP )
-ImageList_AddMasked = WINAPI(INT, HIMAGELIST ,HBITMAP ,COLORREF)
-ImageList_DrawEx = WINAPI(WINBOOL, HIMAGELIST ,INT ,HDC ,INT ,INT ,INT ,INT ,COLORREF ,COLORREF ,UINT)
-ImageList_DrawIndirect = WINAPI(WINBOOL, POINTER(IMAGELISTDRAWPARAMS))
-ImageList_Remove = WINAPI(WINBOOL, HIMAGELIST,INT)
-ImageList_GetIcon = WINAPI(HICON, HIMAGELIST,INT,UINT)
-ImageList_LoadImageA = WINAPI(HIMAGELIST, HINSTANCE,LPCSTR,INT,INT,COLORREF,UINT,UINT)
-ImageList_LoadImageW = WINAPI(HIMAGELIST, HINSTANCE,LPCWSTR,INT,INT,COLORREF,UINT,UINT)
-'''
+
+def ImageList_Draw(himl, hdcDst, x, y, fStyle):
+    ImageList_Draw = comctl32.ImageList_Draw
+    res = ImageList_Draw(himl, hdcDst, x, y, fStyle)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_Replace(himl, i, hbmImage, hbmMask):
+    ImageList_Replace = comctl32.ImageList_Replace
+    res = ImageList_Replace(himl, i, hbmImage, hbmMask)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_AddMasked(himl, hbmImage, crMask):
+    ImageList_AddMasked = comctl32.ImageList_AddMasked
+    res = ImageList_AddMasked(himl, hbmImage, crMask)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_DrawEx(himl, i, hdcDst, x, y, dx, dy, rgbBk, rgbFg, fStyle):
+    ImageList_DrawEx = comctl32.ImageList_DrawEx
+    res = ImageList_DrawEx(himl, i, hdcDst, x, y, dx, dy, rgbBk, rgbFg, fStyle)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_DrawIndirect(pimldp):
+    ImageList_DrawIndirect = comctl32.ImageList_DrawIndirect
+    res = ImageList_DrawIndirect(pimldp)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_Remove(himl, i):
+    ImageList_Remove = comctl32.ImageList_Remove
+    res = ImageList_Remove(himl, i)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_GetIcon(himl, i, flags):
+    ImageList_GetIcon = comctl32.ImageList_GetIcon
+    res = ImageList_GetIcon(himl, i, flags)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_LoadImage(hi, lpbmp, cx, cGrow, crMask, uType, uFlags, unicode: bool = True):
+    ImageList_LoadImage = comctl32.ImageList_LoadImageW if unicode else comctl32.ImageList_LoadImageA
+    res = ImageList_LoadImage(hi, lpbmp, cx, cGrow, crMask, uType, uFlags)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
 
 ILCF_MOVE = 0x0
 ILCF_SWAP = 0x1
 
-'''
-ImageList_Copy = WINAPI(WINBOOL, HIMAGELIST,INT,HIMAGELIST,INT,UINT)
-ImageList_BeginDrag = WINAPI(WINBOOL, HIMAGELIST,INT,INT,INT)
-ImageList_EndDrag = WINAPI(VOID, VOID)
-ImageList_DragEnter = WINAPI(WINBOOL, HWND,INT,INT)
-ImageList_DragLeave = WINAPI(WINBOOL, HWND)
-ImageList_DragMove = WINAPI(WINBOOL, INT,INT)
-ImageList_SetDragCursorImage = WINAPI(WINBOOL, HIMAGELIST,INT,INT,INT)
-ImageList_DragShowNolock = WINAPI(WINBOOL, WINBOOL)
-ImageList_GetDragImage = WINAPI(HIMAGELIST, POINTER(POINT),POINTER(POINT))
 
-ImageList_LoadImage = ImageList_LoadImageW if UNICODE else ImageList_LoadImageA
+def ImageList_Copy(himlDst, iDst, himlSrc, iSrc, uFlags):
+    ImageList_Copy = comctl32.ImageList_Copy
+    res = ImageList_Copy(himlDst, iDst, himlSrc, iSrc, uFlags)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_BeginDrag(himlTrack, iTrack, dxHotspot, dyHotspot):
+    ImageList_BeginDrag = comctl32.ImageList_BeginDrag
+    res = ImageList_BeginDrag(himlTrack, iTrack, dxHotspot, dyHotspot)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_EndDrag():
+    ImageList_EndDrag = comctl32.ImageList_EndDrag
+    ImageList_EndDrag()
+
+
+def ImageList_DragEnter(hwndLock, x, y):
+    ImageList_DragEnter = comctl32.ImageList_DragEnter
+    res = ImageList_DragEnter(hwndLock, x, y)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_DragLeave(hwndLock):
+    ImageList_DragLeave = comctl32.ImageList_DragLeave
+    res = ImageList_DragLeave(hwndLock)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_DragMove(x, y):
+    ImageList_DragMove = comctl32.ImageList_DragMove
+    res = ImageList_DragMove(x, y)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_SetDragCursorImage(himlDrag, iDrag, dxHotspot, dyHotspot):
+    ImageList_SetDragCursorImage = comctl32.ImageList_SetDragCursorImage
+    res = ImageList_SetDragCursorImage(himlDrag, iDrag, dxHotspot, dyHotspot)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_DragShowNolock(fShow):
+    ImageList_DragShowNolock = comctl32.ImageList_DragShowNolock
+    res = ImageList_DragShowNolock(fShow)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_GetDragImage(ppt, pptHotspot):
+    ImageList_GetDragImage = comctl32.ImageList_GetDragImage
+    res = ImageList_GetDragImage(ppt, pptHotspot)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
 
 def ImageList_RemoveAll(himl):
     return ImageList_Remove(himl,-1)
@@ -458,26 +664,47 @@ def ImageList_ExtractIcon(hi,himl,i):
 
 def ImageList_LoadBitmap(hi,lpbmp,cx,cGrow,crMask):
     return ImageList_LoadImage(hi,lpbmp,cx,cGrow,crMask,IMAGE_BITMAP,0)
-'''
 
-
-__IStream_INTERFACE_DEFINED__ = False
 
 IStream = Structure     # from objidlbase.h
 LPSTREAM = IStream      # from objidlbase.h
 REFIID = IID            # from guiddef.h
 
-'''
-if __IStream_INTERFACE_DEFINED__:
-    ImageList_Read = WINAPI(HIMAGELIST,LPSTREAM)
-    ImageList_Write = WINAPI(WINBOOL,HIMAGELIST,LPSTREAM)
 
-    ILP_NORMAL = 0
-    ILP_DOWNLEVEL = 1
+def ImageList_Read(pstm):
+    ImageList_Read = comctl32.ImageList_Read
+    res = ImageList_Read(pstm)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
 
-    ImageList_ReadEx = WINAPI(HRESULT,DWORD,LPSTREAM,REFIID,POINTER(PVOID))
-    ImageList_WriteEx = WINAPI(HRESULT,HIMAGELIST,DWORD,LPSTREAM)
-'''
+
+def ImageList_Write(himl, pstm):
+    ImageList_Write = comctl32.ImageList_Write
+    res = ImageList_Write(himl, pstm)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+ILP_NORMAL = 0
+ILP_DOWNLEVEL = 1
+
+
+def ImageList_ReadEx(dwFlags, pstm, riid, ppv):
+    ImageList_ReadEx = comctl32.ImageList_ReadEx
+    res = ImageList_ReadEx(dwFlags, pstm, riid, ppv)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_WriteEx(himl, dwFlags, pstm):
+    ImageList_WriteEx = comctl32.ImageList_WriteEx
+    res = ImageList_WriteEx(himl, dwFlags, pstm)
+    if res == NULL:
+        raise WinError(GetLastError())
+
 
 class _IMAGEINFO(Structure):
     _fields_ = [('hbmImage', HBITMAP),
@@ -490,15 +717,57 @@ class _IMAGEINFO(Structure):
 IMAGEINFO = _IMAGEINFO
 LPIMAGEINFO = POINTER(IMAGEINFO)
 
-'''
-ImageList_GetIconSize = WINAPI(WINBOOL, HIMAGELIST,POINTER(INT),INT)
-ImageList_SetIconSize = WINAPI(WINBOOL, HIMAGELIST,INT,INT)
-ImageList_GetImageInfo = WINAPI(WINBOOL, HIMAGELIST,INT,IMAGEINFO )
-ImageList_Merge = WINAPI(HIMAGELIST, HIMAGELIST,INT,HIMAGELIST,INT,INT,INT)
-ImageList_Duplicate = WINAPI(HIMAGELIST, HIMAGELIST)
+def ImageList_GetIconSize(himl, cx, cy):
+    ImageList_GetIconSize = comctl32.ImageList_GetIconSize
+    res = ImageList_GetIconSize(himl, cx, cy)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
 
-HIMAGELIST_QueryInterface = WINAPI( HRESULT, HIMAGELIST, REFIID, PVOID)
-'''
+
+def ImageList_SetIconSize(himl, cx, cy):
+    ImageList_SetIconSize = comctl32.ImageList_SetIconSize
+    res = ImageList_SetIconSize(himl, cx, cy)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_GetImageInfo(himl, i, pImageInfo):
+    ImageList_GetImageInfo = comctl32.ImageList_GetImageInfo
+    res = ImageList_GetImageInfo(himl, i, pImageInfo)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_Merge(himl1, i1, himl2, i2, dx, dy):
+    ImageList_Merge = comctl32.ImageList_Merge
+    res = ImageList_Merge(himl1, i1, himl2, i2, dx, dy)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def ImageList_Duplicate(himl):
+    ImageList_Duplicate = comctl32.ImageList_Duplicate
+    res = ImageList_Duplicate(himl)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def HIMAGELIST_QueryInterface(himl, riid, ppv):
+    HIMAGELIST_QueryInterface = comctl32.HIMAGELIST_QueryInterface
+    res = HIMAGELIST_QueryInterface(himl, riid, ppv)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def IImageListToHIMAGELIST(il):
+    return cast(il, HIMAGELIST)
+
 
 WC_HEADER = "SysHeader32"
 
@@ -548,8 +817,11 @@ class _HD_ITEMA(Structure):
                 ('iImage', INT),
                 ('iOrder', INT),
                 ('type', UINT),
-                ('pvFilter', PVOID),
+                ('pvFilter', PVOID)
     ]
+
+    if NTDDI_VERSION >= 0x06000000:
+        _fields_.append(('state', UINT))
 
 HDITEMA = _HD_ITEMA
 LPHDITEMA = POINTER(_HD_ITEMA)
@@ -617,16 +889,37 @@ if NTDDI_VERSION >= 0x06000000:
 
 HDM_GETITEMCOUNT = (HDM_FIRST+0)
 
+def Header_GetItemCount(hwndHD):
+    return SNDMSG(hwndHD, HDM_GETITEMCOUNT, 0, 0)
+
 HDM_INSERTITEMA = (HDM_FIRST+1)
 HDM_INSERTITEMW = (HDM_FIRST+10)
 
+HDM_INSERTITEM = HDM_INSERTITEMW if UNICODE else HDM_INSERTITEMA
+
+def Header_InsertItem(hwndHD, i, phdi):
+    return SNDMSG(hwndHD, HDM_INSERTITEM, WPARAM(i), cast(phdi, LPARAM))
+
 HDM_DELETEITEM = (HDM_FIRST+2)
+
+def Header_DeleteItem(hwndHD, i):
+    return WINBOOL(SNDMSG(hwndHD, HDM_DELETEITEM, WPARAM(i), 0)).value
 
 HDM_GETITEMA = (HDM_FIRST+3)
 HDM_GETITEMW = (HDM_FIRST+11)
 
+HDM_GETITEM = HDM_GETITEMW if UNICODE else HDM_GETITEMA
+
+def Header_GetItem(hwndHD, i, phdi):
+    return WINBOOL(SNDMSG(hwndHD, HDM_GETITEM, WPARAM(i), cast(phdi, LPARAM))).value
+
 HDM_SETITEMA = (HDM_FIRST+4)
 HDM_SETITEMW = (HDM_FIRST+12)
+
+HDM_SETITEM = HDM_SETITEMW if UNICODE else HDM_SETITEMA
+
+def Header_SetItem(hwndHD,i,phdi):
+    return WINBOOL(SNDMSG(hwndHD, HDM_SETITEM, WPARAM(i), cast(phdi, LPARAM))).value
 
 class tagWINDOWPOS(Structure):
     _fields_ = [('hwnd', HWND),
@@ -647,7 +940,14 @@ class _HD_LAYOUT(Structure):
                 ('pwpos', POINTER(WINDOWPOS))
     ]
 
+HD_LAYOUT = _HD_LAYOUT
+HDLAYOUT = _HD_LAYOUT
+LPHDLAYOUT = POINTER(HDLAYOUT)
+
 HDM_LAYOUT = (HDM_FIRST+5)
+
+def Header_Layout(hwndHD, playout):
+    return WINBOOL(SNDMSG(hwndHD, HDM_LAYOUT, 0, cast(playout, LPARAM)))
 
 HHT_NOWHERE = 0x1
 HHT_ONHEADER = 0x2
@@ -679,42 +979,102 @@ HDM_HITTEST = (HDM_FIRST+6)
 
 HDM_GETITEMRECT = (HDM_FIRST+7)
 
+def Header_GetItemRect(hwnd, iItem, lprc):
+    return SNDMSG(hwnd, HDM_GETITEMRECT, WPARAM(iItem), LPARAM(lprc))
+
 HDM_SETIMAGELIST = (HDM_FIRST+8)
+
+def Header_SetImageList(hwnd, himl):
+    return SNDMSG(hwnd, HDM_SETIMAGELIST, 0, LPARAM(himl))
 
 HDM_GETIMAGELIST = (HDM_FIRST+9)
 
+def Header_GetImageList(hwnd):
+    return SNDMSG(hwnd, HDM_GETIMAGELIST, 0, 0)
+
 HDM_ORDERTOINDEX = (HDM_FIRST+15)
+
+def Header_OrderToIndex(hwnd, i):
+    return SNDMSG(hwnd, HDM_ORDERTOINDEX, WPARAM(i), 0)
 
 HDM_CREATEDRAGIMAGE = (HDM_FIRST+16)
 
+def Header_CreateDragImage(hwnd, i):
+    return SNDMSG(hwnd, HDM_CREATEDRAGIMAGE, WPARAM(i), 0)
+
 HDM_GETORDERARRAY = (HDM_FIRST+17)
+
+def Header_GetOrderArray(hwnd, iCount, lpi):
+    return WINBOOL(SNDMSG(hwnd, HDM_GETORDERARRAY, WPARAM(iCount), LPARAM(lpi))).value
 
 HDM_SETORDERARRAY = (HDM_FIRST+18)
 
+def Header_SetOrderArray(hwnd, iCount, lpi):
+    return WINBOOL(SNDMSG(hwnd, HDM_SETORDERARRAY, WPARAM(iCount), LPARAM(lpi))).value
+
 HDM_SETHOTDIVIDER = (HDM_FIRST+19)
+
+def Header_SetHotDivider(hwnd,fPos,dw):
+    return SNDMSG(hwnd, HDM_SETHOTDIVIDER, WPARAM(fPos), LPARAM(dw))
 
 HDM_SETBITMAPMARGIN = (HDM_FIRST+20)
 
+def Header_SetBitmapMargin(hwnd,iWidth):
+    return SNDMSG(hwnd, HDM_SETBITMAPMARGIN, WPARAM(iWidth), 0)
+
 HDM_GETBITMAPMARGIN = (HDM_FIRST+21)
+
+def Header_GetBitmapMargin(hwnd):
+    return SNDMSG(hwnd, HDM_GETBITMAPMARGIN, 0, 0)
 
 HDM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
 
+def Header_SetUnicodeFormat(hwnd,fUnicode):
+    return WINBOOL(SNDMSG(hwnd, HDM_SETUNICODEFORMAT, WPARAM(fUnicode), 0)).value
+
 HDM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+def Header_GetUnicodeFormat(hwnd):
+    return WINBOOL(SNDMSG(hwnd, HDM_GETUNICODEFORMAT, 0, 0)).value
 
 HDM_SETFILTERCHANGETIMEOUT = (HDM_FIRST+22)
 
+def Header_SetFilterChangeTimeout(hwnd,i):
+    return SNDMSG(hwnd, HDM_SETFILTERCHANGETIMEOUT, 0, LPARAM(i))
+
 HDM_EDITFILTER = (HDM_FIRST+23)
 
+def Header_EditFilter(hwnd,i,fDiscardChanges):
+    return SNDMSG(hwnd, HDM_EDITFILTER, WPARAM(i), MAKELPARAM(fDiscardChanges, 0))
+
 HDM_CLEARFILTER = (HDM_FIRST+24)
+
+def Header_ClearFilter(hwnd, i):
+    return SNDMSG(hwnd, HDM_CLEARFILTER, WPARAM(i), 0)
+
+def Header_ClearAllFilters(hwnd):
+    return SNDMSG(hwnd, HDM_CLEARFILTER, WPARAM(-1), 0)
 
 if NTDDI_VERSION >= 0x06000000:
     HDM_GETITEMDROPDOWNRECT = (HDM_FIRST+25)
 
+    def Header_GetItemDropDownRect(hwnd, iItem, lprc):
+        return WINBOOL(SNDMSG(hwnd, HDM_GETITEMDROPDOWNRECT, WPARAM(iItem), LPARAM(lprc))).value
+
     HDM_GETOVERFLOWRECT = (HDM_FIRST+26)
+
+    def Header_GetOverflowRect(hwnd, lprc):
+        return WINBOOL(SNDMSG(hwnd, HDM_GETOVERFLOWRECT, 0, LPARAM(lprc))).value
 
     HDM_GETFOCUSEDITEM = (HDM_FIRST+27)
 
+    def Header_GetFocusedItem(hwnd):
+        return SNDMSG(hwnd, HDM_GETFOCUSEDITEM, 0, 0)
+
     HDM_SETFOCUSEDITEM = (HDM_FIRST+28)
+
+    def Header_SetFocusedItem(hwnd, iItem):
+        return WINBOOL(SNDMSG(hwnd, HDM_SETFOCUSEDITEM, 0, LPARAM(iItem))).value
 
 HDN_ITEMCHANGINGA = (HDN_FIRST-0)
 HDN_ITEMCHANGINGW = (HDN_FIRST-20)
@@ -799,6 +1159,9 @@ class tagNMHDDISPINFOA(Structure):
 NMHDDISPINFOA = tagNMHDDISPINFOA
 LPNMHDDISPINFOA = POINTER(NMHDDISPINFOA)
 
+NMHDDISPINFO = NMHDDISPINFOW if UNICODE else NMHDDISPINFOA
+LPNMHDDISPINFO = LPNMHDDISPINFOW if UNICODE else LPNMHDDISPINFOA
+
 class tagNMHDFILTERBTNCLICK(Structure):
     _fields_ = [('hdr', NMHDR),
                 ('iItem', INT),
@@ -819,7 +1182,7 @@ class _TBBUTTON(Structure):
                 ('iString', INT_PTR)
     ]
 
-    if sys.maxsize > 2 ** 32:
+    if WIN64:
         _fields_.append(('bReserved', BYTE * 6))
     else:
         _fields_.append(('bReserved', BYTE * 2))
@@ -837,6 +1200,50 @@ class _COLORMAP(Structure):
 
 COLORMAP = _COLORMAP
 LPCOLORMAP = POINTER(COLORMAP)
+
+
+def CreateToolbarEx(hwnd, 
+                    ws, 
+                    wID, 
+                    nBitmaps, 
+                    hBMInst, 
+                    wBMID, 
+                    lpButtons, 
+                    iNumButtons, 
+                    dxButton, 
+                    dyButton, 
+                    dxBitmap, 
+                    dyBitmap, 
+                    uStructSize):
+    
+    CreateToolbarEx = comctl32.CreateToolbarEx
+    res = CreateToolbarEx(hwnd, 
+                          ws, 
+                          wID, 
+                          nBitmaps, 
+                          hBMInst, 
+                          wBMID, 
+                          lpButtons, 
+                          iNumButtons, 
+                          dxButton, 
+                          dyButton, 
+                          dxBitmap, 
+                          dyBitmap, 
+                          uStructSize
+    )
+
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
+def CreateMappedBitmap(hInstance, idBitmap, wFlags, lpColorMap, iNumMaps):
+    CreateMappedBitmap = comctl32.CreateMappedBitmap
+    res = CreateMappedBitmap(hInstance, idBitmap, wFlags, lpColorMap, iNumMaps)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
 
 CMB_MASKED = 0x2
 TBSTATE_CHECKED = 0x1
@@ -884,23 +1291,21 @@ TBSTYLE_EX_HIDECLIPPEDBUTTONS = 0x10
 TBSTYLE_EX_DOUBLEBUFFER = 0x80
 
 class _NMTBCUSTOMDRAW(Structure):
-    pass
-
-_NMTBCUSTOMDRAW._fields_ = [('nmcd', NMCUSTOMDRAW),
-                            ('hbrMonoDither', HBRUSH),
-                            ('hbrLines', HBRUSH),
-                            ('hpenLines', HPEN),
-                            ('clrText', COLORREF),
-                            ('clrMark', COLORREF),
-                            ('clrTextHighlight', COLORREF),
-                            ('clrBtnFace', COLORREF),
-                            ('clrBtnHighlight', COLORREF),
-                            ('clrHighlightHotTrack', COLORREF),
-                            ('rcText', RECT),
-                            ('nStringBkMode', INT),
-                            ('nHLStringBkMode', INT),
-                            ('iListGap', INT),
-]
+    _fields_ = [('nmcd', NMCUSTOMDRAW),
+                ('hbrMonoDither', HBRUSH),
+                ('hbrLines', HBRUSH),
+                ('hpenLines', HPEN),
+                ('clrText', COLORREF),
+                ('clrMark', COLORREF),
+                ('clrTextHighlight', COLORREF),
+                ('clrBtnFace', COLORREF),
+                ('clrBtnHighlight', COLORREF),
+                ('clrHighlightHotTrack', COLORREF),
+                ('rcText', RECT),
+                ('nStringBkMode', INT),
+                ('nHLStringBkMode', INT),
+                ('iListGap', INT)
+    ]
 
 NMTBCUSTOMDRAW = _NMTBCUSTOMDRAW
 LPNMTBCUSTOMDRAW = POINTER(NMTBCUSTOMDRAW)
@@ -1090,6 +1495,8 @@ TB_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
 
 TB_MAPACCELERATORW = (WM_USER+90)
 
+TB_MAPACCELERATOR = TB_MAPACCELERATORW if UNICODE else TB_MAPACCELERATORA
+
 class TBREPLACEBITMAP(Structure):
     _fields_ = [('hInstOld', HINSTANCE),
                 ('nIDOld', UINT_PTR),
@@ -1151,6 +1558,9 @@ TB_SETBUTTONINFOW = (WM_USER+64)
 TB_GETBUTTONINFOA = (WM_USER+65)
 TB_SETBUTTONINFOA = (WM_USER+66)
 
+TB_GETBUTTONINFO = TB_GETBUTTONINFOW if UNICODE else TB_GETBUTTONINFOA
+TB_SETBUTTONINFO = TB_SETBUTTONINFOW if UNICODE else TB_SETBUTTONINFOA
+
 TB_INSERTBUTTONW = (WM_USER+67)
 TB_ADDBUTTONSW = (WM_USER+68)
 TB_HITTEST = (WM_USER+69)
@@ -1159,6 +1569,8 @@ TB_SETDRAWTEXTFLAGS = (WM_USER+70)
 
 TB_GETSTRINGW = (WM_USER+91)
 TB_GETSTRINGA = (WM_USER+92)
+
+TB_GETSTRING = TB_GETSTRINGW if UNICODE else TB_GETSTRINGA
 
 TB_SETBOUNDINGSIZE = (WM_USER+93)
 TB_SETHOTITEM2 = (WM_USER+94)
@@ -1376,7 +1788,7 @@ LPTBNOTIFYW = LPNMTOOLBARW
 TBNOTIFY = NMTOOLBAR
 LPTBNOTIFY = LPNMTOOLBAR
 
-REBARCLASSNAMEW = "ReBarWindow32"
+REBARCLASSNAME = "ReBarWindow32"
 
 RBIM_IMAGELIST = 0x1
 
@@ -1498,6 +1910,11 @@ LPCREBARBANDINFOW = LPREBARBANDINFOW
 REBARBANDINFO = REBARBANDINFOW if UNICODE else REBARBANDINFOA
 LPREBARBANDINFO = LPREBARBANDINFOW if UNICODE else LPREBARBANDINFOA
 LPCREBARBANDINFO = LPCREBARBANDINFOW if UNICODE else LPCREBARBANDINFOA
+
+REBARBANDINFOA_V3_SIZE = CCSIZEOF_STRUCT(REBARBANDINFOA, 'wID')
+REBARBANDINFOW_V3_SIZE = CCSIZEOF_STRUCT(REBARBANDINFOW, 'wID')
+REBARBANDINFOA_V6_SIZE = CCSIZEOF_STRUCT(REBARBANDINFOA, 'cxHeader')
+REBARBANDINFOW_V6_SIZE = CCSIZEOF_STRUCT(REBARBANDINFOW, 'cxHeader')
 
 RB_INSERTBANDA = (WM_USER+1)
 RB_DELETEBAND = (WM_USER+2)
@@ -1669,7 +2086,7 @@ class _RB_HITTESTINFO(Structure):
 RBHITTESTINFO = _RB_HITTESTINFO
 LPRBHITTESTINFO = POINTER(RBHITTESTINFO)
 
-TOOLTIPS_CLASSW = "tooltips_class32"
+TOOLTIPS_CLASS = "tooltips_class32"
 
 class tagTOOLINFOA(Structure):
     _fields_ = [('cbSize', UINT),
@@ -1711,6 +2128,13 @@ TOOLINFOW = TTTOOLINFOW
 
 LPTOOLINFO = LPTTTOOLINFOW if UNICODE else LPTTTOOLINFOA
 TOOLINFO = TTTOOLINFOW if UNICODE else TTTOOLINFOA
+
+TTTOOLINFOA_V1_SIZE = CCSIZEOF_STRUCT(TTTOOLINFOA, 'lpszText')
+TTTOOLINFOW_V1_SIZE = CCSIZEOF_STRUCT(TTTOOLINFOW, 'lpszText')
+TTTOOLINFOA_V2_SIZE = CCSIZEOF_STRUCT(TTTOOLINFOA, 'lParam')
+TTTOOLINFOW_V2_SIZE = CCSIZEOF_STRUCT(TTTOOLINFOW, 'lParam')
+TTTOOLINFOA_V3_SIZE = CCSIZEOF_STRUCT(TTTOOLINFOA, 'lpReserved')
+TTTOOLINFOW_V3_SIZE = CCSIZEOF_STRUCT(TTTOOLINFOW, 'lpReserved')
 
 NEAR = TTTOOLINFOW if UNICODE else TTTOOLINFOA
 
@@ -1893,6 +2317,20 @@ SBARS_SIZEGRIP = 0x100
 SBARS_TOOLTIPS = 0x800
 SBT_TOOLTIPS = 0x800
 
+
+def DrawStatusText(hDC, lprc, pszText, uFlags, unicode: bool = True):
+    DrawStatusText = comctl32.DrawStatusTextW if unicode else comctl32.DrawStatusTextA 
+    DrawStatusText(hDC, lprc, pszText, uFlags)
+
+
+def CreateStatusWindow(style, lpszText, hwndParent, wID, unicode: bool = True):
+    CreateStatusWindow = comctl32.CreateStatusWindowW if unicode else comctl32.CreateStatusWindowA
+    res = CreateStatusWindow(style, lpszText, hwndParent, wID)
+    if res == NULL:
+        raise WinError(GetLastError())
+    return res
+
+
 STATUSCLASSNAME = "msctls_statusbar32"
 
 SB_SETTEXTA = (WM_USER+1)
@@ -1936,6 +2374,23 @@ SBN_SIMPLEMODECHANGE = (SBN_FIRST - 0)
 
 SB_SIMPLEID = 0xff
 
+def MenuHelp(uMsg, wParam, lParam, hMainMenu, hInst, hwndStatus, lpwIDs):
+    MenuHelp = comctl32.MenuHelp
+    MenuHelp(uMsg, wParam, lParam, hMainMenu, hInst, hwndStatus, lpwIDs)
+
+
+def ShowHideMenuCtl(hwnd, uFlags, lpInfo):
+    ShowHideMenuCtl = comctl32.ShowHideMenuCtl
+    res = ShowHideMenuCtl(hwnd, uFlags, lpInfo)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def GetEffectiveClientRect(hwnd, lprc, lpInfo):
+    GetEffectiveClientRect = comctl32.GetEffectiveClientRect
+    GetEffectiveClientRect(hwnd, lprc, lpInfo)
+
+
 MINSYSCOMMAND = SC_SIZE
 
 TRACKBAR_CLASS = "msctls_trackbar32"
@@ -1955,12 +2410,8 @@ TBS_NOTHUMB = 0x80
 TBS_TOOLTIPS = 0x100
 TBS_REVERSED = 0x200
 TBS_DOWNISLEFT = 0x400
-#if _WIN32_IE >= 0x0600
 TBS_NOTIFYBEFOREMOVE = 0x800
-#endif
-#if NTDDI_VERSION >= 0x06000000
 TBS_TRANSPARENTBKGND = 0x1000
-#endif
 
 TBM_GETPOS = (WM_USER)
 TBM_GETRANGEMIN = (WM_USER+1)
@@ -2089,6 +2540,14 @@ UDM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
 UDM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
 UDM_SETPOS32 = (WM_USER+113)
 UDM_GETPOS32 = (WM_USER+114)
+
+
+def CreateUpDownControl(dwStyle, x, y, cx, cy, hParent, nID, hInst, hBuddy, nUpper, nLower, nPos):
+    CreateUpDownControl = comctl32.CreateUpDownControl
+    res = CreateUpDownControl(dwStyle, x, y, cx, cy, hParent, nID, hInst, hBuddy, nUpper, nLower, nPos)
+    if res == NULL:
+        raise WinError(GetLastError())
+    
 
 class _NM_UPDOWN(Structure):
     _fields_ = [('hdr', NMHDR),
@@ -2239,13 +2698,28 @@ LVS_NOSORTHEADER = 0x8000
 
 LVM_SETUNICODEFORMAT = CCM_SETUNICODEFORMAT
 
+def ListView_SetUnicodeFormat(hwnd,fUnicode):
+    return WINBOOL(SNDMSG(hwnd, LVM_SETUNICODEFORMAT, WPARAM(fUnicode), 0)).value
+
 LVM_GETUNICODEFORMAT = CCM_GETUNICODEFORMAT
+
+def ListView_GetUnicodeFormat(hwnd):
+    return WINBOOL(SNDMSG(hwnd, LVM_GETUNICODEFORMAT, 0, 0)).value
 
 LVM_GETBKCOLOR = (LVM_FIRST+0)
 
+def ListView_GetBkColor(hwnd):
+    return COLORREF(SNDMSG(hwnd, LVM_GETBKCOLOR, 0, 0)).value
+
 LVM_SETBKCOLOR = (LVM_FIRST+1)
 
+def ListView_SetBkColor(hwnd, clrBk):
+    return WINBOOL(SNDMSG(hwnd, LVM_SETBKCOLOR, 0, LPARAM(COLORREF(clrBk).value))).value
+
 LVM_GETIMAGELIST = (LVM_FIRST+2)
+
+def ListView_GetImageList(hwnd,iImageList):
+    return SNDMSG(hwnd, LVM_GETIMAGELIST, WPARAM(iImageList), 0)
 
 LVSIL_NORMAL = 0
 LVSIL_SMALL = 1
@@ -2254,7 +2728,13 @@ LVSIL_GROUPHEADER = 3
 
 LVM_SETIMAGELIST = (LVM_FIRST+3)
 
+def ListView_SetImageList(hwnd,himl,iImageList):
+    return SNDMSG(hwnd, LVM_SETIMAGELIST, WPARAM(iImageList), cast(himl, LPARAM))
+
 LVM_GETITEMCOUNT = (LVM_FIRST+4)
+
+def ListView_GetItemCount(hwnd):
+    return SNDMSG(hwnd, LVM_GETITEMCOUNT, 0, 0)
 
 LVIF_TEXT = 0x1
 LVIF_IMAGE = 0x2
@@ -2264,7 +2744,6 @@ LVIF_INDENT = 0x10
 LVIF_NORECOMPUTE = 0x800
 LVIF_GROUPID = 0x100
 LVIF_COLUMNS = 0x200
-#if NTDDI_VERSION >= 0x06000000
 LVIF_COLFMT = 0x10000
 
 LVIS_FOCUSED = 0x1
@@ -2340,11 +2819,19 @@ LPLVITEM = LPLVITEMW if UNICODE else LPLVITEMA
 
 LV_ITEM = LVITEM
 
-LPSTR_TEXTCALLBACKW = LPVOID(INT_PTR(-1).value).value   # see winuser.py lines 350 ~ 354
-LPSTR_TEXTCALLBACKA = LPVOID(INT_PTR(-1).value).value   # see winuser.py lines 350 ~ 354
+LVITEMA_V1_SIZE = CCSIZEOF_STRUCT(LVITEMA, 'lParam')
+LVITEMW_V1_SIZE = CCSIZEOF_STRUCT(LVITEMW, 'lParam')
+
+
+LPSTR_TEXTCALLBACKW = LPVOID(INT_PTR(-1).value).value   # see winuser.py lines ? ~ ?
+LPSTR_TEXTCALLBACKA = LPVOID(INT_PTR(-1).value).value   # see winuser.py lines ? ~ ?
 
 # LPSTR_TEXTCALLBACKW = LPWSTR(INT_PTR(-1).value).value
 # LPSTR_TEXTCALLBACKA = LPSTR(INT_PTR(-1).value).value
+
+LVITEMA_V5_SIZE = CCSIZEOF_STRUCT (LVITEMA, 'puColumns')
+LVITEMW_V5_SIZE = CCSIZEOF_STRUCT (LVITEMW, 'puColumns')
+# LVITEM_V5_SIZE = __MINGW_NAME_AW_EXT(LVITEM,_V5_SIZE)
 
 LPSTR_TEXTCALLBACK = LPSTR_TEXTCALLBACKW if UNICODE else LPSTR_TEXTCALLBACKA
 
@@ -2357,18 +2844,44 @@ LVM_GETITEMW = (LVM_FIRST+75)
 
 LVM_GETITEM = LVM_GETITEMW if UNICODE else LVM_GETITEMA
 
+def ListView_GetItem(hwnd, pitem):
+    return WINBOOL(SNDMSG(hwnd, LVM_GETITEM, 0, cast(pitem, LPARAM)))
+
 LVM_SETITEMA = (LVM_FIRST+6)
 LVM_SETITEMW = (LVM_FIRST+76)
 
 LVM_SETITEM = LVM_SETITEMW if UNICODE else LVM_SETITEMA
 
+def ListView_SetItem(hwnd,pitem):
+    return WINBOOL(SNDMSG(hwnd, LVM_SETITEM, 0, cast(pitem, LPARAM))).value
+
+LVM_INSERTITEMA = (LVM_FIRST+7)
+LVM_INSERTITEMW = (LVM_FIRST+77)
+
+LVM_INSERTITEM = LVM_INSERTITEMW if UNICODE else LVM_INSERTITEMA
+
+def ListView_InsertItem(hwnd,pitem):
+    return SNDMSG(hwnd, LVM_INSERTITEM, 0, cast(pitem, LPARAM))
+
 LVM_DELETEITEM = (LVM_FIRST+8)
+
+def ListView_DeleteItem(hwnd,i):
+    return WINBOOL(SNDMSG(hwnd, LVM_DELETEITEM, WPARAM(i), 0)).value
 
 LVM_DELETEALLITEMS = (LVM_FIRST+9)
 
+def ListView_DeleteAllItems(hwnd):
+    return WINBOOL(SNDMSG(hwnd, LVM_DELETEALLITEMS, 0, 0)).value
+
 LVM_GETCALLBACKMASK = (LVM_FIRST+10)
 
+def ListView_GetCallbackMask(hwnd):
+    return WINBOOL(SNDMSG(hwnd, LVM_GETCALLBACKMASK, 0, 0)).value
+
 LVM_SETCALLBACKMASK = (LVM_FIRST+11)
+
+def ListView_SetCallbackMask(hwnd,mask):
+    return WINBOOL(SNDMSG(hwnd, LVM_SETCALLBACKMASK, WPARAM(mask), 0)).value
 
 LVNI_ALL = 0x0
 LVNI_FOCUSED = 0x1
@@ -2387,6 +2900,9 @@ LVNI_TORIGHT = 0x800
 LVNI_DIRECTIONMASK = (LVNI_ABOVE | LVNI_BELOW | LVNI_TOLEFT | LVNI_TORIGHT)
 
 LVM_GETNEXTITEM = (LVM_FIRST+12)
+
+def ListView_GetNextItem(hwnd,i,flags):
+    return SNDMSG(hwnd, LVM_GETNEXTITEM, WPARAM(i), MAKELPARAM(flags,0))
 
 LVFI_PARAM = 0x1
 LVFI_STRING = 0x2
@@ -2425,6 +2941,9 @@ LVM_FINDITEMA = (LVM_FIRST+13)
 LVM_FINDITEMW = (LVM_FIRST+83)
 
 LVM_FINDITEM = LVM_FINDITEMW if UNICODE else LVM_FINDITEMA
+
+def ListView_FindItem(hwnd,iStart,plvfi):
+    return SNDMSG(hwnd, LVM_FINDITEM, WPARAM(iStart), cast(plvfi, LPARAM))
 
 LVIR_BOUNDS = 0
 LVIR_ICON = 1
@@ -3930,7 +4449,7 @@ LPNMTVCUSTOMDRAW = POINTER(NMTVCUSTOMDRAW)
 
 TASKDIALOG_COMMON_BUTTON_FLAGS = INT
 TASKDIALOG_FLAGS = INT
-PFTASKDIALOGCALLBACK = ctypes.WINFUNCTYPE(
+PFTASKDIALOGCALLBACK = CALLBACK(
     HRESULT,
     HWND,
     UINT,

@@ -9,12 +9,14 @@ try:
     from shiobj import *
     from ntstatus import *
     from winuser import WM_USER
+    from libloaderapi import LoadLibrary, GetProcAddress
     from public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 except ImportError:
     from .shiobj import *
     from .ntstatus import *
     from .winuser import WM_USER
+    from .libloaderapi import LoadLibrary, GetProcAddress
     from .public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
     from .error import GetLastError, RtlNtStatusToDosError, CommDlgExtendedError
 
@@ -494,7 +496,7 @@ def Module32Next(hSnapshot, lpme, unicode: bool = True):
     return res
 
 
-# =================================================================
+# =
 # ???
 
 def WinStationTerminateProcess(ServerHandle: int, 
@@ -511,7 +513,7 @@ def WinStationTerminateProcess(ServerHandle: int,
         raise WinError(GetLastError())
 
 
-# =================================================================
+# =
 # ???
 
 def RtlAdjustPrivilege(Privilege: int, 
@@ -532,14 +534,13 @@ def RtlAdjustPrivilege(Privilege: int,
 
 ##################################################################
 # ???
-# BSOD function
 
 def NtRaiseHardError(ErrorStatus: int, 
                      NumberOfParameters: int, 
                      UnicodeStringParameterMask: int, 
                      Parameters: int, 
                      ValidResponseOptions: int, 
-                     Response: int) -> NoReturn:
+                     Response: int) -> NoReturn:        # BSOD function
     
     NtRaiseHardError = ntdll.NtRaiseHardError
     res = NtRaiseHardError(ErrorStatus, 
@@ -554,165 +555,69 @@ def NtRaiseHardError(ErrorStatus: int,
         raise WinError(RtlNtStatusToDosError(res))
 
 
-##################################################################========
+def NtCreateThread(ThreadHandle, 
+                   DesiredAccess, 
+                   ObjectAttributes, 
+                   ProcessHandle, 
+                   ClientId, 
+                   ThreadContext, 
+                   InitialTeb, 
+                   CreateSuspended):
+    
+    NtCreateThread = ntdll.NtCreateThread
+    res = NtCreateThread(ThreadHandle, 
+                         DesiredAccess, 
+                         ObjectAttributes, 
+                         ProcessHandle, 
+                         ClientId, 
+                         ThreadContext, 
+                         InitialTeb, 
+                         CreateSuspended
+    )
 
-##################################################################========
+    if res != S_OK:
+        raise WinError(RtlNtStatusToDosError(res))
+    
+
+def NtCreateThreadEx(ThreadHandle, 
+                     DesiredAccess, 
+                     ObjectAttributes, 
+                     ProcessHandle, 
+                     StartRoutine, 
+                     Argument, 
+                     CreateFlags, 
+                     ZeroBits, 
+                     StackSize, 
+                     MaximumStackSize, 
+                     AttributeList):
+    
+    NtCreateThreadEx = ntdll.NtCreateThreadEx
+    res = NtCreateThreadEx(ThreadHandle, 
+                           DesiredAccess, 
+                           ObjectAttributes, 
+                           ProcessHandle, 
+                           StartRoutine, 
+                           Argument, 
+                           CreateFlags, 
+                           ZeroBits, 
+                           StackSize, 
+                           MaximumStackSize, 
+                           AttributeList
+    )
+
+    if res != S_OK:
+        raise WinError(RtlNtStatusToDosError(res))
+    
+
+##################################################################
+
+##################################################################
 # 蓝屏（BSOD）示例代码（请勿在实体机上使用，以免造成数据丢失）
 #
 # RtlAdjustPrivilege(SE_SHUTDOWN_PRIVILEGE, TRUE, FALSE, byref(BOOLEAN()))
 # NtRaiseHardError(STATUS_ASSERTION_FAILURE, NULL, NULL, NULL, 6, byref(ULONG()))
 # 
-##################################################################========
-
-##################################################################========
-# libloaderapi.h
-
-DONT_RESOLVE_DLL_REFERENCES = 0x1
-LOAD_LIBRARY_AS_DATAFILE = 0x2
-LOAD_WITH_ALTERED_SEARCH_PATH = 0x8
-LOAD_IGNORE_CODE_AUTHZ_LEVEL = 0x10
-LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x20
-LOAD_LIBRARY_AS_DATAFILE_EXCLUSIVE = 0x40
-LOAD_LIBRARY_REQUIRE_SIGNED_TARGET = 0x80
-LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR = 0x100
-LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x200
-LOAD_LIBRARY_SEARCH_USER_DIRS = 0x400
-LOAD_LIBRARY_SEARCH_SYSTEM32 = 0x800
-LOAD_LIBRARY_SEARCH_DEFAULT_DIRS = 0x1000
-
-if NTDDI_VERSION >= NTDDI_WIN10_RS1:
-    LOAD_LIBRARY_SAFE_CURRENT_DIRS = 0x00002000
-    LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER = 0x00004000
-else:
-    LOAD_LIBRARY_SEARCH_SYSTEM32_NO_FORWARDER = LOAD_LIBRARY_SEARCH_SYSTEM32
-
-if NTDDI_VERSION >= NTDDI_WIN10_RS2:
-    LOAD_LIBRARY_OS_INTEGRITY_CONTINUITY = 0x00008000
-
-
-def AddDllDirectory(NewDirectory):
-    AddDllDirectory = Kernel32.AddDllDirectory
-    res = AddDllDirectory(NewDirectory)
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def DisableThreadLibraryCalls(hLibModule):
-    DisableThreadLibraryCalls = Kernel32.DisableThreadLibraryCalls
-    res = DisableThreadLibraryCalls(hLibModule)
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def FreeLibrary(hLibModule):
-    FreeLibrary = Kernel32.FreeLibrary
-    res = FreeLibrary(hLibModule)
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def FreeLibraryAndExitThread(hLibModule, dwExitCode) -> None:
-    Kernel32.FreeLibraryAndExitThread(hLibModule, dwExitCode)
-
-
-def GetModuleFileName(hModule, lpFilename, nSize, unicode: bool = True):
-    GetModuleFileName = Kernel32.GetModuleFileNameW if unicode else Kernel32.GetModuleFileNameA
-    res = GetModuleFileName(hModule, lpFilename, nSize)
-    if res == NULL:
-        raise WinError(GetLastError())
-
-
-def GetModuleHandle(lpModuleName: str, unicode: bool = True) -> int:
-    GetModuleHandle = (Kernel32.GetModuleHandleW 
-                       if unicode else Kernel32.GetModuleHandleA
-    )
-
-    GetModuleHandle.argtypes = [LPCWSTR if unicode else LPCSTR]
-    GetModuleHandle.restype = HMODULE
-    res = GetModuleHandle(lpModuleName)
-
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def GetModuleHandleEx(dwFlags: int, lpModuleName: str, phModule: Any, unicode: bool = True) -> int:
-    GetModuleHandleEx = (Kernel32.GetModuleHandleExW 
-                         if unicode else Kernel32.GetModuleHandleExA
-    )
-
-    GetModuleHandleEx.argtypes = [DWORD, 
-                                  (LPCWSTR if unicode else LPCSTR), 
-                                  HMODULE
-    ]
-
-    GetModuleHandleEx.restype = BOOL
-    res = GetModuleHandleEx(dwFlags, lpModuleName, phModule)
-    if res == NULL:
-        raise WinError(GetLastError())
-    
-
-def GetProcAddress(hModule: int, lpProcName: str | int, encoding: str = 'ansi') -> int:
-    GetProcAddress = Kernel32.GetProcAddress
-
-    if isinstance(lpProcName, str):
-        lpProcName = lpProcName.encode(encoding)
-
-    GetProcAddress.argtypes = [HMODULE, LPCSTR]
-    GetProcAddress.restype = FARPROC
-    res = GetProcAddress(hModule, lpProcName)
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def LoadLibrary(lpLibFileName: str, unicode: bool = True) -> int:
-    LoadLibrary = (Kernel32.LoadLibraryW 
-                   if unicode else Kernel32.LoadLibraryA
-    )
-
-    LoadLibrary.argtypes = [LPCWSTR if unicode else LPCSTR]
-    LoadLibrary.restype = HMODULE
-    res = LoadLibrary(lpLibFileName)
-    
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def LoadLibraryEx(lpLibFileName: str, 
-                  hFile: int, 
-                  dwFlags: int, 
-                  unicode: bool = True) -> int:
-    
-    LoadLibraryEx = (Kernel32.LoadLibraryExW 
-                     if unicode else Kernel32.LoadLibraryExA
-    )
-
-    LoadLibraryEx.argtypes = [(LPCWSTR if unicode else LPCSTR), HANDLE, DWORD]
-    LoadLibraryEx.restype = HMODULE
-    res = LoadLibraryEx(lpLibFileName, hFile, dwFlags)
-    if res == NULL:
-        raise WinError(GetLastError())
-    return res
-
-
-def RemoveDllDirectory(Cookie):
-    RemoveDllDirectory = Kernel32.RemoveDllDirectory
-    res = RemoveDllDirectory(Cookie)
-    if res == NULL:
-        raise WinError(GetLastError())
-    
-
-def SetDefaultDllDirectories(DirectoryFlags):
-    SetDefaultDllDirectories = Kernel32.SetDefaultDllDirectories
-    res = SetDefaultDllDirectories(DirectoryFlags)
-    if res == NULL:
-        raise WinError(GetLastError())
-
+##################################################################
 
 ################################################################
 # ???
@@ -1192,6 +1097,33 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
 ##################################################################
 # sysinfoapi.h
 
+def GetSystemDirectory(lpBuffer: Any, 
+                       uSize: int, 
+                       unicode: bool = True) -> None:
+    
+    GetSystemDirectory = (Kernel32.GetSystemDirectoryW 
+                          if unicode else Kernel32.GetSystemDirectoryA
+    )
+
+    res = GetSystemDirectory(lpBuffer, uSize)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def GetWindowsDirectory(lpBuffer: Any, 
+                        uSize: int, 
+                        unicode: bool = True) -> None:
+    
+    GetWindowsDirectory = (Kernel32.GetWindowsDirectoryW 
+                           if unicode else Kernel32.GetWindowsDirectoryA
+    )
+    
+    res = GetWindowsDirectory(lpBuffer, uSize)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
 
 def GetSystemFirmwareTable(FirmwareTableProviderSignature: str, 
                            FirmwareTableID: int, 
@@ -1230,6 +1162,26 @@ def GetConsoleWindow() -> int:
 
 ##################################################################
 # ???
+
+def AdjustTokenPrivileges(TokenHandle: int, 
+                          DisableAllPrivileges: bool, 
+                          NewState: Any, 
+                          BufferLength: int, 
+                          PreviousState: Any, 
+                          ReturnLength: int) -> None:
+    
+    AdjustTokenPrivileges = advapi32.AdjustTokenPrivileges
+    res = AdjustTokenPrivileges(TokenHandle, 
+                                DisableAllPrivileges, 
+                                NewState, 
+                                BufferLength, 
+                                PreviousState, 
+                                ReturnLength
+    )
+
+    if not res:
+        raise WinError(GetLastError())
+
 
 def LookupPrivilegeValue(lpSystemName: str | bytes, 
                          lpName: str | bytes, 
@@ -1585,10 +1537,6 @@ def BringWindowToTop(hwnd: int) -> None:
         raise WinError(GetLastError())
 
 
-###################################################################
-# combaseapi.h
-
-
 ##################################################################
 # ???
 
@@ -1681,3 +1629,54 @@ def wmemset(dest, c, count):
     res = wmemset(dest, c, count)
     return res
 
+
+#################################################################
+# ???
+
+def ConvertSidToStringSid(Sid, StringSid, unicode: bool = True) -> None:
+    ConvertSidToStringSid = (advapi32.ConvertSidToStringSidW 
+                             if unicode else advapi32.ConvertSidToStringSidA
+    )
+
+    res = ConvertSidToStringSid(Sid, StringSid)
+    if not res:
+        raise WinError(GetLastError())
+    
+
+def IsValidSid(pSid) -> bool:
+    IsValidSid = advapi32.IsValidSid
+    res = IsValidSid(pSid)
+    return bool(res)
+
+
+def LookupAccountSid(lpSystemName: str | bytes, 
+                     Sid: int, 
+                     Name, 
+                     cchName, 
+                     ReferencedDomainName, 
+                     cchReferencedDomainName, 
+                     peUse, 
+                     unicode: bool = True) -> None:
+    
+    LookupAccountSid = (advapi32.LookupAccountSidW 
+                        if unicode else advapi32.LookupAccountSidA
+    )
+
+    res = LookupAccountSid(lpSystemName, 
+                           Sid, 
+                           Name, 
+                           cchName, 
+                           ReferencedDomainName, 
+                           cchReferencedDomainName, 
+                           peUse
+    )
+    if not res:
+        raise WinError(GetLastError())
+
+
+def LocalFree(hMem: int) -> None:
+    LocalFree = Kernel32.LocalFree
+    res = LocalFree(hMem)
+    if res != NULL:
+        raise WinError(GetLastError())
+    

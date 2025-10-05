@@ -1,6 +1,5 @@
 # coding = 'utf-8'
-
-''' The shellapi was used Windows API to make. '''
+# shellapi.h
 
 import enum
 import ctypes
@@ -16,7 +15,7 @@ try:
     from error import GetLastError
     from windef import POINT, RECT
     from processthreadsapi import *
-    from winuser import WM_USER, SendMessageW
+    from winuser import WM_USER, SendMessage
     from wtypesbase import LPSECURITY_ATTRIBUTES
 except ImportError:
     from .sdkddkver import *
@@ -26,7 +25,7 @@ except ImportError:
     from .error import GetLastError
     from .windef import POINT, RECT
     from .processthreadsapi import *
-    from .winuser import WM_USER, SendMessageW
+    from .winuser import WM_USER, SendMessage
     from .wtypesbase import LPSECURITY_ATTRIBUTES
 
 NULL = 0
@@ -285,6 +284,7 @@ class _SHELLEXECUTEINFOW(ctypes.Structure):
                     ('hMonitor', HANDLE)
         ]
 
+    _anonymous_ = ['SHELLEXECUTEICON']
     _fields_ = [('cbSize', DWORD), 
                 ('fMask', ULONG),
                 ('hwnd', HWND),
@@ -298,7 +298,7 @@ class _SHELLEXECUTEINFOW(ctypes.Structure):
                 ('lpClass', LPCWSTR),
                 ('hkeyClass', HKEY),
                 ('dwHotKey', DWORD),
-                ('hIcon_Monitor', SHELLEXECUTEICON),
+                ('SHELLEXECUTEICON', SHELLEXECUTEICON),
                 ('hProcess', HANDLE)
     ]
 
@@ -308,6 +308,7 @@ class _SHELLEXECUTEINFOA(ctypes.Structure):
                     ('hMonitor', HANDLE)
         ]
 
+    _anonymous_ = ['SHELLEXECUTEICON']
     _fields_ = [('cbSize', DWORD),
                 ('fMask', ULONG),
                 ('hwnd', HWND),
@@ -321,7 +322,7 @@ class _SHELLEXECUTEINFOA(ctypes.Structure):
                 ('lpClass', LPCSTR),
                 ('hkeyClass', HKEY),
                 ('dwHotKey', DWORD),
-                ('hIcon_Monitor', SHELLEXECUTEICON),
+                ('SHELLEXECUTEICON', SHELLEXECUTEICON),
                 ('hProcess', HANDLE)
     ]
 
@@ -330,6 +331,9 @@ LPSHELLEXECUTEINFOW = ctypes.POINTER(SHELLEXECUTEINFOW)
 
 SHELLEXECUTEINFOA = _SHELLEXECUTEINFOA
 LPSHELLEXECUTEINFOA = ctypes.POINTER(SHELLEXECUTEINFOA)
+
+SHELLEXECUTEINFO = SHELLEXECUTEINFOW if UNICODE else SHELLEXECUTEINFOA
+LPSHELLEXECUTEINFO = LPSHELLEXECUTEINFOW if UNICODE else LPSHELLEXECUTEINFOA
 
 class _SHCREATEPROCESSINFOW(Structure):
     _fields_ = [('cbSize', DWORD),
@@ -850,7 +854,7 @@ if NTDDI_VERSION >= 0x06000000:
 
     NCM_GETADDRESS =  (WM_USER+1)
 
-    SNDMSG = SendMessageW
+    SNDMSG = SendMessage
 
 
     def NetAddr_GetAddress(hwnd: int, pv: int) -> int:

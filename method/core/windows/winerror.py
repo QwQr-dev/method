@@ -3141,50 +3141,50 @@ SEVERITY_SUCCESS = 0
 SEVERITY_ERROR = 1
 
 
-def SUCCEEDED(hr: int):
+def SUCCEEDED(hr: int) -> bool:
     return HRESULT(hr).value >= 0
 
 
-def FAILED(hr: int):
+def FAILED(hr: int) -> bool:
     return HRESULT(hr).value < 0
 
 
-def IS_ERROR(Status: int):
+def IS_ERROR(Status: int) -> bool:
     return __LONG32(Status).value >> 31 == SEVERITY_ERROR
 
 
-def HRESULT_CODE(hr: int):
+def HRESULT_CODE(hr: int) -> int:
     return (hr & 0xFFFF)
 
 
-def SCODE_CODE(sc: int):
+def SCODE_CODE(sc: int) -> int:
     return (sc & 0xFFFF)
 
 
-def HRESULT_FACILITY(hr: int):
+def HRESULT_FACILITY(hr: int) -> int:
     return ((hr >> 16) & 0x1fff)
 
 
-def SCODE_FACILITY(sc: int):
+def SCODE_FACILITY(sc: int) -> int:
     return ((sc >> 16) & 0x1fff)
 
 
-def HRESULT_SEVERITY(hr: int):
+def HRESULT_SEVERITY(hr: int) -> int:
     return ((hr >> 31) & 0x1)
 
 
-def SCODE_SEVERITY(sc: int):
+def SCODE_SEVERITY(sc: int) -> int:
     return ((sc >> 31) & 0x1)
 
 
-def MAKE_HRESULT(sev: int, fac: int, code: int):
+def MAKE_HRESULT(sev: int, fac: int, code: int) -> int:
     return HRESULT(__LONG32(sev).value << 31 | 
                    __LONG32(fac).value << 16 | 
                    __LONG32(code).value
     ).value
 
 
-def MAKE_SCODE(sev: int, fac: int, code: int):
+def MAKE_SCODE(sev: int, fac: int, code: int) -> int:
     return SCODE(__LONG32(sev).value << 31 | 
                  __LONG32(fac).value << 16 | 
                  __LONG32(code).value
@@ -3194,7 +3194,7 @@ def MAKE_SCODE(sev: int, fac: int, code: int):
 FACILITY_NT_BIT = 0x10000000
 
 
-def __HRESULT_FROM_WIN32(x: int):
+def __HRESULT_FROM_WIN32(x: int) -> int:
     if HRESULT(x).value <= 0:
         return HRESULT(x).value
     

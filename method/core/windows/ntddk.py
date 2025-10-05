@@ -312,6 +312,7 @@ class _KDEVICE_QUEUE(Structure):    # from ntos.h
                             ('Hint', LONG64, 56)
                 ]
 
+            _anonymous_ = ['ReHi']
             _fields_ = [('Busy', BOOLEAN),
                         ('ReHi', ReHi)
             ]

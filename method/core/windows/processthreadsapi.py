@@ -2,12 +2,7 @@
 
 import enum
 from typing import Any, NoReturn
-from ctypes import (WinError, 
-                    Structure, 
-                    byref, 
-                    sizeof, 
-                    POINTER
-)
+from ctypes import WinError, Structure, POINTER
 
 try:
     from sdkddkver import *
@@ -496,6 +491,16 @@ def CreateRemoteThread(hProcess,
                        lpThreadId):
     
     CreateRemoteThread = Kernel32.CreateRemoteThread
+    CreateRemoteThread.argtypes = [HANDLE, 
+                                   VOID, 
+                                   SIZE_T, 
+                                   VOID, 
+                                   VOID, 
+                                   DWORD, 
+                                   DWORD
+    ]
+
+    CreateRemoteThread.restype = HANDLE
     res = CreateRemoteThread(hProcess, 
                             lpThreadAttributes, 
                             dwStackSize, 
@@ -505,7 +510,7 @@ def CreateRemoteThread(hProcess,
                             lpThreadId
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 

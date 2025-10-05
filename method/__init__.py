@@ -1,7 +1,7 @@
 # coding = 'utf-8'
 
 ''' 
-使用 python 来调用 Windows API 的一个模块 
+使用 Python 来调用 Windows API 的一个模块 
 
 项目开源网址：https://github.com/QwQr-dev/method
 '''
@@ -10,7 +10,7 @@ import os
 import sys
 from platform import system as _system
 
-__version__ = ['Beta 0.8.54']
+__version__ = ['Beta 0.8.55']
 major = 3
 minor = 13
 

@@ -1,11 +1,15 @@
 # coding = 'utf-8'
 
 from . import (windows,
-               messagebox
+               messagebox,
+               taskdialog
 )
 
 from .sys_win import (get_proc_path, 
                       get_serv_or_proc_path,
+                      get_all_windows_hwnd,
+                      get_goal_exec_hwnd_to_pid,
+                      get_goal_exec_pid_to_hwnd,
                       get_self_directory,  
                       get_device_UUID,
                       open_file_location, 
@@ -14,8 +18,11 @@ from .sys_win import (get_proc_path,
                       wmi_query_serv, 
                       RunAsAdmin,
                       RunAsAdmin2,
+                      get_user_info,
                       system_type,
                       enum_reg_value,
+                      WINDOWS,
+                      SYSTEM32,
                       SYSTEMROOT,
                       APPDATA,
                       HOMEDRIVE,
@@ -54,6 +61,7 @@ from .sys_win import (get_proc_path,
                       Common_Files
 )
 
+from .windows import *
 from .filedialog import *
 from .messagebox import *
 from .taskdialog import *
