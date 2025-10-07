@@ -853,19 +853,19 @@ def MAKELONG(a, b):
     return LONG(a | b).value
 
 
-def LOWORD(l):
+def LOWORD(l: int) -> int:
     return WORD(DWORD_PTR(l).value & 0xffff).value
 
 
-def HIWORD(l):
+def HIWORD(l: int) -> int:
     return WORD(((DWORD_PTR(l).value) >> 16) & 0xffff).value
 
 
-def LOBYTE(w):
+def LOBYTE(w: int) -> int:
     return BYTE((DWORD_PTR(w).value) & 0xff).value
 
 
-def HIBYTE(w):
+def HIBYTE(w: int) -> int:
     return BYTE(((DWORD_PTR(w).value) >> 8) & 0xff).value
 
 
@@ -1929,9 +1929,18 @@ EWX_ARSO = 0x04000000
 EWX_CHECK_SAFE_FOR_SERVER = 0x08000000
 
 
-def SendMessage(hwnd, msg, wparam, lparam, unicode: bool = True):
+def SendMessage(hwnd, 
+                msg, 
+                wparam, 
+                lparam, 
+                unicode: bool = True) -> int:
+    
     SendMessage = User32.SendMessageW if unicode else User32.SendMessageA
-    return SendMessage(hwnd, msg, wparam, lparam)
+    SendMessage.restype = LRESULT
+    res = SendMessage(hwnd, msg, wparam, lparam)
+    if GetLastError() == 5:
+        raise WinError(GetLastError())
+    return res
 
 
 BSM_ALLCOMPONENTS = 0x00000000
@@ -4124,7 +4133,7 @@ LPMSGBOXPARAMSW = PMSGBOXPARAMSW
 def EndTask(hwnd: int, fShutDown: bool, fForce: bool) -> None:
     EndTask = User32.EndTask
     res = EndTask(hwnd, fShutDown, fForce)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     
 
@@ -4172,24 +4181,30 @@ def IsWindowVisible(hwnd) -> bool:
 def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any) -> None:
     GetWindowThreadProcessId = User32.GetWindowThreadProcessId
     res = GetWindowThreadProcessId(hwnd, lpdwProcessId)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
 def IsWindow(hwnd: int = NULL) -> bool:
-    return bool(User32.IsWindow(hwnd))
+    IsWindow = User32.IsWindow
+    IsWindow.argtypes = [HWND]
+    return bool(IsWindow(hwnd))
 
 
 def IsWindowVisible(hwnd: int) -> bool:
-    return bool(User32.IsWindowVisible(hwnd))
+    IsWindowVisible = User32.IsWindowVisible
+    IsWindowVisible.argtypes = [HWND]
+    return bool(IsWindowVisible(hwnd))
 
 
 def IsUserAnAdmin() -> bool:
-    return bool(shell32.IsUserAnAdmin())
+    IsUserAnAdmin = shell32.IsUserAnAdmin
+    return bool(IsUserAnAdmin())
 
 
 def ShowWindow(hwnd: int, nCmdShow: int) -> bool:
-    return bool(User32.ShowWindow(hwnd, nCmdShow))
+    ShowWindow = User32.ShowWindow
+    return bool(ShowWindow(hwnd, nCmdShow))
 
 
 def MessageBox(hwnd: int, 
@@ -4199,11 +4214,11 @@ def MessageBox(hwnd: int,
                unicode: bool = True) -> int:
     
     MessageBox = User32.MessageBoxW if unicode else User32.MessageBoxA
-    result = MessageBox(hwnd, lpText, lpCaption, uType)
+    res = MessageBox(hwnd, lpText, lpCaption, uType)
     
-    if result == NULL:
+    if not res:
         raise WinError(GetLastError())
-    return result
+    return res
 
 
 def MessageBoxEx(hwnd: int, 
@@ -4214,19 +4229,19 @@ def MessageBoxEx(hwnd: int,
                  unicode: bool = True) -> int:
     
     MessageBoxEx = User32.MessageBoxExW if unicode else User32.MessageBoxExA
-    result = MessageBoxEx(hwnd, lpText, lpCaption, uType, wLanguageId)
+    res = MessageBoxEx(hwnd, lpText, lpCaption, uType, wLanguageId)
     
-    if result == NULL:
+    if not res:
         raise WinError(GetLastError())
-    return result
+    return res
     
 
 def MessageBeep(uType: int) -> bool:
     MessageBeep = User32.MessageBeep
-    result = MessageBeep(uType)
-    if result == 0:
+    res = MessageBeep(uType)
+    if not res:
         raise WinError(GetLastError())
-    return bool(result)
+    return bool(res)
 
 
 def MessageBoxIndirect(hwndOwner: int = HWND(), 
@@ -4256,11 +4271,11 @@ def MessageBoxIndirect(hwndOwner: int = HWND(),
     mbp.lpfnMsgBoxCallback = lpfnMsgBoxCallback
     mbp.dwLanguageId = dwLanguageId
 
-    result = MessageBoxIndirect(byref(mbp)) 
+    res = MessageBoxIndirect(byref(mbp)) 
 
-    if result == NULL:
+    if not res:
         raise WinError(GetLastError())
-    return result
+    return res
 
 
 def GetCurrentProcess() -> int:
@@ -4282,7 +4297,7 @@ def LoadImage(hInst: int,
     )
 
     res = LoadImage(hInst, name, type, cx, cy, fuLoad)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -4430,7 +4445,7 @@ def CreateWindowEx(dwExStyle,
                          lpParam
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -4494,7 +4509,7 @@ def PostQuitMessage(nExitCode: int) -> NoReturn:
 def BeginPaint(hWnd, lpPaint):
     BeginPaint = User32.BeginPaint
     res = BeginPaint(hWnd, lpPaint)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -4502,7 +4517,7 @@ def BeginPaint(hWnd, lpPaint):
 def FillRect(hDC, lprc, hbr):
     FillRect = User32.FillRect
     res = FillRect(hDC, lprc, hbr)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -4659,4 +4674,27 @@ def SetLayeredWindowAttributes(hwnd, crKey, bAlpha, dwFlags):
     if not res:
         raise WinError(GetLastError())
     
+
+def FindWindow(lpClassName: str | bytes, 
+               lpWindowName: str | bytes, 
+               unicode: bool = True) -> int:
     
+    FindWindow = User32.FindWindowW if unicode else User32.FindWindowA
+    res = FindWindow(lpClassName, lpWindowName)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def FindWindowEx(hWndParent, 
+                 hWndChildAfter, 
+                 lpszClass, 
+                 lpszWindow, 
+                 unicode: bool = True) -> int:
+    
+    FindWindowEx = User32.FindWindowExW if unicode else User32.FindWindowExA
+    res = FindWindowEx(hWndParent, hWndChildAfter, lpszClass, lpszWindow)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+

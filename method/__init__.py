@@ -10,7 +10,7 @@ import os
 import sys
 from platform import system as _system
 
-__version__ = ['Beta 0.8.55']
+__version__ = ['Beta 0.8.56']
 major = 3
 minor = 13
 

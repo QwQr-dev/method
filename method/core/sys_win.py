@@ -85,8 +85,29 @@ def get_user_info() -> tuple[str, str, str]:
         domain = domain_buffer.value
     finally:
         CloseHandle(token)
-
     return sid_string, domain, username
+
+
+def IsUIAccess(pid: int = None) -> bool:
+    '''
+    检查已运行的程序是否具有 UIAccess 权限
+    '''
+    Token = HANDLE()
+    Handle = OpenProcess(PROCESS_QUERY_INFORMATION, 
+                         FALSE, 
+                         GetCurrentProcessId() if pid is None else pid  # pid 为 None 时，获取自身的 pid
+    )
+    OpenProcessToken(Handle, TOKEN_QUERY, byref(Token))
+    UIAccess = DWORD()
+    Return_Length = DWORD()
+    GetTokenInformation(Token, 
+                        TokenUIAccess, 
+                        byref(UIAccess), 
+                        sizeof(UIAccess), 
+                        byref(Return_Length)
+    )
+    CloseHandle(Token)
+    return bool(UIAccess.value)
 
 
 def get_device_UUID() -> (str | None):
@@ -143,7 +164,7 @@ def get_device_UUID() -> (str | None):
         return f"{data1}-{data2}-{data3}-{data4[0:2].hex().upper()}-{data4[2:].hex().upper()}"
 
 
-def system_type(sys_basictypes: bool = False, uuid: bool = False) -> dict[str, (str | None)]:
+def get_system_information(sys_basictypes: bool = False, uuid: bool = False) -> dict[str, (str | None)]:
     '''Get information of the system.（获取系统信息）'''
 
     from struct import calcsize
@@ -308,9 +329,34 @@ def get_serv_or_proc_path(pid: int,
         return None
 
 
-def get_all_windows_hwnd(get_invisible_window_hwnd: bool = False) -> list[int]:
-    '''枚举程序的 hwnd'''
+def get_exec_hwnd_to_title(hwnd: int) -> (str | None):
+    '''通过 hwnd 来获取已运行程序的标题'''
+    try:
+        textLenInCharacters = GetWindowTextLength(hwnd)
+        stringBuffer = ((WCHAR if UNICODE else CHAR) * (textLenInCharacters + 1))()
+        GetWindowText(hwnd, stringBuffer, textLenInCharacters + 1, UNICODE)
+    except:
+        return None
+    
+    if UNICODE:
+        return stringBuffer.value
+    return stringBuffer.value.decode(sys.getdefaultencoding())
 
+
+def get_goal_title_to_hwnd(title: str) -> list[int]:
+    '''通过目标窗口标题来获取 hwnd'''
+    hwnds = []
+    for hwnd in get_all_exec_hwnd():
+        try:
+            if title == get_exec_hwnd_to_title(hwnd):
+                hwnds.append(hwnd)
+        except:
+            pass
+    return hwnds
+
+
+def get_all_exec_hwnd(get_invisible_window_hwnd: bool = False) -> list[int]:
+    '''获取所有已运行程序的 hwnd'''
     window_hwnds = []
     def foreach_window(hWnd, lParam):
         if IsWindowVisible(hWnd) or get_invisible_window_hwnd:
@@ -320,23 +366,30 @@ def get_all_windows_hwnd(get_invisible_window_hwnd: bool = False) -> list[int]:
     return window_hwnds
 
 
+def get_all_exec_title() -> list[str | None]:
+    '''获取所有已运行程序的标题'''
+    titles = []
+    for hwnd in get_all_exec_hwnd(True):
+        titles.append(get_exec_hwnd_to_title(hwnd))
+    return titles
+
+
 def get_goal_exec_pid_to_hwnd(pid: int) -> (int | None):
     '''通过目标程序的 PID 来获取 hwnd'''
-
     if not isinstance(pid, int):
         raise TypeError(f"The object should be of int, not '{type(pid).__name__}'")
     
-    hwnds = get_all_windows_hwnd(True)
+    hwnds = get_all_exec_hwnd(True)
     for hwnd in hwnds:
         process_id = HANDLE()
-        
         try:
             GetWindowThreadProcessId(hwnd, byref(process_id))
         except:
             return None
         
         if process_id.value == pid:
-            return hwnd   
+            return hwnd  
+    return None 
 
 
 def get_goal_exec_hwnd_to_pid(hwnd: int) -> (int | None):
@@ -472,6 +525,18 @@ def _SYSTEM32() -> str:
     return path.value.decode(sys.getdefaultencoding())
 
 
+def _SYSWOW64() -> (str | None):
+    wow64_path = (TCHAR * MAX_PATH)()
+    try:
+        GetSystemWow64Directory(wow64_path, MAX_PATH, UNICODE)
+    except:
+        return None
+    
+    if UNICODE:
+        return wow64_path.value
+    return wow64_path.value.decode(sys.getdefaultencoding())
+
+
 def _WINDOWS() -> str:
     path = (TCHAR * MAX_PATH)()
     GetWindowsDirectory(path, MAX_PATH, UNICODE)
@@ -483,13 +548,16 @@ def _WINDOWS() -> str:
 WINDOWS: str = _WINDOWS()
 SYSTEMROOT: str = _WINDOWS()
 SYSTEM32: str = _SYSTEM32()
+SYSWOW64 = _SYSWOW64()      # 在 32 位 Windows 上，没有 SYSWOW64 这个值
 APPDATA: str = os.environ['APPDATA']
 HOMEDRIVE: str = os.environ['HOMEDRIVE']
 HOMEPATH: str = os.environ['HOMEPATH']
 LOCALAPPDATA: str = os.environ['LOCALAPPDATA']
 LOGONSERVER = os.environ['LOGONSERVER'] if 'system' != get_user_info()[2].lower() else None     # 在具有 System 令牌的情况下，没有 LOGONSERVER 这个值
 USERDOMAIN: str = os.environ['USERDOMAIN']
-USERDOMAIN_ROAMINGPROFILE = os.environ['USERDOMAIN_ROAMINGPROFILE'] if 'system' != get_user_info()[2].lower() else None     # 同上
+USERDOMAIN_ROAMINGPROFILE = (os.environ['USERDOMAIN_ROAMINGPROFILE']        # 在具有 System 令牌的情况下，没有 USERDOMAIN_ROAMINGPROFILE 这个值
+                             if 'system' != get_user_info()[2].lower() else None
+)     
 USERNAME: str = os.environ['USERNAME']
 USERPROFILE: str = os.environ['USERPROFILE']
 HOME: str = HOMEDRIVE + HOMEPATH

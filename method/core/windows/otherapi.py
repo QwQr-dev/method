@@ -173,7 +173,7 @@ def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True) -> 
     )
 
     res = CreateJobObject(lpJobAttributes, lpName)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -181,7 +181,7 @@ def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True) -> 
 def AssignProcessToJobObject(hJob: int, hProcess: int) -> int:
     AssignProcessToJobObject = Kernel32.AssignProcessToJobObject
     res = AssignProcessToJobObject(hJob, hProcess)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -189,7 +189,19 @@ def AssignProcessToJobObject(hJob: int, hProcess: int) -> int:
 def TerminateJobObject(hJob: int, uExitCode: int) -> int:
     TerminateJobObject = Kernel32.TerminateJobObject
     res = TerminateJobObject(hJob, uExitCode)
-    if res == NULL:
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def GetCurrentDirectory(nBufferLength: int, lpBuffer: Any, unicode: bool = True) -> int:
+    GetCurrentDirectory = (Kernel32.GetCurrentDirectoryW 
+                           if unicode else Kernel32.GetCurrentDirectoryA
+    )
+
+    GetCurrentDirectory.restype = DWORD
+    res = GetCurrentDirectory(nBufferLength, lpBuffer)
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -509,7 +521,7 @@ def WinStationTerminateProcess(ServerHandle: int,
                                     ExitCode
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -528,7 +540,7 @@ def RtlAdjustPrivilege(Privilege: int,
                              OldValue
     )
 
-    if res != STATUS_SUCCESS:
+    if res:
         raise WinError(RtlNtStatusToDosError(res))
 
 
@@ -551,7 +563,7 @@ def NtRaiseHardError(ErrorStatus: int,
                         Response
     )
 
-    if res != STATUS_SUCCESS:
+    if res:
         raise WinError(RtlNtStatusToDosError(res))
 
 
@@ -575,7 +587,7 @@ def NtCreateThread(ThreadHandle,
                          CreateSuspended
     )
 
-    if res != S_OK:
+    if res:
         raise WinError(RtlNtStatusToDosError(res))
     
 
@@ -605,7 +617,7 @@ def NtCreateThreadEx(ThreadHandle,
                            AttributeList
     )
 
-    if res != S_OK:
+    if res:
         raise WinError(RtlNtStatusToDosError(res))
     
 
@@ -1050,7 +1062,7 @@ def lstrcpyn(lpString1, lpString2, iMaxLength, unicode: bool = True):
     lstrcpyn.restype = (LPWSTR if unicode else LPSTR)
     res = lstrcpyn(lpString1, lpString2, iMaxLength)
     
-    if res == NULL:
+    if not res:
         raise WinError()
     return res
 
@@ -1064,7 +1076,7 @@ def lstrlen(lpString, unicode: bool = True):
 def lstrcat(lpString1, lpString2, unicode: bool = True):
     lstrcat = Kernel32.lstrcatW if unicode else Kernel32.lstrcatA
     res = lstrcat(lpString1, lpString2)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return lpString1
 
@@ -1099,13 +1111,32 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True):
 
 def GetSystemDirectory(lpBuffer: Any, 
                        uSize: int, 
-                       unicode: bool = True) -> None:
+                       unicode: bool = True) -> int:
     
     GetSystemDirectory = (Kernel32.GetSystemDirectoryW 
                           if unicode else Kernel32.GetSystemDirectoryA
     )
 
     res = GetSystemDirectory(lpBuffer, uSize)
+    if not res:
+        raise WinError(GetLastError())
+    return res
+
+
+def GetSystemWow64Directory(lpBuffer: Any, 
+                            uSize: int, 
+                            unicode: bool = True) -> int:
+    
+    GetSystemWow64Directory = (Kernel32.GetSystemWow64DirectoryW 
+                               if unicode else Kernel32.GetSystemWow64DirectoryA
+    )
+    
+    GetSystemWow64Directory.restype = UINT
+    res = GetSystemWow64Directory(lpBuffer, uSize)
+
+    if res == ERROR_CALL_NOT_IMPLEMENTED:
+        raise WinError(res)
+    
     if not res:
         raise WinError(GetLastError())
     return res
@@ -1140,7 +1171,7 @@ def GetSystemFirmwareTable(FirmwareTableProviderSignature: str,
                                  BufferSize
     )
     
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -1162,6 +1193,24 @@ def GetConsoleWindow() -> int:
 
 ##################################################################
 # ???
+
+def GetVersion() -> int:
+    GetVersion = Kernel32.GetVersion
+    GetVersion.restype = DWORD
+    return GetVersion()
+
+
+def CheckTokenMembership(TokenHandle: int, 
+                         SidToCheck: Any, 
+                         IsMember: Any) -> None:
+    
+    CheckTokenMembership = advapi32.CheckTokenMembership
+    CheckTokenMembership.argtypes = [HANDLE, PVOID, PBOOL]
+    CheckTokenMembership.restype = BOOL
+    res = CheckTokenMembership(TokenHandle, SidToCheck, IsMember)
+    if not res:
+        raise WinError(GetLastError())
+
 
 def AdjustTokenPrivileges(TokenHandle: int, 
                           DisableAllPrivileges: bool, 
@@ -1211,6 +1260,14 @@ def GetTokenInformation(TokenHandle: int,
                         ReturnLength: Any):
     
     GetTokenInformation = advapi32.GetTokenInformation
+    GetTokenInformation.argtypes = [HANDLE, 
+                                    UINT, 
+                                    LPVOID, 
+                                    DWORD, 
+                                    PDWORD
+    ]
+
+    GetTokenInformation.restype = BOOL
     res = GetTokenInformation(TokenHandle, 
                               TokenInformationClass, 
                               TokenInformation, 
@@ -1286,7 +1343,7 @@ def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True) -> int:
     GetWindowLongPtr.argtypes = [HWND, INT]
     GetWindowLongPtr.restype = LONG_PTR
     res = GetWindowLongPtr(hwnd, nIndex)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -1388,7 +1445,7 @@ def CreateWindowInBand(dwExStyle: int,
                              dwBand
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -1677,6 +1734,6 @@ def LookupAccountSid(lpSystemName: str | bytes,
 def LocalFree(hMem: int) -> None:
     LocalFree = Kernel32.LocalFree
     res = LocalFree(hMem)
-    if res != NULL:
+    if res:
         raise WinError(GetLastError())
     

@@ -29,20 +29,20 @@ def OpenProcess(dwDesiredAccess: int,
     OpenProcess = Kernel32.OpenProcess
     OpenProcess.argtypes = [DWORD, BOOL, DWORD]
     OpenProcess.restype = HANDLE
-    handle = OpenProcess(dwDesiredAccess, 
+    res = OpenProcess(dwDesiredAccess, 
                          bInheritHandle, 
                          dwProcessId
     )
 
-    if not handle:
+    if not res:
         raise WinError(GetLastError())
-    return handle
+    return res
 
 
 def QueueUserAPC(pfnAPC, hThread, dwData):
     QueueUserAPC = Kernel32.QueueUserAPC
     res = QueueUserAPC(pfnAPC, hThread, dwData)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -61,7 +61,7 @@ def GetProcessTimes(hProcess: int,
                          lpUserTime
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     
 
@@ -72,7 +72,7 @@ def ExitProcess(uExitCode: int) -> NoReturn:
 def GetExitCodeProcess(hProcess, LPlpExitCode) -> None:
     GetExitCodeProcess = Kernel32.GetExitCodeProcess
     res = GetExitCodeProcess(hProcess, LPlpExitCode)
-    if res == NULL:
+    if not res:
         WinError(GetLastError())
 
 
@@ -87,7 +87,7 @@ def OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId):
                      dwThreadId
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -95,7 +95,7 @@ def OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId):
 def SetThreadPriorityBoost(hThread, bDisablePriorityBoost):
     SetThreadPriorityBoost = Kernel32.SetThreadPriorityBoost
     res = SetThreadPriorityBoost(hThread, bDisablePriorityBoost)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -103,7 +103,7 @@ def SetThreadPriorityBoost(hThread, bDisablePriorityBoost):
 def GetThreadPriorityBoost(hThread, pDisablePriorityBoost):
     GetThreadPriorityBoost = Kernel32.GetThreadPriorityBoost
     res = GetThreadPriorityBoost(hThread, pDisablePriorityBoost)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -111,7 +111,7 @@ def SetThreadToken(PThread, Token):
     SetThreadToken = advapi32.SetThreadToken
     # SetThreadToken.argtypes = [PHANDLE, HANDLE]
     res = SetThreadToken(PThread, Token)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -125,7 +125,7 @@ def OpenProcessToken(ProcessHandle: int, DesiredAccess: int, PTokenHandle: Any):
                            PTokenHandle
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -137,7 +137,7 @@ def OpenThreadToken(ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle):
                          TokenHandle
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -156,7 +156,7 @@ def GetCurrentProcessId() -> int:
 def SetPriorityClass(hProcess, dwPriorityClass):
     SetPriorityClass = Kernel32.SetPriorityClass
     res = SetPriorityClass(hProcess, dwPriorityClass)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -164,7 +164,7 @@ def SetPriorityClass(hProcess, dwPriorityClass):
 def GetPriorityClass(hProcess):
     GetPriorityClass = Kernel32.GetPriorityClass
     res = GetPriorityClass(hProcess)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -172,7 +172,7 @@ def GetPriorityClass(hProcess):
 def GetProcessId(Process) -> int:
     GetProcessId = Kernel32.GetProcessId
     res = GetProcessId(Process)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -180,7 +180,7 @@ def GetProcessId(Process) -> int:
 def GetThreadId(Thread) -> int:
     GetThreadId = Kernel32.GetThreadId
     res = GetThreadId(Thread)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -191,7 +191,7 @@ def GetThreadContext(hThread, lpContext):
                           lpContext
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -202,7 +202,7 @@ def FlushInstructionCache(hProcess, lpBaseAddress, dwSize):
                                 dwSize
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -216,7 +216,7 @@ def TerminateProcess(hProcess: int, uExitCode: int) -> None:
     TerminateProcess.argtypes = [HANDLE, UINT]
     TerminateProcess.restype = BOOL
     res = TerminateProcess(hProcess, uExitCode)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -431,7 +431,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
                                           RequiredMaskCount
         )
 
-        if res == NULL:
+        if not res:
             raise WinError(res)
 
 
@@ -457,7 +457,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
                                          RequiredMaskCount
         )
 
-        if res == NULL:
+        if not res:
             raise WinError(GetLastError())
 
 
@@ -471,7 +471,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
                                         CpuSetMaskCount
         )
 
-        if res == NULL:
+        if not res:
             raise WinError(GetLastError())
 
 
@@ -517,7 +517,7 @@ def CreateRemoteThread(hProcess,
 def TerminateThread(hThread, dwExitCode):
     TerminateThread = Kernel32.TerminateThread
     res = TerminateThread(hThread, dwExitCode)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return hThread
 
@@ -525,14 +525,14 @@ def TerminateThread(hThread, dwExitCode):
 def SetProcessShutdownParameters(dwLevel, dwFlags):
     SetProcessShutdownParameters = Kernel32.SetProcessShutdownParameters
     res = SetProcessShutdownParameters(dwLevel, dwFlags)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
 def GetProcessVersion(ProcessId) -> int:
     GetProcessVersion = Kernel32.GetProcessVersion
     res = GetProcessVersion(ProcessId)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -544,7 +544,7 @@ def GetStartupInfoW(lpStartupInfo):
 def SetThreadStackGuarantee(StackSizeInBytes):
     SetThreadStackGuarantee = Kernel32.SetThreadStackGuarantee
     res = SetThreadStackGuarantee(StackSizeInBytes)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -554,7 +554,7 @@ def ProcessIdToSessionId(dwProcessId: int, pSessionId: Any):
                                pSessionId
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -578,7 +578,7 @@ def CreateRemoteThreadEx(hProcess,
                                lpThreadId
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -586,14 +586,14 @@ def CreateRemoteThreadEx(hProcess,
 def SetThreadContext(hThread: int, lpContext):
     SetThreadContext = Kernel32.SetThreadContext
     res = SetThreadContext(hThread, lpContext)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
 def GetProcessHandleCount(hProcess: int, pdwHandleCount: Any):
     GetProcessHandleCount = Kernel32.GetProcessHandleCount
     res = GetProcessHandleCount(hProcess, pdwHandleCount)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -664,7 +664,7 @@ def CreateProcessAsUser(hToken: int,
                               lpProcessInformation
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -675,7 +675,7 @@ PROC_THREAD_ATTRIBUTE_REPLACE_VALUE = 0x00000001
 def GetProcessIdOfThread(Thread: int) -> int:
     GetProcessIdOfThread = Kernel32.GetProcessIdOfThread
     res = GetProcessIdOfThread(Thread)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
     return res
 
@@ -692,7 +692,7 @@ def InitializeProcThreadAttributeList(lpAttributeList,
                                             lpSize
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -704,14 +704,14 @@ def DeleteProcThreadAttributeList(lpAttributeList) -> None:
 def SetProcessAffinityUpdateMode(hProcess, dwFlags):
     SetProcessAffinityUpdateMode = Kernel32.SetProcessAffinityUpdateMode
     res = SetProcessAffinityUpdateMode(hProcess, dwFlags)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
 def QueryProcessAffinityUpdateMode(hProcess, lpdwFlags):
     QueryProcessAffinityUpdateMode = Kernel32.QueryProcessAffinityUpdateMode
     res = QueryProcessAffinityUpdateMode(hProcess, lpdwFlags)
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -733,7 +733,7 @@ def UpdateProcThreadAttribute(lpAttributeList,
                                     lpReturnSize
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 
@@ -741,7 +741,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN8:
     def SetProcessMitigationPolicy(MitigationPolicy, lpBuffer, dwLength):
         SetProcessMitigationPolicy = Kernel32.SetProcessMitigationPolicy
         res = SetProcessMitigationPolicy(MitigationPolicy, lpBuffer, dwLength)
-        if res == NULL:
+        if not res:
             raise WinError(GetLastError())
 
 
@@ -773,7 +773,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WINBLUE:
     def IsProcessCritical (hProcess, Critical):
         IsProcessCritical = Kernel32.IsProcessCritical
         res = IsProcessCritical (hProcess, Critical)
-        if res == NULL:
+        if not res:
             raise WinError(GetLastError())
 
 
@@ -781,7 +781,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
     def SetProtectedPolicy (PolicyGuid, PolicyValue, OldPolicyValue):
         SetProtectedPolicy = Kernel32.SetProtectedPolicy
         res = SetProtectedPolicy (PolicyGuid, PolicyValue, OldPolicyValue)
-        if res == NULL:
+        if not res:
             raise WinError(GetLastError())
 
 
@@ -820,7 +820,7 @@ def CreateProcess(lpApplicationName: str,
                         lpProcessInformation
     )
 
-    if res == NULL:
+    if not res:
         raise WinError(GetLastError())
 
 

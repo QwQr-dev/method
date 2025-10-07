@@ -278,6 +278,11 @@ SW_FORCEMINIMIZE = 11
 if NTDDI_VERSION >= 0x06020000:
     SEE_MASK_FLAG_HINST_IS_SITE = 0x8000000
 
+class SHELLEXECUTEICON(ctypes.Union):
+    _fields_ = [('hIcon', HANDLE), 
+                ('hMonitor', HANDLE)
+    ]
+    
 class _SHELLEXECUTEINFOW(ctypes.Structure):
     class SHELLEXECUTEICON(ctypes.Union):
         _fields_ = [('hIcon', HANDLE), 
@@ -947,7 +952,7 @@ def ShellExecuteEx(fMask: int = SEE_MASK_FLAG_NO_UI | SEE_MASK_FORCENOIDLIST,
     mbr.lpClass = lpClass
     mbr.hkeyClass = hkeyClass
     mbr.dwHotKey = dwHotKey
-    mbr.hIcon_Monitor = mbr.SHELLEXECUTEICON(*hIcon_Monitor)
+    mbr.hIcon_Monitor = SHELLEXECUTEICON(*hIcon_Monitor)
     res = ShellExecuteEx(ctypes.byref(mbr))
     hProcess = mbr.hProcess
     hInstApp = mbr.hInstApp
