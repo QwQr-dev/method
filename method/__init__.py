@@ -9,7 +9,7 @@
 import os
 import sys
 
-__version__ = 'Beta 0.8.59'
+__version__ = 'Beta 0.8.60'
 major = 3
 minor = 13
 
