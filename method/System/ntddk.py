@@ -4,7 +4,6 @@ import sys
 import enum
 import platform
 from typing import Any
-
 from method.System.winnt import *
 from method.System.errcheck import *
 from method.System.ntstatus import *

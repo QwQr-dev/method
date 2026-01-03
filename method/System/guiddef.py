@@ -70,7 +70,7 @@ FMTID = GUID
 LPFMTID = POINTER(FMTID)
 
 
-def InlineIsEqualGUID(rguid1, rguid2) -> bool:
+def InlineIsEqualGUID(rguid1: GUID, rguid2: GUID) -> bool:
     return ((rguid1.Data1)[0] == (rguid2.Data1)[0] and
             (rguid1.Data1)[1] == (rguid2.Data1)[1] and
             (rguid1.Data1)[2] == (rguid2.Data1)[2] and

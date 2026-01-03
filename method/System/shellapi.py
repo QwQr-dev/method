@@ -915,7 +915,7 @@ def OpenProcess(
     errcheck: bool = True
 ) -> int:
     
-    OpenProcess = Kernel32.OpenProcess
+    OpenProcess = kernel32.OpenProcess
     res = OpenProcess(
         dwDesiredAccess, 
         bInheritHandle, 
@@ -926,7 +926,7 @@ def OpenProcess(
 
 
 def CloseHandle(hObject: int, errcheck: bool = True) -> None:
-    CloseHandle = Kernel32.CloseHandle
+    CloseHandle = kernel32.CloseHandle
     CloseHandle.argtypes = [HANDLE]
     CloseHandle.restype = BOOL
     res = CloseHandle(hObject)
@@ -942,8 +942,8 @@ def QueryFullProcessImageName(
     errcheck: bool = True
 ) -> str:
     
-    QueryFullProcessImageName = (Kernel32.QueryFullProcessImageNameW 
-                                 if unicode else Kernel32.QueryFullProcessImageNameA
+    QueryFullProcessImageName = (kernel32.QueryFullProcessImageNameW 
+                                 if unicode else kernel32.QueryFullProcessImageNameA
     )
     
     res = QueryFullProcessImageName(hProcess, dwFlags, lpExeName, lpdwSize)

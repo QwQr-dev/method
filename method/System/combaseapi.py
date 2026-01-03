@@ -6,9 +6,11 @@ from typing import Any
 from method.System.wtypesbase import *
 from method.System.winusutypes import *
 from method.System.public_dll import ole32
+from method.System.unknwnbase import IUnknown
 from method.System.errcheck import hresult_to_errcheck, win32_to_errcheck
 
 interface = Structure
+LPUNKNOWN = POINTER(IUnknown)
 
 
 def LISet32(li, v) -> int:
@@ -64,58 +66,98 @@ PServerInformation = POINTER(ServerInformation)
 
 def CreateStreamOnHGlobal(hGlobal, fDeleteOnRelease, ppstm, errcheck: bool = True):
     CreateStreamOnHGlobal = ole32.CreateStreamOnHGlobal
+    '''
+    CreateStreamOnHGlobal.argtypes = [
+        HGLOBAL,
+        WINBOOL,
+        
+    ]
+    '''
     res = CreateStreamOnHGlobal(hGlobal, fDeleteOnRelease, ppstm)
     return hresult_to_errcheck(res, errcheck)    
+
 
 def GetHGlobalFromStream(pstm, phglobal, errcheck: bool = True):
     GetHGlobalFromStream = ole32.GetHGlobalFromStream
     res = GetHGlobalFromStream(pstm, phglobal)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoInitialize(pvReserved: int = NULL, errcheck: bool = True) -> None:
     CoInitialize = ole32.CoInitialize
+    CoInitialize.argtypes = [LPVOID]
+    CoInitialize.restype = HRESULT
     res = CoInitialize(pvReserved)
     return hresult_to_errcheck(res, errcheck)
 
+
 def CoInitializeEx(pvReserved: int, dwCoInit: int, errcheck: bool = True) -> None:
     CoInitializeEx = ole32.CoInitializeEx
+    CoInitializeEx.argtypes = [REFIID, LPVOID]
+    CoInitializeEx.restype = HRESULT
     res = CoInitializeEx(pvReserved, dwCoInit)
     return hresult_to_errcheck(res, errcheck)
 
+
 def CoUninitialize(errcheck: bool = True) -> None:
     CoUninitialize = ole32.CoUninitialize
+    CoUninitialize.restype = HRESULT
     res = CoUninitialize()
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoGetCurrentLogicalThreadId(pguid, errcheck: bool = True):
     CoGetCurrentLogicalThreadId = ole32.CoGetCurrentLogicalThreadId
+    CoGetCurrentLogicalThreadId.argtypes = [POINTER(GUID)]
+    CoGetCurrentLogicalThreadId.restype = HRESULT
     res = CoGetCurrentLogicalThreadId(pguid)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoGetContextToken(pToken, errcheck: bool = True):
     CoGetContextToken = ole32.CoGetContextToken
+    CoGetContextToken.argtypes = [PULONG_PTR]
+    CoGetContextToken.restype = HRESULT
     res = CoGetContextToken(pToken)
     return hresult_to_errcheck(res, errcheck)    
 
-def CoGetApartmentType(pAptType, pAptQualifier, errcheck: bool = True):
+
+def CoGetApartmentType(pAptType: int, pAptQualifier: int, errcheck: bool = True):
     CoGetApartmentType = ole32.CoGetApartmentType
+    CoGetApartmentType.argtypes = [UINT, UINT]
+    CoGetApartmentType.restype = HRESULT
     res = CoGetApartmentType(pAptType, pAptQualifier)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoGetObjectContext(riid, ppv, errcheck: bool = True):
     CoGetObjectContext = ole32.CoGetObjectContext
+    CoGetObjectContext.argtypes = [REFIID, LPVOID]
+    CoGetObjectContext.restype = HRESULT
     res = CoGetObjectContext(riid, ppv)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoRegisterClassObject(rclsid, pUnk, dwClsContext, flags, lpdwRegister, errcheck: bool = True):
     CoRegisterClassObject = ole32.CoRegisterClassObject
+    CoRegisterClassObject.argtypes = [
+        REFCLSID,
+        LPUNKNOWN,
+        DWORD,
+        DWORD,
+        LPDWORD
+    ]
+
+    CoRegisterClassObject.restype = HRESULT
     res = CoRegisterClassObject(rclsid, pUnk, dwClsContext, flags, lpdwRegister)
     return hresult_to_errcheck(res, errcheck)    
+
 
 def CoRevokeClassObject(dwRegister, errcheck: bool = True):
     CoRevokeClassObject = ole32.CoRevokeClassObject
     res = CoRevokeClassObject(dwRegister)
     return hresult_to_errcheck(res, errcheck)    
+
 
 def CoResumeClassObjects(errcheck: bool = True):
     CoResumeClassObjects = ole32.CoResumeClassObjects
@@ -135,6 +177,7 @@ def CoGetMalloc(dwMemContext, ppMalloc, errcheck: bool = True):
 
 def CoGetCurrentProcess():
     CoGetCurrentProcess = ole32.CoGetCurrentProcess
+    CoGetCurrentProcess.restype = DWORD
     res = CoGetCurrentProcess()
     return res
 

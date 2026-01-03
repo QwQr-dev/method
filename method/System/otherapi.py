@@ -3,12 +3,11 @@
 # ???: 指暂时未分类的部分类或函数、或 Microsoft 未公开的 Windows API
 
 from typing import NoReturn, Any
-
 from method.System.shiobj import *
 from method.System.ntstatus import *
 from method.System.winuser import WM_USER
 from method.System.libloaderapi import LoadLibrary, GetProcAddress
-from method.System.public_dll import Kernel32, ntdll, shell32, advapi32, User32, winsta
+from method.System.public_dll import kernel32, ntdll, shell32, advapi32, user32, winsta
 from method.System.errcheck import win32_to_errcheck, RtlNtStatusToDosError, CommDlgExtendedError
 
 FARPROC = INT_PTR
@@ -159,8 +158,8 @@ if NTDDI_VERSION >= NTDDI_WIN10_FE:
 
 
 def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True, errcheck: bool = True) -> int:
-    CreateJobObject = (Kernel32.CreateJobObjectW 
-                       if unicode else Kernel32.CreateJobObjectA
+    CreateJobObject = (kernel32.CreateJobObjectW 
+                       if unicode else kernel32.CreateJobObjectA
     )
 
     res = CreateJobObject(lpJobAttributes, lpName)
@@ -169,22 +168,22 @@ def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True, err
 
 
 def AssignProcessToJobObject(hJob: int, hProcess: int, errcheck: bool = True) -> int:
-    AssignProcessToJobObject = Kernel32.AssignProcessToJobObject
+    AssignProcessToJobObject = kernel32.AssignProcessToJobObject
     res = AssignProcessToJobObject(hJob, hProcess)
     return win32_to_errcheck(res, errcheck)
 
 
 
 def TerminateJobObject(hJob: int, uExitCode: int, errcheck: bool = True) -> int:
-    TerminateJobObject = Kernel32.TerminateJobObject
+    TerminateJobObject = kernel32.TerminateJobObject
     res = TerminateJobObject(hJob, uExitCode)
     return win32_to_errcheck(res, errcheck)
 
 
 
 def GetCurrentDirectory(nBufferLength: int, lpBuffer: Any, unicode: bool = True, errcheck: bool = True) -> int:
-    GetCurrentDirectory = (Kernel32.GetCurrentDirectoryW 
-                           if unicode else Kernel32.GetCurrentDirectoryA
+    GetCurrentDirectory = (kernel32.GetCurrentDirectoryW 
+                           if unicode else kernel32.GetCurrentDirectoryA
     )
 
     GetCurrentDirectory.restype = DWORD
@@ -398,7 +397,7 @@ def RunfileDlg(
 
 
 def WaitForSingleObject(hHandle: int, dwMilliseconds: int, errcheck: bool = True) -> int:
-    WaitForSingleObject = Kernel32.WaitForSingleObject
+    WaitForSingleObject = kernel32.WaitForSingleObject
     res = WaitForSingleObject(hHandle, dwMilliseconds)
     return win32_to_errcheck(res, errcheck)
 
@@ -638,7 +637,7 @@ def GetSaveFileName(unnamedParam1, unicode: bool = True):
     
 
 def lstrcpyn(lpString1, lpString2, iMaxLength, unicode: bool = True, errcheck: bool = True):
-    lstrcpyn = Kernel32.lstrcpynW if unicode else Kernel32.lstrcpynA
+    lstrcpyn = kernel32.lstrcpynW if unicode else kernel32.lstrcpynA
     lstrcpyn.argtypes = [(LPWSTR if unicode else LPSTR), 
                         (LPCWSTR if unicode else LPCSTR), 
                         INT
@@ -650,14 +649,14 @@ def lstrcpyn(lpString1, lpString2, iMaxLength, unicode: bool = True, errcheck: b
 
 
 def lstrlen(lpString, unicode: bool = True):
-    lstrlen = Kernel32.lstrlenW if unicode else Kernel32.lstrlenA
+    lstrlen = kernel32.lstrlenW if unicode else kernel32.lstrlenA
     res = lstrlen(lpString)
     return res
 
 
 
 def lstrcat(lpString1, lpString2, unicode: bool = True, errcheck: bool = True):
-    lstrcat = Kernel32.lstrcatW if unicode else Kernel32.lstrcatA
+    lstrcat = kernel32.lstrcatW if unicode else kernel32.lstrcatA
     res = lstrcat(lpString1, lpString2)
     return win32_to_errcheck(res, errcheck)   
 
@@ -699,8 +698,8 @@ def GetSystemDirectory(
     errcheck: bool = True
 ) -> int:
 
-    GetSystemDirectory = (Kernel32.GetSystemDirectoryW 
-                          if unicode else Kernel32.GetSystemDirectoryA
+    GetSystemDirectory = (kernel32.GetSystemDirectoryW 
+                          if unicode else kernel32.GetSystemDirectoryA
     )
 
     res = GetSystemDirectory(lpBuffer, uSize)
@@ -715,8 +714,8 @@ def GetSystemWow64Directory(
     errcheck: bool = True
 ) -> int:
     
-    GetSystemWow64Directory = (Kernel32.GetSystemWow64DirectoryW 
-                               if unicode else Kernel32.GetSystemWow64DirectoryA
+    GetSystemWow64Directory = (kernel32.GetSystemWow64DirectoryW 
+                               if unicode else kernel32.GetSystemWow64DirectoryA
     )
     
     GetSystemWow64Directory.restype = UINT
@@ -733,8 +732,8 @@ def GetWindowsDirectory(
     errcheck: bool = True
 ) -> None:
     
-    GetWindowsDirectory = (Kernel32.GetWindowsDirectoryW 
-                           if unicode else Kernel32.GetWindowsDirectoryA
+    GetWindowsDirectory = (kernel32.GetWindowsDirectoryW 
+                           if unicode else kernel32.GetWindowsDirectoryA
     )
     
     res = GetWindowsDirectory(lpBuffer, uSize)
@@ -760,7 +759,7 @@ def GetSystemFirmwareTable(
     if isinstance(FirmwareTableProviderSignature, str):
         FirmwareTableProviderSignature = FirmwareTableProviderSignature.encode(encoding=encoding)
 
-    GetSystemFirmwareTable = Kernel32.GetSystemFirmwareTable
+    GetSystemFirmwareTable = kernel32.GetSystemFirmwareTable
     res = GetSystemFirmwareTable(int.from_bytes(FirmwareTableProviderSignature, byteorder=byteorder), 
                                  FirmwareTableID, 
                                  pFirmwareTableBuffer,
@@ -783,7 +782,7 @@ SMBIOS_HEADER = _SMBIOS_HEADER
 
 
 def GetConsoleWindow() -> int:
-    GetConsoleWindow = Kernel32.GetConsoleWindow
+    GetConsoleWindow = kernel32.GetConsoleWindow
     return GetConsoleWindow()
 
 
@@ -792,7 +791,7 @@ def GetConsoleWindow() -> int:
 
 
 def GetVersion() -> int:
-    GetVersion = Kernel32.GetVersion
+    GetVersion = kernel32.GetVersion
     GetVersion.restype = DWORD
     return GetVersion()
 
@@ -939,7 +938,7 @@ def RevertToSelf(errcheck: bool = True) -> None:
 
 
 def GetCommandLine(unicode: bool = True) -> (str | bytes):
-    GetCommandLine = Kernel32.GetCommandLineW if unicode else Kernel32.GetCommandLineA
+    GetCommandLine = kernel32.GetCommandLineW if unicode else kernel32.GetCommandLineA
     GetCommandLine.restype = LPWSTR if unicode else LPSTR
     res = GetCommandLine()
     return res
@@ -950,8 +949,8 @@ def GetCommandLine(unicode: bool = True) -> (str | bytes):
 
 
 def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True, errcheck: bool = True) -> int:
-    GetWindowLongPtr = (User32.GetWindowLongPtrW 
-                        if unicode else User32.GetWindowLongPtrA
+    GetWindowLongPtr = (user32.GetWindowLongPtrW 
+                        if unicode else user32.GetWindowLongPtrA
     )
 
     GetWindowLongPtr.argtypes = [HWND, INT]
@@ -972,7 +971,7 @@ def SetWindowPos(
     errcheck: bool = True
 ) -> None:
     
-    SetWindowPos = User32.SetWindowPos
+    SetWindowPos = user32.SetWindowPos
     SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
     SetWindowPos.restype = BOOL
     res = SetWindowPos(
@@ -989,7 +988,7 @@ def SetWindowPos(
 
 
 def CheckDlgButton(hDlg, nIDButton, uCheck, errcheck: bool = True):
-    CheckDlgButton = User32.CheckDlgButton
+    CheckDlgButton = user32.CheckDlgButton
     res = CheckDlgButton(hDlg, nIDButton, uCheck)
     return win32_to_errcheck(res, errcheck)    
 
@@ -1008,14 +1007,14 @@ def SetWindowPos(
     errcheck: bool = True
 ):
     
-    SetWindowPos = User32.SetWindowPos
+    SetWindowPos = user32.SetWindowPos
     SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
     res = SetWindowPos(hwnd, hWndInsertAfter, X, Y, cx, cy, uFlags)
     return win32_to_errcheck(res, errcheck)
 
 
 def SetForegroundWindow(hwnd: int) -> bool:
-    SetForegroundWindow = User32.SetForegroundWindow
+    SetForegroundWindow = user32.SetForegroundWindow
     res = SetForegroundWindow(hwnd)
     return bool(res)
 
@@ -1025,7 +1024,7 @@ def SetForegroundWindow(hwnd: int) -> bool:
 
 
 def GetWindowBand(hwnd: int, pdwBand: int, errcheck: bool = True) -> None:
-    GetWindowBand = User32.GetWindowBand
+    GetWindowBand = user32.GetWindowBand
     GetWindowBand.argtypes = [HWND, DWORD]
     GetWindowBand.restype = BOOL
     res = GetWindowBand(hwnd, pdwBand)
@@ -1049,7 +1048,7 @@ def CreateWindowInBand(
     errcheck: bool = True
 ) -> int:
     
-    CreateWindowInBand = User32.CreateWindowInBand
+    CreateWindowInBand = user32.CreateWindowInBand
     res = CreateWindowInBand(
         dwExStyle, 
         lpClassName, 
@@ -1088,7 +1087,7 @@ def CreateWindowInBandEx(
     errcheck: bool = True
 ) -> int:
     
-    CreateWindowInBandEx = User32.CreateWindowInBandEx
+    CreateWindowInBandEx = user32.CreateWindowInBandEx
     res = CreateWindowInBandEx(
         dwExStyle, 
         lpClassName, 
@@ -1111,7 +1110,7 @@ def CreateWindowInBandEx(
 
 
 def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int, errcheck: bool = True) -> None:
-    SetWindowBand = User32.SetWindowBand
+    SetWindowBand = user32.SetWindowBand
     SetWindowBand.argtypes = [HWND, HWND, DWORD]
     SetWindowBand.restype = BOOL
     res = SetWindowBand(hwnd, hwndInsertAfter, dwBand)
@@ -1119,7 +1118,7 @@ def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int, errcheck: bool =
 
 
 def UpdateWindow(hwnd: int) -> bool:
-    res = User32.UpdateWindow(hwnd)
+    res = user32.UpdateWindow(hwnd)
     return bool(res)
     
 
@@ -1212,7 +1211,7 @@ class DLGTEMPLATE(ctypes.Structure):
 
 
 def BringWindowToTop(hwnd: int, errcheck: bool = True) -> None:
-    BringWindowToTop = User32.BringWindowToTop
+    BringWindowToTop = user32.BringWindowToTop
     res = BringWindowToTop(hwnd)
     return win32_to_errcheck(res, errcheck)
 
@@ -1221,14 +1220,14 @@ def BringWindowToTop(hwnd: int, errcheck: bool = True) -> None:
 
 
 def IsWow64Process(hProcess, Wow64Process, errcheck: bool = True):
-    IsWow64Process = Kernel32.IsWow64Process
+    IsWow64Process = kernel32.IsWow64Process
     IsWow64Process.argtypes = [HANDLE, PBOOL]
     res = IsWow64Process(hProcess, Wow64Process)
     return win32_to_errcheck(res, errcheck)    
 
 
 def IsWow64Process2(hProcess, pProcessMachine, pNativeMachine, errcheck: bool = True):
-    IsWow64Process2 = Kernel32.IsWow64Process2
+    IsWow64Process2 = kernel32.IsWow64Process2
     IsWow64Process2.argtypes = [HANDLE, PUSHORT, PUSHORT]
     res = IsWow64Process2(hProcess, pProcessMachine, pNativeMachine)
     return win32_to_errcheck(res, errcheck)
@@ -1296,7 +1295,7 @@ def LookupAccountSid(
 
 
 def LocalFree(hMem: int) -> None:
-    LocalFree = Kernel32.LocalFree
+    LocalFree = kernel32.LocalFree
     LocalFree.argtypes = [HLOCAL]
     LocalFree.restype = HLOCAL
     LocalFree(hMem)
@@ -1314,7 +1313,7 @@ def ImpersonateLoggedOnUser(hToken: int, errcheck: bool = True) -> None:
 
 
 def Sleep(dwMilliseconds: int) -> None:
-    Sleep = Kernel32.Sleep
+    Sleep = kernel32.Sleep
     Sleep.argtypes = [DWORD]
     Sleep(dwMilliseconds)
 

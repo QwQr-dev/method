@@ -858,11 +858,11 @@ SHUTDOWN_ARSO = 0x00002000
 
 
 def InitiateShutdown(
-    lpMachineName,
-    lpMessage,
-    dwGracePeriod,
-    dwShutdownFlags,
-    dwReason,
+    lpMachineName: str | bytes,
+    lpMessage: str | bytes,
+    dwGracePeriod: int,
+    dwShutdownFlags: int,
+    dwReason: int,
     unicode: bool = True,
     errcheck: bool = True
 ) -> NoReturn:

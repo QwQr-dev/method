@@ -2,7 +2,6 @@
 
 import enum
 from typing import Any, NoReturn
-
 from method.System.sdkddkver import *
 from method.System.public_dll import *
 from method.System.winusutypes import *
@@ -21,7 +20,7 @@ def OpenProcess(
     errcheck: bool = True
 ) -> int:
     
-    OpenProcess = Kernel32.OpenProcess
+    OpenProcess = kernel32.OpenProcess
     OpenProcess.argtypes = [DWORD, BOOL, DWORD]
     OpenProcess.restype = HANDLE
     res = OpenProcess(
@@ -34,7 +33,7 @@ def OpenProcess(
 
 
 def QueueUserAPC(pfnAPC, hThread, dwData, errcheck: bool = True):
-    QueueUserAPC = Kernel32.QueueUserAPC
+    QueueUserAPC = kernel32.QueueUserAPC
     res = QueueUserAPC(pfnAPC, hThread, dwData)
     return win32_to_errcheck(res, errcheck)
 
@@ -48,7 +47,7 @@ def GetProcessTimes(
     errcheck: bool = True
 ):
     
-    GetProcessTimes = Kernel32.GetProcessTimes
+    GetProcessTimes = kernel32.GetProcessTimes
     res = GetProcessTimes(
         hProcess,
         lpCreationTime,
@@ -61,20 +60,20 @@ def GetProcessTimes(
 
 
 def ExitProcess(uExitCode: int) -> NoReturn:
-    Kernel32.ExitProcess(uExitCode)
+    kernel32.ExitProcess(uExitCode)
 
 
 def GetExitCodeProcess(hProcess, LPlpExitCode, errcheck: bool = True) -> None:
-    GetExitCodeProcess = Kernel32.GetExitCodeProcess
+    GetExitCodeProcess = kernel32.GetExitCodeProcess
     res = GetExitCodeProcess(hProcess, LPlpExitCode)
     return win32_to_errcheck(res, errcheck)
 
 def SwitchToThread() -> int:
-    return Kernel32.SwitchToThread()
+    return kernel32.SwitchToThread()
 
 
 def OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId, errcheck: bool = True):
-    OpenThread = Kernel32.OpenThread
+    OpenThread = kernel32.OpenThread
     res = OpenThread(dwDesiredAccess, 
                      bInheritHandle, 
                      dwThreadId
@@ -84,13 +83,13 @@ def OpenThread(dwDesiredAccess, bInheritHandle, dwThreadId, errcheck: bool = Tru
 
 
 def SetThreadPriorityBoost(hThread, bDisablePriorityBoost, errcheck: bool = True):
-    SetThreadPriorityBoost = Kernel32.SetThreadPriorityBoost
+    SetThreadPriorityBoost = kernel32.SetThreadPriorityBoost
     res = SetThreadPriorityBoost(hThread, bDisablePriorityBoost)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetThreadPriorityBoost(hThread, pDisablePriorityBoost, errcheck: bool = True):
-    GetThreadPriorityBoost = Kernel32.GetThreadPriorityBoost
+    GetThreadPriorityBoost = kernel32.GetThreadPriorityBoost
     res = GetThreadPriorityBoost(hThread, pDisablePriorityBoost)
     return win32_to_errcheck(res, errcheck)
 
@@ -126,43 +125,43 @@ def OpenThreadToken(ThreadHandle, DesiredAccess, OpenAsSelf, TokenHandle, errche
 
 
 def GetCurrentProcess() -> int:
-    GetCurrentProcess = Kernel32.GetCurrentProcess
+    GetCurrentProcess = kernel32.GetCurrentProcess
     GetCurrentProcess.restype = HANDLE
     return GetCurrentProcess()
 
 
 def GetCurrentProcessId() -> int:
-	GetCurrentProcessId = Kernel32.GetCurrentProcessId
+	GetCurrentProcessId = kernel32.GetCurrentProcessId
 	GetCurrentProcessId.restype = DWORD
 	return GetCurrentProcessId()
 
 
 def SetPriorityClass(hProcess, dwPriorityClass, errcheck: bool = True):
-    SetPriorityClass = Kernel32.SetPriorityClass
+    SetPriorityClass = kernel32.SetPriorityClass
     res = SetPriorityClass(hProcess, dwPriorityClass)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetPriorityClass(hProcess, errcheck: bool = True):
-    GetPriorityClass = Kernel32.GetPriorityClass
+    GetPriorityClass = kernel32.GetPriorityClass
     res = GetPriorityClass(hProcess)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetProcessId(Process, errcheck: bool = True) -> int:
-    GetProcessId = Kernel32.GetProcessId
+    GetProcessId = kernel32.GetProcessId
     res = GetProcessId(Process)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetThreadId(Thread, errcheck: bool = True) -> int:
-    GetThreadId = Kernel32.GetThreadId
+    GetThreadId = kernel32.GetThreadId
     res = GetThreadId(Thread)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetThreadContext(hThread, lpContext, errcheck: bool = True):
-    GetThreadContext = Kernel32.GetThreadContext
+    GetThreadContext = kernel32.GetThreadContext
     res = GetThreadContext(hThread, 
                           lpContext
     )
@@ -171,7 +170,7 @@ def GetThreadContext(hThread, lpContext, errcheck: bool = True):
 
 
 def FlushInstructionCache(hProcess, lpBaseAddress, dwSize, errcheck: bool = True):
-    FlushInstructionCache = Kernel32.FlushInstructionCache
+    FlushInstructionCache = kernel32.FlushInstructionCache
     res = FlushInstructionCache(hProcess, 
                                 lpBaseAddress, 
                                 dwSize
@@ -181,11 +180,11 @@ def FlushInstructionCache(hProcess, lpBaseAddress, dwSize, errcheck: bool = True
 
 
 def GetCurrentProcessorNumber() -> int:
-    return Kernel32.GetCurrentProcessorNumber()
+    return kernel32.GetCurrentProcessorNumber()
 
 
 def TerminateProcess(hProcess: int, uExitCode: int, errcheck: bool = True) -> None:
-    TerminateProcess = Kernel32.TerminateProcess
+    TerminateProcess = kernel32.TerminateProcess
     TerminateProcess.argtypes = [HANDLE, UINT]
     TerminateProcess.restype = BOOL
     res = TerminateProcess(hProcess, uExitCode)
@@ -402,7 +401,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
         errcheck: bool = True
     ):
         
-        GetProcessDefaultCpuSetMasks = Kernel32.GetProcessDefaultCpuSetMasks
+        GetProcessDefaultCpuSetMasks = kernel32.GetProcessDefaultCpuSetMasks
         res = GetProcessDefaultCpuSetMasks(
             Process, 
             CpuSetMasks, 
@@ -419,7 +418,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
         CpuSetMaskCount
     ):
         
-        SetProcessDefaultCpuSetMasks = Kernel32.SetProcessDefaultCpuSetMasks   
+        SetProcessDefaultCpuSetMasks = kernel32.SetProcessDefaultCpuSetMasks   
         res = SetProcessDefaultCpuSetMasks(
             Process, 
             CpuSetMasks, 
@@ -437,7 +436,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
         errcheck: bool = True
     ):
         
-        GetThreadSelectedCpuSetMasks = Kernel32.GetThreadSelectedCpuSetMasks
+        GetThreadSelectedCpuSetMasks = kernel32.GetThreadSelectedCpuSetMasks
         res = GetThreadSelectedCpuSetMasks(
             Thread, 
             CpuSetMasks, 
@@ -455,7 +454,7 @@ if _WIN32_WINNT >= WIN32_WINNT_WIN10:
         errcheck: bool = True
     ):
         
-        SetThreadSelectedCpuSetMasks = Kernel32.SetThreadSelectedCpuSetMasks
+        SetThreadSelectedCpuSetMasks = kernel32.SetThreadSelectedCpuSetMasks
         res = SetThreadSelectedCpuSetMasks(
             Thread, 
             CpuSetMasks, 
@@ -483,7 +482,7 @@ def CreateRemoteThread(
     errcheck: bool = True
 ):
     
-    CreateRemoteThread = Kernel32.CreateRemoteThread
+    CreateRemoteThread = kernel32.CreateRemoteThread
     CreateRemoteThread.argtypes = [
         HANDLE, 
         VOID, 
@@ -509,36 +508,36 @@ def CreateRemoteThread(
 
 
 def TerminateThread(hThread, dwExitCode, errcheck: bool = True):
-    TerminateThread = Kernel32.TerminateThread
+    TerminateThread = kernel32.TerminateThread
     res = TerminateThread(hThread, dwExitCode)
     return win32_to_errcheck(res, errcheck)
 
 
 def SetProcessShutdownParameters(dwLevel, dwFlags, errcheck: bool = True):
-    SetProcessShutdownParameters = Kernel32.SetProcessShutdownParameters
+    SetProcessShutdownParameters = kernel32.SetProcessShutdownParameters
     res = SetProcessShutdownParameters(dwLevel, dwFlags)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetProcessVersion(ProcessId, errcheck: bool = True) -> int:
-    GetProcessVersion = Kernel32.GetProcessVersion
+    GetProcessVersion = kernel32.GetProcessVersion
     res = GetProcessVersion(ProcessId)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetStartupInfoW(lpStartupInfo):
-    GetStartupInfoW = Kernel32.GetStartupInfoW
+    GetStartupInfoW = kernel32.GetStartupInfoW
     GetStartupInfoW(lpStartupInfo)
 
 
 def SetThreadStackGuarantee(StackSizeInBytes, errcheck: bool = True):
-    SetThreadStackGuarantee = Kernel32.SetThreadStackGuarantee
+    SetThreadStackGuarantee = kernel32.SetThreadStackGuarantee
     res = SetThreadStackGuarantee(StackSizeInBytes)
     return win32_to_errcheck(res, errcheck)
 
 
 def ProcessIdToSessionId(dwProcessId: int, pSessionId: Any, errcheck: bool = True):
-    ProcessIdToSessionId = Kernel32.ProcessIdToSessionId
+    ProcessIdToSessionId = kernel32.ProcessIdToSessionId
     res = ProcessIdToSessionId(dwProcessId, pSessionId)
     return win32_to_errcheck(res, errcheck)
 
@@ -555,7 +554,7 @@ def CreateRemoteThreadEx(
     errcheck: bool = True
 ):
     
-    CreateRemoteThreadEx = Kernel32.CreateRemoteThreadEx
+    CreateRemoteThreadEx = kernel32.CreateRemoteThreadEx
     res = CreateRemoteThreadEx(
         hProcess, 
         lpThreadAttributes, 
@@ -571,13 +570,13 @@ def CreateRemoteThreadEx(
 
 
 def SetThreadContext(hThread: int, lpContext, errcheck: bool = True):
-    SetThreadContext = Kernel32.SetThreadContext
+    SetThreadContext = kernel32.SetThreadContext
     res = SetThreadContext(hThread, lpContext)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetProcessHandleCount(hProcess: int, pdwHandleCount: Any, errcheck: bool = True):
-    GetProcessHandleCount = Kernel32.GetProcessHandleCount
+    GetProcessHandleCount = kernel32.GetProcessHandleCount
     res = GetProcessHandleCount(hProcess, pdwHandleCount)
     return win32_to_errcheck(res, errcheck)
 
@@ -664,7 +663,7 @@ PROC_THREAD_ATTRIBUTE_REPLACE_VALUE = 0x00000001
 
 
 def GetProcessIdOfThread(Thread: int, errcheck: bool = True) -> int:
-    GetProcessIdOfThread = Kernel32.GetProcessIdOfThread
+    GetProcessIdOfThread = kernel32.GetProcessIdOfThread
     res = GetProcessIdOfThread(Thread)
     return win32_to_errcheck(res, errcheck)
 
@@ -677,7 +676,7 @@ def InitializeProcThreadAttributeList(
     errcheck: bool = True
 ):
 
-    InitializeProcThreadAttributeList = Kernel32.InitializeProcThreadAttributeList
+    InitializeProcThreadAttributeList = kernel32.InitializeProcThreadAttributeList
     res = InitializeProcThreadAttributeList(
         lpAttributeList, 
         dwAttributeCount, 
@@ -689,18 +688,18 @@ def InitializeProcThreadAttributeList(
 
 
 def DeleteProcThreadAttributeList(lpAttributeList) -> None:
-    DeleteProcThreadAttributeList = Kernel32.DeleteProcThreadAttributeList
+    DeleteProcThreadAttributeList = kernel32.DeleteProcThreadAttributeList
     DeleteProcThreadAttributeList(lpAttributeList)
 
 
 def SetProcessAffinityUpdateMode(hProcess, dwFlags, errcheck: bool = True):
-    SetProcessAffinityUpdateMode = Kernel32.SetProcessAffinityUpdateMode
+    SetProcessAffinityUpdateMode = kernel32.SetProcessAffinityUpdateMode
     res = SetProcessAffinityUpdateMode(hProcess, dwFlags)
     return win32_to_errcheck(res, errcheck)
 
 
 def QueryProcessAffinityUpdateMode(hProcess, lpdwFlags, errcheck: bool = True):
-    QueryProcessAffinityUpdateMode = Kernel32.QueryProcessAffinityUpdateMode
+    QueryProcessAffinityUpdateMode = kernel32.QueryProcessAffinityUpdateMode
     res = QueryProcessAffinityUpdateMode(hProcess, lpdwFlags)
     return win32_to_errcheck(res, errcheck)
 
@@ -716,7 +715,7 @@ def UpdateProcThreadAttribute(
     errcheck: bool = True
 ):
     
-    UpdateProcThreadAttribute = Kernel32.UpdateProcThreadAttribute
+    UpdateProcThreadAttribute = kernel32.UpdateProcThreadAttribute
     res = UpdateProcThreadAttribute(
         lpAttributeList, 
         dwFlags, 
@@ -732,7 +731,7 @@ def UpdateProcThreadAttribute(
 
 if _WIN32_WINNT >= WIN32_WINNT_WIN8:
     def SetProcessMitigationPolicy(MitigationPolicy: int, lpBuffer: Any, dwLength: Any, errcheck: bool = True):
-        SetProcessMitigationPolicy = Kernel32.SetProcessMitigationPolicy
+        SetProcessMitigationPolicy = kernel32.SetProcessMitigationPolicy
         SetProcessMitigationPolicy.argtypes = [UINT, PVOID, SIZE_T]
         SetProcessMitigationPolicy.restype = BOOL
         res = SetProcessMitigationPolicy(MitigationPolicy, lpBuffer, dwLength)
@@ -765,20 +764,20 @@ MEMORY_PRIORITY_NORMAL        = 5
 
 if _WIN32_WINNT >= WIN32_WINNT_WINBLUE:
     def IsProcessCritical (hProcess, Critical, errcheck: bool = True):
-        IsProcessCritical = Kernel32.IsProcessCritical
+        IsProcessCritical = kernel32.IsProcessCritical
         res = IsProcessCritical (hProcess, Critical)
         return win32_to_errcheck(res, errcheck)
 
 
 if _WIN32_WINNT >= WIN32_WINNT_WIN10:
     def SetProtectedPolicy (PolicyGuid, PolicyValue, OldPolicyValue, errcheck: bool = True):
-        SetProtectedPolicy = Kernel32.SetProtectedPolicy
+        SetProtectedPolicy = kernel32.SetProtectedPolicy
         res = SetProtectedPolicy (PolicyGuid, PolicyValue, OldPolicyValue)
         return win32_to_errcheck(res, errcheck)
 
 
 def QueryProtectedPolicy (PolicyGuid, PolicyValue, errcheck: bool = True):
-    QueryProtectedPolicy = Kernel32.QueryProtectedPolicy
+    QueryProtectedPolicy = kernel32.QueryProtectedPolicy
     res = QueryProtectedPolicy (PolicyGuid, PolicyValue)
     return win32_to_errcheck(res, errcheck)
 
@@ -798,8 +797,8 @@ def CreateProcess(
     errcheck: bool = True
 ):
     
-    CreateProcess = (Kernel32.CreateProcessW 
-                     if unicode else Kernel32.CreateProcessA
+    CreateProcess = (kernel32.CreateProcessW 
+                     if unicode else kernel32.CreateProcessA
     )
 
     res = CreateProcess(
@@ -819,14 +818,14 @@ def CreateProcess(
 
 
 def GetCurrentThreadStackLimits(LowLimit, HighLimit):
-    GetCurrentThreadStackLimits = Kernel32.GetCurrentThreadStackLimits
+    GetCurrentThreadStackLimits = kernel32.GetCurrentThreadStackLimits
     GetCurrentThreadStackLimits.argtypes = [PULONG_PTR, PULONG_PTR]
     GetCurrentThreadStackLimits.restype = VOID
     return GetCurrentThreadStackLimits(LowLimit, HighLimit)
 
 
 def GetProcessMitigationPolicy(hProcess, MitigationPolicy, lpBuffer, dwLength, errcheck: bool = True):
-    GetProcessMitigationPolicy = Kernel32.GetProcessMitigationPolicy
+    GetProcessMitigationPolicy = kernel32.GetProcessMitigationPolicy
     res = GetProcessMitigationPolicy(hProcess, MitigationPolicy, lpBuffer, dwLength)
     return win32_to_errcheck(res, errcheck)
 

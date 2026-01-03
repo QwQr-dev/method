@@ -5,18 +5,15 @@ from method.System.guiddef import *
 from method.System.wtypesbase import *
 from method.System.winusutypes import *
 from method.System.wmivirtualkey import *
-from method.System.unknwnbase import IUnknown
+from method.System.unknwnbase import IUnknown, _In_, _Out_
 
+OLESTR = LPCWSTR
 OLECHAR = WCHAR
 POLECHAR = POINTER(OLECHAR)
 CIMTYPE = LONG
 BSTR = POLECHAR
 DATE = DOUBLE
 VARIANT_BOOL = SHORT
-
-_In_ = 1
-_Out_ = 2
-
 
 class tagCY(Structure):
     class DUMMYSTRUCTNAME(Structure):
@@ -370,71 +367,76 @@ VT_TYPEMASK = 0xfff
 
 VT_GENERIC = -1
 
-VARTYPE = ctypes.c_ushort
+VARTYPE = c_ushort
 
 
-class SOLE_AUTHENTICATION_SERVICE(ctypes.Structure):
+class SOLE_AUTHENTICATION_SERVICE(Structure):
     _fields_ = [
-        ('dwAuthnSvc', wintypes.DWORD),
-        ('dwAuthzSvc', wintypes.DWORD),
-        ('pPrincipalName', wintypes.OLESTR),
+        ('dwAuthnSvc', DWORD),
+        ('dwAuthzSvc', DWORD),
+        ('pPrincipalName', OLESTR),
         ('hr', HRESULT)
     ]
 
-class SECURITY_DESCRIPTOR(ctypes.Structure):
-    _fields_ = [('Revision', ctypes.c_byte),
-                ('Sbz1', ctypes.c_byte),
-                ('Control', ctypes.c_uint16),
-                ('Owner', ctypes.c_void_p),
-                ('Group', ctypes.c_void_p),
-                ('Sacl', ctypes.c_void_p),
-                ('Dacl', ctypes.c_void_p),
-                ]
+class SECURITY_DESCRIPTOR(Structure):
+    _fields_ = [
+        ('Revision', c_byte),
+        ('Sbz1', c_byte),
+        ('Control', c_uint16),
+        ('Owner', c_void_p),
+        ('Group', c_void_p),
+        ('Sacl', c_void_p),
+        ('Dacl', c_void_p),
+    ]
 
 
-class SAFEARRAYBOUND(ctypes.Structure):
-    _fields_ = [('cElements', wintypes.ULONG),
-                ('lLbound', wintypes.LONG)]
+class SAFEARRAYBOUND(Structure):
+    _fields_ = [
+        ('cElements', ULONG),
+        ('lLbound', LONG)
+    ]
 
 
-class SAFEARRAY(ctypes.Structure):
-    _fields_ = [('cDims', wintypes.USHORT),
-                ('fFeatures', wintypes.USHORT),
-                ('cbElements', wintypes.ULONG),
-                ('cLocks', wintypes.ULONG),
-                ('pvData', wintypes.LPVOID),
-                ('rgsabound', ctypes.POINTER(SAFEARRAYBOUND))]
+class SAFEARRAY(Structure):
+    _fields_ = [
+        ('cDims', USHORT),
+        ('fFeatures', USHORT),
+        ('cbElements', ULONG),
+        ('cLocks', ULONG),
+        ('pvData', LPVOID),
+        ('rgsabound', POINTER(SAFEARRAYBOUND))
+    ]
 
 
-class DECIMAL_DUMMYSTRUCTNAME(ctypes.Structure):
-    _fields_ = [('scale', wintypes.BYTE),
-                ('sign', wintypes.BYTE)]
+class DECIMAL_DUMMYSTRUCTNAME(Structure):
+    _fields_ = [('scale', BYTE),
+                ('sign', BYTE)]
 
 
-class DECIMAL_DUMMYSTRUCTNAME2(ctypes.Structure):
-    _fields_ = [('Lo32', wintypes.ULONG),
-                ('Mid32', wintypes.ULONG)]
+class DECIMAL_DUMMYSTRUCTNAME2(Structure):
+    _fields_ = [('Lo32', ULONG),
+                ('Mid32', ULONG)]
 
 
-class DECIMAL_DUMMYUNIONNAME(ctypes.Union):
+class DECIMAL_DUMMYUNIONNAME(Union):
     _fields_ = [('DUMMYSTRUCTNAME', DECIMAL_DUMMYSTRUCTNAME),
-                ('signscale', wintypes.USHORT)]
+                ('signscale', USHORT)]
 
 
-class DECIMAL_DUMMYUNIONNAME2(ctypes.Union):
+class DECIMAL_DUMMYUNIONNAME2(Union):
     _fields_ = [('DUMMYSTRUCTNAME2', DECIMAL_DUMMYSTRUCTNAME2),
-                ('Lo64', ctypes.c_ulonglong)]
+                ('Lo64', c_ulonglong)]
 
 
-class DECIMAL(ctypes.Structure):
+class DECIMAL(Structure):
     _fields_ = [('DUMMYUNIONNAME', DECIMAL_DUMMYUNIONNAME),
-                ('Hi32', wintypes.ULONG),
+                ('Hi32', ULONG),
                 ('DUMMYUNIONNAME2', DECIMAL_DUMMYUNIONNAME2)]
 
 
-class VARIANT__tagBRECORD(ctypes.Structure):
-    _fields_ = [("pvRecord", wintypes.LPVOID),
-                ("pRecInfo", wintypes.LPVOID)]  # IRecordInfo * pRecInfo;
+class VARIANT__tagBRECORD(Structure):
+    _fields_ = [("pvRecord", LPVOID),
+                ("pRecInfo", LPVOID)]  # IRecordInfo * pRecInfo;
 
 ##############################################
 # wbemcli.h
@@ -542,9 +544,10 @@ class IWbemContext(IUnknown):
         )
 
         GetNames = CALLBACK(HRESULT, LONG, SAFEARRAY)
-        GetNames = GetNames(IWbemContext_GetNames_Idx,
-                            'GetNames',
-                            flags
+        GetNames = GetNames(
+            IWbemContext_GetNames_Idx,
+            'GetNames',
+            flags
         )
         res = GetNames(self.this, lFlags, pNames)
         return res
@@ -553,9 +556,10 @@ class IWbemContext(IUnknown):
     def BeginEnumeration(self, lFlags):
         flags = ((_In_, 'lFlags'))
         BeginEnumeration = CALLBACK(HRESULT, LONG)
-        BeginEnumeration = BeginEnumeration(IWbemContext_BeginEnumeration_Idx,
-                                            'BeginEnumeration',
-                                            flags
+        BeginEnumeration = BeginEnumeration(
+            IWbemContext_BeginEnumeration_Idx,
+            'BeginEnumeration',
+            flags
         )
 
         res = BeginEnumeration(self.this, lFlags)
@@ -569,9 +573,10 @@ class IWbemContext(IUnknown):
         )
 
         Next = CALLBACK(HRESULT, LONG, BSTR, VARIANT)
-        Next = Next(IWbemContext_Next_Idx,
-                    'Next',
-                    flags
+        Next = Next(
+            IWbemContext_Next_Idx,
+            'Next',
+            flags
         )
 
         res = Next(self.this, lFlags, pstrName, pValue)
@@ -581,9 +586,10 @@ class IWbemContext(IUnknown):
     def EndEnumeration(self):
         flags = ()
         EndEnumeration = CALLBACK(HRESULT)
-        EndEnumeration = EndEnumeration(IWbemContext_EndEnumeration_Idx,
-                                        'EndEnumeration',
-                                        flags
+        EndEnumeration = EndEnumeration(
+            IWbemContext_EndEnumeration_Idx,
+            'EndEnumeration',
+            flags
         )
 
         res = EndEnumeration(self.this)
@@ -596,9 +602,10 @@ class IWbemContext(IUnknown):
                  (_In_, 'pValue')
         )
         GetValue = CALLBACK(HRESULT, LPCWSTR, LONG, VARIANT)
-        GetValue = GetValue(IWbemContext_GetValue_Idx,
-                            'GetValue',
-                            flags
+        GetValue = GetValue(
+            IWbemContext_GetValue_Idx,
+            'GetValue',
+            flags
         )
         
         res = GetValue(self.this, wszName, lFlags, pValue)
@@ -626,10 +633,11 @@ class IWbemContext(IUnknown):
         )
 
         DeleteValue = CALLBACK(HRESULT, LPCWSTR, LONG)
-        DeleteValue = DeleteValue(IWbemContext_DeleteValue_Idx,
-                                  'DeleteValue',
-                                  flags
-                                  )
+        DeleteValue = DeleteValue(
+            IWbemContext_DeleteValue_Idx,
+            'DeleteValue',
+            flags
+        )
         res = DeleteValue(self.this, wszName, lFlags)
         return res
         
@@ -637,9 +645,11 @@ class IWbemContext(IUnknown):
     def DeleteAll(self):
         flags = ()
         DeleteAll = CALLBACK(HRESULT)
-        DeleteAll = DeleteAll(IWbemContext_DeleteAll_Idx,
-                              'DeleteAll',
-                              flags)
+        DeleteAll = DeleteAll(
+            IWbemContext_DeleteAll_Idx,
+            'DeleteAll',
+            flags
+        )
         res = DeleteAll(self.this)
         return res
     
@@ -648,9 +658,11 @@ class IWbemClassObject(IUnknown):
     def BeginEnumeration(self, lEnumFlags):
         flags = ((_In_, 'lEnumFlags'))
         BeginEnumeration = CALLBACK(HRESULT, LONG)
-        BeginEnumeration = BeginEnumeration(IWbemClassObject_BeginEnumeration_Idx,
-                                            'lEnumFlags',
-                                            flags)
+        BeginEnumeration = BeginEnumeration(
+            IWbemClassObject_BeginEnumeration_Idx,
+            'lEnumFlags',
+            flags
+        )
         res = lEnumFlags(self.this, lEnumFlags)
         return res
     
@@ -658,9 +670,11 @@ class IWbemClassObject(IUnknown):
     def BeginMethodEnumeration(self, lEnumFlags):
         flags = ((_In_, 'lEnumFlags'))
         BeginMethodEnumeration = CALLBACK(HRESULT, LONG)
-        BeginMethodEnumeration = BeginMethodEnumeration(IWbemClassObject_BeginMethodEnumeration_Idx,
-                                                        'BeginMethodEnumeration',
-                                                        flags)
+        BeginMethodEnumeration = BeginMethodEnumeration(
+            IWbemClassObject_BeginMethodEnumeration_Idx,
+            'BeginMethodEnumeration',
+            flags
+        )
         res = BeginMethodEnumeration(self.this, lEnumFlags)
         return res
     
@@ -670,7 +684,8 @@ class IWbemClassObject(IUnknown):
         Clone = CALLBACK(HRESULT, IWbemClassObject)
         Clone = Clone(IWbemClassObject_Clone_Idx,
                       'Clone',
-                      flags)
+                      flags
+        )
         res = Clone(self.this, ppCopy)
         return res
     
@@ -687,12 +702,14 @@ class IWbemClassObject(IUnknown):
         res = CompareTo(self.this, lFlags, pCompareTo)
         return res
     
-    def Get(self,
-            wszName,
-            lFlags,
-            pVal,
-            pType,
-            plFlavor):
+    def Get(
+        self,
+        wszName,
+        lFlags,
+        pVal,
+        pType,
+        plFlavor
+    ):
         
         flags = (
             (_In_, 'wszName'),
@@ -744,11 +761,13 @@ class IEnumWbemClassObject(IUnknown):
         res = Reset(self.this)
         return res
     
-    def Next(self,
-             lTimeout: int,
-             uCount: int,
-             apObjects: Any,
-             puReturned: Any):
+    def Next(
+        self,
+        lTimeout: int,
+        uCount: int,
+        apObjects: Any,
+        puReturned: Any
+    ):
         
         flags = (
             (_In_, 'lTimeout'),
@@ -770,11 +789,12 @@ class IEnumWbemClassObject(IUnknown):
             flags
         )
 
-        res = Next(self.this,
-                   lTimeout,
-                   uCount,
-                   apObjects,
-                   puReturned
+        res = Next(
+            self.this,
+            lTimeout,
+            uCount,
+            apObjects,
+            puReturned
         )
 
         return res
@@ -792,12 +812,14 @@ class IWbemServices(IUnknown):
 
         )
 
-    def ExecQuery(self, 
-                  strQueryLanguage: str, 
-                  strQuery: str,
-                  lFlags: int,
-                  pCtx: Any,
-                  ppEnum: Any):
+    def ExecQuery(
+        self, 
+        strQueryLanguage: str, 
+        strQuery: str,
+        lFlags: int,
+        pCtx: Any,
+        ppEnum: Any
+    ):
         
         flags = (
             (_In_, 'strQueryLanguage'),
@@ -843,7 +865,8 @@ class IWbemLocator(IUnknown):
         lSecurityFlags: Any,
         strAuthority: str,
         pCtx: Any,
-        ppNamespace) -> int:
+        ppNamespace
+    ) -> int:
 
         flags = ((_In_, 'strNetworkResource'),
                  (_In_, 'strUser'),

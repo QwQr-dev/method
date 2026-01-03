@@ -9,19 +9,19 @@ from method.System.ntstatus import NT_ERROR
 
 
 def GetLastError() -> int:
-    GetLastError = Kernel32.GetLastError
+    GetLastError = kernel32.GetLastError
     GetLastError.restype = DWORD
     return GetLastError()
 
 
 def SetLastError(dwErrCode: int) -> None:
-    SetLastError = Kernel32.SetLastError
+    SetLastError = kernel32.SetLastError
     SetLastError.argtypes = [DWORD]
     SetLastError(dwErrCode)
 
 
 def SetLastErrorEx(dwErrCode: int, dwType: Any = NULL) -> None:
-    SetLastErrorEx = User32.SetLastErrorEx
+    SetLastErrorEx = user32.SetLastErrorEx
     SetLastErrorEx.argtypes = [DWORD, DWORD]
     SetLastErrorEx(dwErrCode, dwType)
 
@@ -67,8 +67,8 @@ def FormatMessage(
     errcheck: bool = True
 ) -> int:
     
-    FormatMessage = (Kernel32.FormatMessageW 
-                     if unicode else Kernel32.FormatMessageA
+    FormatMessage = (kernel32.FormatMessageW 
+                     if unicode else kernel32.FormatMessageA
     )
 
     res = FormatMessage(

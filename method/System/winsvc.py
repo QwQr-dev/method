@@ -6,6 +6,7 @@ from method.System.sdkddkver import *
 from method.System.winusutypes import *
 from method.System.public_dll import advapi32
 from method.System.errcheck import win32_to_errcheck, hresult_to_errcheck
+from method.System.winnt import SECURITY_INFORMATION, PSECURITY_INFORMATION, PSECURITY_DESCRIPTOR
 
 ##################################################################
 # from winnt.h
@@ -519,6 +520,7 @@ def ChangeServiceConfig(
         (LPCWSTR if unicode else LPCSTR)
     ]
 
+    ChangeServiceConfig.restype = WINBOOL
     res = ChangeServiceConfig(
         hService, 
         dwServiceType, 
@@ -542,6 +544,7 @@ def ChangeServiceConfig2(hService, dwInfoLevel, lpInfo, unicode: bool = True, er
     )
     
     ChangeServiceConfig2.argtypes = [SC_HANDLE, DWORD, LPVOID]
+    ChangeServiceConfig2.restype = WINBOOL
     res = ChangeServiceConfig2(hService, dwInfoLevel, lpInfo)
     return win32_to_errcheck(res, errcheck)    
 
@@ -549,6 +552,7 @@ def ChangeServiceConfig2(hService, dwInfoLevel, lpInfo, unicode: bool = True, er
 def CloseServiceHandle(hSCObject, errcheck: bool = True):
     CloseServiceHandle = advapi32.CloseServiceHandle
     CloseServiceHandle.argtypes = [SC_HANDLE]
+    CloseServiceHandle.restype = WINBOOL
     res = CloseServiceHandle(hSCObject)
     return win32_to_errcheck(res, errcheck)    
 
@@ -556,6 +560,7 @@ def CloseServiceHandle(hSCObject, errcheck: bool = True):
 def ControlService(hService, dwControl, lpServiceStatus, errcheck: bool = True):
     ControlService = advapi32.ControlService
     ControlService.argtypes = [SC_HANDLE, DWORD, LPSERVICE_STATUS]
+    ControlService.restype = WINBOOL
     res = ControlService(hService, dwControl, lpServiceStatus)
     return win32_to_errcheck(res, errcheck)
 
@@ -619,6 +624,7 @@ def CreateService(
 def DeleteService(hService, errcheck: bool = True):
     DeleteService = advapi32.DeleteService
     DeleteService.argtypes = [SC_HANDLE]
+    DeleteService.restype = WINBOOL
     res = DeleteService(hService)
     return win32_to_errcheck(res, errcheck)    
 
@@ -647,6 +653,7 @@ def EnumDependentServices(
         LPDWORD
     ]
 
+    EnumDependentServices.restype = WINBOOL
     res = EnumDependentServices(
         hService, 
         dwServiceState, 
@@ -684,6 +691,7 @@ def EnumServicesStatus(
         LPDWORD
     ]
 
+    EnumServicesStatus.restype = WINBOOL
     res = EnumServicesStatus(
         hSCManager, 
         dwServiceType, 
@@ -716,6 +724,7 @@ def EnumServicesStatusEx(
                             if unicode else advapi32.EnumServicesStatusExA
     )
 
+    EnumServicesStatusEx.restype = WINBOOL
     EnumServicesStatusEx.argtypes = [
         SC_HANDLE, 
         UINT, 
@@ -757,6 +766,14 @@ def GetServiceKeyName(
                          if unicode else advapi32.GetServiceKeyNameA
     )
 
+    GetServiceKeyName.argtypes = [
+        SC_HANDLE,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPWSTR if unicode else LPSTR),
+        LPDWORD
+    ]
+
+    GetServiceKeyName.restype = WINBOOL
     res = GetServiceKeyName(
         hSCManager, 
         lpDisplayName, 
@@ -780,6 +797,14 @@ def GetServiceDisplayName(
                              if unicode else advapi32.GetServiceDisplayNameA
     )
 
+    GetServiceDisplayName.argtypes = [
+        SC_HANDLE,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPWSTR if unicode else LPSTR),
+        LPDWORD
+    ]
+
+    GetServiceDisplayName.restype = WINBOOL
     res = GetServiceDisplayName(
         hSCManager, 
         lpServiceName, 
@@ -800,6 +825,8 @@ def LockServiceDatabase(hSCManager, errcheck: bool = True):
 
 def NotifyBootConfigStatus(BootAcceptable, errcheck: bool = True):
     NotifyBootConfigStatus = advapi32.NotifyBootConfigStatus
+    NotifyBootConfigStatus.argtypes = [WINBOOL]
+    NotifyBootConfigStatus.restype = SC_LOCK
     res = NotifyBootConfigStatus(BootAcceptable)
     return win32_to_errcheck(res, errcheck)    
 
@@ -869,6 +896,14 @@ def QueryServiceConfig(
                           if unicode else advapi32.QueryServiceConfigA
     )
 
+    QueryServiceConfig.argtypes = [
+        SC_HANDLE,
+        (LPQUERY_SERVICE_CONFIGW if unicode else LPQUERY_SERVICE_CONFIGA),
+        DWORD,
+        LPDWORD
+    ]
+
+    QueryServiceConfig.restype = WINBOOL
     res = QueryServiceConfig(
         hService, 
         lpServiceConfig, 
@@ -893,6 +928,15 @@ def QueryServiceConfig2(
                            if unicode else advapi32.QueryServiceConfig2A
     )
 
+    QueryServiceConfig2.argtypes = [
+        SC_HANDLE,
+        DWORD,
+        LPBYTE,
+        DWORD,
+        LPDWORD
+    ]
+
+    QueryServiceConfig2.restype = WINBOOL
     res = QueryServiceConfig2(
         hService, 
         dwInfoLevel, 
@@ -906,18 +950,37 @@ def QueryServiceConfig2(
 
 def QueryServiceLockStatus(hSCManager, lpLockStatus, cbBufSize, pcbBytesNeeded, unicode: bool = True, errcheck: bool = True):
     QueryServiceLockStatus = advapi32.QueryServiceLockStatusW if unicode else advapi32.QueryServiceLockStatusA
+    QueryServiceLockStatus.argtypes = [
+        SC_HANDLE,
+        (LPQUERY_SERVICE_CONFIGW if unicode else LPQUERY_SERVICE_CONFIGA),
+        DWORD,
+        LPDWORD
+    ]
+
+    QueryServiceLockStatus.restype = WINBOOL
     res = QueryServiceLockStatus(hSCManager, lpLockStatus, cbBufSize, pcbBytesNeeded)
     return win32_to_errcheck(res, errcheck)    
 
 
 def QueryServiceObjectSecurity(hService, dwSecurityInformation, lpSecurityDescriptor, cbBufSize, pcbBytesNeeded, errcheck: bool = True):
     QueryServiceObjectSecurity = advapi32.QueryServiceObjectSecurity
+    QueryServiceObjectSecurity.argtypes = [
+        SC_HANDLE,
+        SECURITY_INFORMATION,
+        PSECURITY_DESCRIPTOR,
+        DWORD,
+        LPDWORD
+    ]
+
+    QueryServiceObjectSecurity.restype = WINBOOL
     res = QueryServiceObjectSecurity(hService, dwSecurityInformation, lpSecurityDescriptor, cbBufSize, pcbBytesNeeded)
     return win32_to_errcheck(res, errcheck)    
 
 
 def QueryServiceStatus(hService, lpServiceStatus, errcheck: bool = True):
     QueryServiceStatus = advapi32.QueryServiceStatus
+    QueryServiceStatus.argtypes = [SC_HANDLE, LPSERVICE_STATUS]
+    QueryServiceStatus.restype = WINBOOL
     res = QueryServiceStatus(hService, lpServiceStatus)
     return win32_to_errcheck(res, errcheck)    
 
@@ -940,6 +1003,7 @@ def QueryServiceStatusEx(
         LPDWORD
     ]
     
+    QueryServiceStatusEx.restype = WINBOOL
     res = QueryServiceStatusEx(
         hService, 
         InfoLevel, 
@@ -956,6 +1020,11 @@ def RegisterServiceCtrlHandler(lpServiceName, lpHandlerProc, unicode: bool = Tru
                                   if unicode else advapi32.RegisterServiceCtrlHandlerA
     )
 
+    RegisterServiceCtrlHandler.argtypes = [
+        (LPCWSTR if unicode else LPCSTR),
+        LPHANDLER_FUNCTION
+    ]
+
     RegisterServiceCtrlHandler.restype = SERVICE_STATUS_HANDLE
     res = RegisterServiceCtrlHandler(lpServiceName, lpHandlerProc)
     return win32_to_errcheck(res, errcheck)    
@@ -967,6 +1036,12 @@ def RegisterServiceCtrlHandlerEx(lpServiceName, lpHandlerProc, lpContext, unicod
                                     if unicode else advapi32.RegisterServiceCtrlHandlerExA
     )
 
+    RegisterServiceCtrlHandlerEx.argtypes = [
+        (LPCWSTR if unicode else LPCSTR),
+        LPHANDLER_FUNCTION_EX,
+        LPVOID
+    ]
+
     RegisterServiceCtrlHandlerEx.restype = SERVICE_STATUS_HANDLE
     res = RegisterServiceCtrlHandlerEx(lpServiceName, lpHandlerProc, lpContext)
     return win32_to_errcheck(res, errcheck)    
@@ -975,12 +1050,25 @@ def RegisterServiceCtrlHandlerEx(lpServiceName, lpHandlerProc, lpContext, unicod
 
 def SetServiceObjectSecurity(hService, dwSecurityInformation, lpSecurityDescriptor, errcheck: bool = True):
     SetServiceObjectSecurity = advapi32.SetServiceObjectSecurity
+    SetServiceObjectSecurity.argtypes = [
+        SC_HANDLE,
+        SECURITY_INFORMATION,
+        PSECURITY_INFORMATION
+    ]
+
+    SetServiceObjectSecurity.restype = WINBOOL
     res = SetServiceObjectSecurity(hService, dwSecurityInformation, lpSecurityDescriptor)
     return win32_to_errcheck(res, errcheck)    
 
 
 def SetServiceStatus(hServiceStatus, lpServiceStatus, errcheck: bool = True):
     SetServiceStatus = advapi32.SetServiceStatus
+    SetServiceStatus.argtypes = [
+        SERVICE_STATUS_HANDLE,
+        LPENUM_SERVICE_STATUS
+    ]
+
+    SetServiceStatus.restype = WINBOOL
     res = SetServiceStatus(hServiceStatus, lpServiceStatus)
     return win32_to_errcheck(res, errcheck)    
 
@@ -990,6 +1078,8 @@ def StartServiceCtrlDispatcher(lpServiceStartTable, unicode: bool = True, errche
                                   if unicode else advapi32.StartServiceCtrlDispatcherA
     )
 
+    StartServiceCtrlDispatcher.argtypes = [(SERVICE_TABLE_ENTRYW if unicode else SERVICE_TABLE_ENTRYA)]
+    StartServiceCtrlDispatcher.restype = WINBOOL
     res = StartServiceCtrlDispatcher(lpServiceStartTable)
     return win32_to_errcheck(res, errcheck)    
 
@@ -1002,12 +1092,15 @@ def StartService(hService, dwNumServiceArgs, lpServiceArgVectors, unicode: bool 
         (LPCWSTR if unicode else LPCSTR)
     ]
 
+    StartService.restype = WINBOOL
     res = StartService(hService, dwNumServiceArgs, lpServiceArgVectors)
     return win32_to_errcheck(res, errcheck)    
 
 
 def UnlockServiceDatabase(ScLock, errcheck: bool = True):
     UnlockServiceDatabase = advapi32.UnlockServiceDatabase
+    UnlockServiceDatabase.argtypes = [SC_LOCK]
+    UnlockServiceDatabase.restype = WINBOOL
     res = UnlockServiceDatabase(ScLock)
     return win32_to_errcheck(res, errcheck)    
 
@@ -1149,6 +1242,14 @@ LPSERVICE_SID_INFO = POINTER(SERVICE_SID_INFO)
 
 def ControlServiceEx(hService, dwControl, dwInfoLevel, pControlParams, unicode: bool = True, errcheck: bool = True):
     ControlServiceEx = advapi32.ControlServiceExW if unicode else advapi32.ControlServiceExA
+    ControlServiceEx.argtypes = [
+        SC_HANDLE,
+        DWORD,
+        DWORD,
+        PVOID
+    ]
+
+    ControlServiceEx.restype = WINBOOL
     res = ControlServiceEx(hService, dwControl, dwInfoLevel, pControlParams)
     return win32_to_errcheck(res, errcheck)    
 
@@ -1158,6 +1259,7 @@ def NotifyServiceStatusChange(hService, dwNotifyMask, pNotifyBuffer, unicode: bo
                                  if unicode else advapi32.NotifyServiceStatusChangeA
     )
 
+    NotifyServiceStatusChange.argtypes = [SC_HANDLE, DWORD]
     NotifyServiceStatusChange.restype = DWORD
     res = NotifyServiceStatusChange(hService, dwNotifyMask, pNotifyBuffer)
     return hresult_to_errcheck(res, errcheck)

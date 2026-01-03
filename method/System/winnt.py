@@ -9,7 +9,7 @@ from method.System.winusutypes import *
 from method.System.win32typing import CDataType
 from method.System.guiddef import GUID, DEFINE_GUID
 from method.System.errcheck import win32_to_errcheck
-from method.System.public_dll import ole32, Kernel32, ntdll
+from method.System.public_dll import ole32, kernel32, ntdll
 from method.System.wchar import memcpy, memcmp, memset, memmove
 
 S_OK = 0    
@@ -8955,7 +8955,7 @@ def RtlAddFunctionTable(FunctionTable, EntryCount, BaseAddress, errcheck: bool =
 
 
 def RtlDeleteFunctionTable(FunctionTable, errcheck: bool = True):
-    RtlDeleteFunctionTable = Kernel32.RtlDeleteFunctionTable
+    RtlDeleteFunctionTable = kernel32.RtlDeleteFunctionTable
     RtlDeleteFunctionTable.argtypes = [PRUNTIME_FUNCTION]
     RtlDeleteFunctionTable.restype = BOOLEAN
     res = RtlDeleteFunctionTable(FunctionTable)
@@ -8972,7 +8972,7 @@ def RtlInstallFunctionTableCallback(
     errcheck: bool = True
 ):
     
-    RtlInstallFunctionTableCallback = Kernel32.RtlInstallFunctionTableCallback
+    RtlInstallFunctionTableCallback = kernel32.RtlInstallFunctionTableCallback
     res = RtlInstallFunctionTableCallback(
         TableIdentifier, 
         BaseAddress, 
@@ -8986,7 +8986,7 @@ def RtlInstallFunctionTableCallback(
 
 
 def RtlRestoreContext(ContextRecord, ExceptionRecord):
-    RtlRestoreContext = Kernel32.RtlRestoreContext
+    RtlRestoreContext = kernel32.RtlRestoreContext
     RtlRestoreContext(ContextRecord, ExceptionRecord)
 
 
@@ -8995,7 +8995,7 @@ def RtlUnwind(TargetFrame,
               ExceptionRecord, 
               ReturnValue):
     
-    RtlUnwind = Kernel32.RtlUnwind
+    RtlUnwind = kernel32.RtlUnwind
     RtlUnwind(TargetFrame, 
             TargetIp, 
             ExceptionRecord, 
@@ -9004,7 +9004,7 @@ def RtlUnwind(TargetFrame,
 
 
 def RtlPcToFileHeader(PcValue, BaseOfImage):
-    RtlPcToFileHeader = Kernel32.RtlPcToFileHeader
+    RtlPcToFileHeader = kernel32.RtlPcToFileHeader
     return RtlPcToFileHeader(PcValue, BaseOfImage)
 
 
@@ -9012,7 +9012,7 @@ def RtlPcToFileHeader(PcValue, BaseOfImage):
 # _x86_64
 
 def RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable):
-    RtlLookupFunctionEntry = Kernel32.RtlLookupFunctionEntry
+    RtlLookupFunctionEntry = kernel32.RtlLookupFunctionEntry
     return RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable)
 
 
@@ -9023,7 +9023,7 @@ def RtlUnwindEx(TargetFrame,
                 ContextRecord, 
                 HistoryTable):
     
-    RtlUnwindEx = Kernel32.RtlUnwindEx
+    RtlUnwindEx = kernel32.RtlUnwindEx
     RtlUnwindEx(TargetFrame, 
                 TargetIp, 
                 ExceptionRecord, 
@@ -9042,7 +9042,7 @@ def RtlVirtualUnwind(HandlerType,
                      EstablisherFrame,
                      ContextPointers):
     
-    RtlVirtualUnwind = Kernel32.RtlVirtualUnwind
+    RtlVirtualUnwind = kernel32.RtlVirtualUnwind
     RtlVirtualUnwind(HandlerType, 
                     ImageBase, 
                     ControlPc, 

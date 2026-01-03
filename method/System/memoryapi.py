@@ -70,12 +70,12 @@ if _WIN32_WINNT >= _WIN32_WINNT_WIN8:
 
 
 def VirtualFree(lpAddress, dwSize, dwFreeType, errcheck: bool = True):
-    VirtualFree = Kernel32.VirtualFree
+    VirtualFree = kernel32.VirtualFree
     res = VirtualFree(lpAddress, dwSize, dwFreeType)
     return win32_to_errcheck(res, errcheck)    
 
 def VirtualAlloc(lpAddress: int, dwSize: int, flAllocationType: int, flProtect: int, errcheck: bool = True) -> int:
-    VirtualAlloc = Kernel32.VirtualAlloc
+    VirtualAlloc = kernel32.VirtualAlloc
     VirtualAlloc.restype = VOID
     res = VirtualAlloc(lpAddress, dwSize, flAllocationType, flProtect)
     return win32_to_errcheck(res, errcheck)
@@ -90,7 +90,7 @@ def VirtualAllocEx(
     errcheck: bool = True
 ) -> int:
     
-    VirtualAllocEx = Kernel32.VirtualAllocEx
+    VirtualAllocEx = kernel32.VirtualAllocEx
     VirtualAllocEx.restype = VOID
     res = VirtualAllocEx(hProcess, 
                          lpAddress, 
@@ -112,40 +112,40 @@ FILE_MAP_LARGE_PAGES = 0x20000000
 
 
 def VirtualQuery(lpAddress, lpBuffer, dwLength, errcheck: bool = True):
-    VirtualQuery = Kernel32.VirtualQuery
+    VirtualQuery = kernel32.VirtualQuery
     res = VirtualQuery(lpAddress, lpBuffer, dwLength)
     return win32_to_errcheck(res, errcheck)
 
 def FlushViewOfFile(lpBaseAddress, dwNumberOfBytesToFlush, errcheck: bool = True):
-    FlushViewOfFile = Kernel32.FlushViewOfFile
+    FlushViewOfFile = kernel32.FlushViewOfFile
     res = FlushViewOfFile(lpBaseAddress, dwNumberOfBytesToFlush)
     return win32_to_errcheck(res, errcheck)    
 
 def UnmapViewOfFile(lpBaseAddress, errcheck: bool = True):
-    UnmapViewOfFile = Kernel32.UnmapViewOfFile
+    UnmapViewOfFile = kernel32.UnmapViewOfFile
     res = UnmapViewOfFile(lpBaseAddress)
     return win32_to_errcheck(res, errcheck)    
 
 def UnmapViewOfFile2(Process, BaseAddress, UnmapFlags, errcheck: bool = True):
-    UnmapViewOfFile2 = Kernel32.UnmapViewOfFile2
+    UnmapViewOfFile2 = kernel32.UnmapViewOfFile2
     res = UnmapViewOfFile2(Process, BaseAddress, UnmapFlags)
     return win32_to_errcheck(res, errcheck)    
 
 def CreateFileMappingFromApp(hFile, SecurityAttributes, PageProtection, MaximumSize, Name, errcheck: bool = True):
-    CreateFileMappingFromApp = Kernel32.CreateFileMappingFromApp
+    CreateFileMappingFromApp = kernel32.CreateFileMappingFromApp
     res = CreateFileMappingFromApp(hFile, SecurityAttributes, PageProtection, MaximumSize, Name)
     return win32_to_errcheck(res, errcheck)    
 
 
 def MapViewOfFileFromApp(hFileMappingObject, DesiredAccess, FileOffset, NumberOfBytesToMap, errcheck: bool = True):
-    MapViewOfFileFromApp = Kernel32.MapViewOfFileFromApp
+    MapViewOfFileFromApp = kernel32.MapViewOfFileFromApp
     MapViewOfFileFromApp.restype = PVOID
     res = MapViewOfFileFromApp(hFileMappingObject, DesiredAccess, FileOffset, NumberOfBytesToMap)
     return win32_to_errcheck(res, errcheck)    
 
 
 def VirtualUnlockEx(Process, Address, Size, errcheck: bool = True):
-    VirtualUnlockEx = Kernel32.VirtualUnlockEx
+    VirtualUnlockEx = kernel32.VirtualUnlockEx
     res = VirtualUnlockEx(Process, Address, Size)
     return win32_to_errcheck(res, errcheck)    
 
@@ -159,7 +159,7 @@ if _WIN32_WINNT >= _WIN32_WINNT_WIN10:
         errcheck: bool = True
     ):
         
-        SetProcessValidCallTargets = Kernel32.SetProcessValidCallTargets
+        SetProcessValidCallTargets = kernel32.SetProcessValidCallTargets
         res = SetProcessValidCallTargets(
             hProcess, 
             VirtualAddress, 
@@ -182,7 +182,7 @@ if _WIN32_WINNT >= _WIN32_WINNT_WIN10:
         errcheck: bool = True
     ):
         
-        SetProcessValidCallTargetsForMappedView = Kernel32.SetProcessValidCallTargetsForMappedView
+        SetProcessValidCallTargetsForMappedView = kernel32.SetProcessValidCallTargetsForMappedView
         res = SetProcessValidCallTargetsForMappedView(
             Process, 
             VirtualAddress, 
@@ -196,19 +196,19 @@ if _WIN32_WINNT >= _WIN32_WINNT_WIN10:
         return win32_to_errcheck(res, errcheck)        
 
     def VirtualAllocFromApp(BaseAddress, Size, AllocationType, Protection, errcheck: bool = True):
-        VirtualAllocFromApp = Kernel32.VirtualAllocFromApp
+        VirtualAllocFromApp = kernel32.VirtualAllocFromApp
         VirtualAllocFromApp.restype = PVOID
         res = VirtualAllocFromApp(BaseAddress, Size, AllocationType, Protection)
         return win32_to_errcheck(res, errcheck)        
 
 
     def VirtualProtectFromApp(lpAddress, dwSize, flNewProtect, lpflOldProtect, errcheck: bool = True):
-        VirtualProtectFromApp = Kernel32.VirtualProtectFromApp
+        VirtualProtectFromApp = kernel32.VirtualProtectFromApp
         res = VirtualProtectFromApp(lpAddress, dwSize, flNewProtect, lpflOldProtect)
         return win32_to_errcheck(res, errcheck)        
 
     def OpenFileMappingFromApp(DesiredAccess, InheritHandle, Name, errcheck: bool = True):
-        OpenFileMappingFromApp = Kernel32.OpenFileMappingFromApp
+        OpenFileMappingFromApp = kernel32.OpenFileMappingFromApp
         res = OpenFileMappingFromApp(DesiredAccess, InheritHandle, Name)
         return win32_to_errcheck(res, errcheck)        
     
@@ -225,7 +225,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS4:
         errcheck: bool = True
     ):
         
-        VirtualAlloc2FromApp = Kernel32.VirtualAlloc2FromApp
+        VirtualAlloc2FromApp = kernel32.VirtualAlloc2FromApp
         VirtualAlloc2FromApp.restype = PVOID
         res = VirtualAlloc2FromApp(
             Process, 
@@ -253,7 +253,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS4:
         errcheck: bool = True
     ):
         
-        MapViewOfFile3FromApp = Kernel32.MapViewOfFile3FromApp
+        MapViewOfFile3FromApp = kernel32.MapViewOfFile3FromApp
         MapViewOfFile3FromApp.restype = PVOID
         res = MapViewOfFile3FromApp(
             FileMapping, 
@@ -271,7 +271,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS4:
 
 
 def VirtualProtect(lpAddress, dwSize, flNewProtect, lpflOldProtect, errcheck: bool = True):
-    VirtualProtect = Kernel32.VirtualProtect
+    VirtualProtect = kernel32.VirtualProtect
     res = VirtualProtect(lpAddress, dwSize, flNewProtect, lpflOldProtect)
     return win32_to_errcheck(res, errcheck)
 
@@ -284,18 +284,18 @@ FILE_CACHE_MIN_HARD_DISABLE = 0x00000008
 
 
 def VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect, lpflOldProtect, errcheck: bool = True):
-    VirtualProtectEx = Kernel32.VirtualProtectEx
+    VirtualProtectEx = kernel32.VirtualProtectEx
     res = VirtualProtectEx(hProcess, lpAddress, dwSize, flNewProtect, lpflOldProtect)
     return win32_to_errcheck(res, errcheck)    
 
 def VirtualQueryEx(hProcess, lpAddress, lpBuffer, dwLength, errcheck: bool = True):
-    VirtualQueryEx = Kernel32.VirtualQueryEx
+    VirtualQueryEx = kernel32.VirtualQueryEx
     res = VirtualQueryEx(hProcess, lpAddress, lpBuffer, dwLength)
     return win32_to_errcheck(res, errcheck)    
 
 
 def ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesRead, errcheck: bool = True):
-    ReadProcessMemory = Kernel32.ReadProcessMemory
+    ReadProcessMemory = kernel32.ReadProcessMemory
     res = ReadProcessMemory(hProcess, lpBaseAddress, lpBuffer, nSize, lpNumberOfBytesRead)
     return win32_to_errcheck(res, errcheck)
 
@@ -308,7 +308,7 @@ def WriteProcessMemory(
     errcheck: bool = True
 ) -> None:
     
-    WriteProcessMemory = Kernel32.WriteProcessMemory
+    WriteProcessMemory = kernel32.WriteProcessMemory
     WriteProcessMemory.argtypes = [HANDLE, 
                                    LPVOID, 
                                    LPCVOID, 
@@ -337,7 +337,7 @@ def CreateFileMapping(
     errcheck: bool = True
 ):
     
-    CreateFileMapping = Kernel32.CreateFileMappingW if unicode else Kernel32.CreateFileMappingA
+    CreateFileMapping = kernel32.CreateFileMappingW if unicode else kernel32.CreateFileMappingA
     res = CreateFileMapping(
         hFile, 
         lpFileMappingAttributes, 
@@ -351,7 +351,7 @@ def CreateFileMapping(
 
 
 def OpenFileMapping(dwDesiredAccess, bInheritHandle, lpName, unicode: bool = True, errcheck: bool = True):
-    OpenFileMapping = Kernel32.OpenFileMappingW if unicode else Kernel32.OpenFileMappingA
+    OpenFileMapping = kernel32.OpenFileMappingW if unicode else kernel32.OpenFileMappingA
     res = OpenFileMapping(dwDesiredAccess, bInheritHandle, lpName)
     return win32_to_errcheck(res, errcheck)    
 
@@ -365,7 +365,7 @@ def MapViewOfFile(
     errcheck: bool = True
 ):
     
-    MapViewOfFile = Kernel32.MapViewOfFile
+    MapViewOfFile = kernel32.MapViewOfFile
     MapViewOfFile.restype = LPVOID
     res = MapViewOfFile(
         hFileMappingObject, 
@@ -388,7 +388,7 @@ def MapViewOfFileEx(
     errcheck: bool = True
 ):
     
-    MapViewOfFileEx = Kernel32.MapViewOfFileEx
+    MapViewOfFileEx = kernel32.MapViewOfFileEx
     MapViewOfFileEx.restype = LPVOID
     res = MapViewOfFileEx(
         hFileMappingObject, 
@@ -402,59 +402,59 @@ def MapViewOfFileEx(
     return win32_to_errcheck(res, errcheck)    
 
 def VirtualLock(lpAddress, dwSize, errcheck: bool = True):
-    VirtualLock = Kernel32.VirtualLock
+    VirtualLock = kernel32.VirtualLock
     res = VirtualLock(lpAddress, dwSize)
     return win32_to_errcheck(res, errcheck)    
 
 def VirtualUnlock(lpAddress, dwSize, errcheck: bool = True):
-    VirtualUnlock = Kernel32.VirtualLock
+    VirtualUnlock = kernel32.VirtualLock
     res = VirtualUnlock(lpAddress, dwSize)
     return win32_to_errcheck(res, errcheck)    
 
 def CreateMemoryResourceNotification(NotificationType, errcheck: bool = True):
-    CreateMemoryResourceNotification = Kernel32.CreateMemoryResourceNotification
+    CreateMemoryResourceNotification = kernel32.CreateMemoryResourceNotification
     res = CreateMemoryResourceNotification(NotificationType)
     return win32_to_errcheck(res, errcheck)    
 
 
 def QueryMemoryResourceNotification(ResourceNotificationHandle, ResourceState, errcheck: bool = True):
-    QueryMemoryResourceNotification = Kernel32.QueryMemoryResourceNotification
+    QueryMemoryResourceNotification = kernel32.QueryMemoryResourceNotification
     res = QueryMemoryResourceNotification(ResourceNotificationHandle, ResourceState)
     return win32_to_errcheck(res, errcheck)    
 
 
 def GetSystemFileCacheSize(lpMinimumFileCacheSize, lpMaximumFileCacheSize, lpFlags, errcheck: bool = True):
-    GetSystemFileCacheSize = Kernel32.GetSystemFileCacheSize
+    GetSystemFileCacheSize = kernel32.GetSystemFileCacheSize
     res = GetSystemFileCacheSize(lpMinimumFileCacheSize, lpMaximumFileCacheSize, lpFlags)
     return win32_to_errcheck(res, errcheck)    
 
 
 def SetSystemFileCacheSize(MinimumFileCacheSize, MaximumFileCacheSize, Flags, errcheck: bool = True):
-    SetSystemFileCacheSize = Kernel32.SetSystemFileCacheSize
+    SetSystemFileCacheSize = kernel32.SetSystemFileCacheSize
     res = SetSystemFileCacheSize(MinimumFileCacheSize, MaximumFileCacheSize, Flags)
     return win32_to_errcheck(res, errcheck)    
 
 
 def AllocateUserPhysicalPages(hProcess, NumberOfPages, PageArray, errcheck: bool = True):
-    AllocateUserPhysicalPages = Kernel32.AllocateUserPhysicalPages
+    AllocateUserPhysicalPages = kernel32.AllocateUserPhysicalPages
     res = AllocateUserPhysicalPages(hProcess, NumberOfPages, PageArray)
     return win32_to_errcheck(res, errcheck)    
 
 
 def FreeUserPhysicalPages(hProcess, NumberOfPages, PageArray, errcheck: bool = True):
-    FreeUserPhysicalPages = Kernel32.FreeUserPhysicalPages
+    FreeUserPhysicalPages = kernel32.FreeUserPhysicalPages
     res = FreeUserPhysicalPages(hProcess, NumberOfPages, PageArray)
     return win32_to_errcheck(res, errcheck)    
 
 
 def MapUserPhysicalPages(VirtualAddress, NumberOfPages, PageArray, errcheck: bool = True):
-    MapUserPhysicalPages = Kernel32.MapUserPhysicalPages
+    MapUserPhysicalPages = kernel32.MapUserPhysicalPages
     res = MapUserPhysicalPages(VirtualAddress, NumberOfPages, PageArray)
     return win32_to_errcheck(res, errcheck)    
 
 
 def AllocateUserPhysicalPagesNuma(hProcess, NumberOfPages, PageArray, nndPreferred, errcheck: bool = True):
-    AllocateUserPhysicalPagesNuma = Kernel32.AllocateUserPhysicalPagesNuma
+    AllocateUserPhysicalPagesNuma = kernel32.AllocateUserPhysicalPagesNuma
     res = AllocateUserPhysicalPagesNuma(hProcess, NumberOfPages, PageArray, nndPreferred)
     return win32_to_errcheck(res, errcheck)    
 
@@ -471,7 +471,7 @@ def CreateFileMappingNuma(
     errcheck: bool = True
 ):
     
-    CreateFileMappingNuma = Kernel32.CreateFileMappingNumaW if unicode else Kernel32.CreateFileMappingNumaA
+    CreateFileMappingNuma = kernel32.CreateFileMappingNumaW if unicode else kernel32.CreateFileMappingNumaA
     res = CreateFileMappingNuma(
         hFile, 
         lpFileMappingAttributes, 
@@ -486,7 +486,7 @@ def CreateFileMappingNuma(
 
 
 def VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred, errcheck: bool = True):
-    VirtualAllocExNuma = Kernel32.VirtualAllocExNuma
+    VirtualAllocExNuma = kernel32.VirtualAllocExNuma
     VirtualAllocExNuma.restype = LPVOID
     res = VirtualAllocExNuma(hProcess, lpAddress, dwSize, flAllocationType, flProtect, nndPreferred)
     return win32_to_errcheck(res, errcheck)    
@@ -495,12 +495,12 @@ if _WIN32_WINNT >= _WIN32_WINNT_WIN8:
     MEHC_PATROL_SCRUBBER_PRESENT = 0x1
 
     def GetMemoryErrorHandlingCapabilities(Capabilities, errcheck: bool = True):
-        GetMemoryErrorHandlingCapabilities = Kernel32.GetMemoryErrorHandlingCapabilities
+        GetMemoryErrorHandlingCapabilities = kernel32.GetMemoryErrorHandlingCapabilities
         res = GetMemoryErrorHandlingCapabilities(Capabilities)
         return win32_to_errcheck(res, errcheck)        
 
     def PrefetchVirtualMemory(hProcess, NumberOfEntries, VirtualAddresses, Flags, errcheck: bool = True):
-        PrefetchVirtualMemory = Kernel32.PrefetchVirtualMemory
+        PrefetchVirtualMemory = kernel32.PrefetchVirtualMemory
         res = PrefetchVirtualMemory(hProcess, NumberOfEntries, VirtualAddresses, Flags)
         return win32_to_errcheck(res, errcheck)        
 
@@ -508,14 +508,14 @@ if _WIN32_WINNT >= _WIN32_WINNT_WIN8:
     PBAD_MEMORY_CALLBACK_ROUTINE = POINTER(BAD_MEMORY_CALLBACK_ROUTINE)
 
     def RegisterBadMemoryNotification(Callback, errcheck: bool = True):
-        RegisterBadMemoryNotification = Kernel32.RegisterBadMemoryNotification
+        RegisterBadMemoryNotification = kernel32.RegisterBadMemoryNotification
         RegisterBadMemoryNotification.restype = PVOID
         res = RegisterBadMemoryNotification(Callback)
         return win32_to_errcheck(res, errcheck)        
 
 
     def UnregisterBadMemoryNotification(RegistrationHandle, errcheck: bool = True):
-        UnregisterBadMemoryNotification = Kernel32.UnregisterBadMemoryNotification
+        UnregisterBadMemoryNotification = kernel32.UnregisterBadMemoryNotification
         res = UnregisterBadMemoryNotification(RegistrationHandle)
         return win32_to_errcheck(res, errcheck)    
 
@@ -559,7 +559,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS1:
         errcheck: bool = True
     ):
         
-        QueryVirtualMemoryInformation = Kernel32.QueryVirtualMemoryInformation
+        QueryVirtualMemoryInformation = kernel32.QueryVirtualMemoryInformation
         res = QueryVirtualMemoryInformation(
             Process, 
             VirtualAddress, 
@@ -584,7 +584,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS2:
         errcheck: bool = True
     ):
         
-        MapViewOfFileNuma2 = Kernel32.MapViewOfFileNuma2
+        MapViewOfFileNuma2 = kernel32.MapViewOfFileNuma2
         MapViewOfFileNuma2.restype = PVOID
         res = MapViewOfFileNuma2(
             FileMappingHandle, 
@@ -611,7 +611,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS2:
         errcheck: bool = True
     ):
         
-        MapViewOfFile2 = Kernel32.MapViewOfFile2
+        MapViewOfFile2 = kernel32.MapViewOfFile2
         MapViewOfFile2.restype = PVOID
         res = MapViewOfFile2(
             FileMappingHandle, 
@@ -637,7 +637,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS4:
         errcheck: bool = True
     ):
         
-        VirtualAlloc2 = Kernel32.VirtualAlloc2
+        VirtualAlloc2 = kernel32.VirtualAlloc2
         VirtualAlloc2.restype = PVOID
         res = VirtualAlloc2(
             Process, 
@@ -665,7 +665,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS4:
         errcheck: bool = True
     ):
         
-        MapViewOfFile3 = Kernel32.MapViewOfFile3
+        MapViewOfFile3 = kernel32.MapViewOfFile3
         MapViewOfFile3.restype = PVOID
         res = MapViewOfFile3(
             FileMapping, 
@@ -696,7 +696,7 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS5:
         errcheck: bool = True
     ):
         
-        CreateFileMapping2 = Kernel32.CreateFileMapping2
+        CreateFileMapping2 = kernel32.CreateFileMapping2
         CreateFileMapping2.restype = HANDLE
         res = CreateFileMapping2(
             File, 
@@ -714,35 +714,35 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS5:
 
 
 def GetLargePageMinimum():
-    GetLargePageMinimum = Kernel32.GetLargePageMinimum
+    GetLargePageMinimum = kernel32.GetLargePageMinimum
     return GetLargePageMinimum()
 
 
 def GetProcessWorkingSetSizeEx(hProcess, lpMinimumWorkingSetSize, lpMaximumWorkingSetSize, Flags, errcheck: bool = True):
-    GetProcessWorkingSetSizeEx = Kernel32.GetProcessWorkingSetSizeEx
+    GetProcessWorkingSetSizeEx = kernel32.GetProcessWorkingSetSizeEx
     res = GetProcessWorkingSetSizeEx(hProcess, lpMinimumWorkingSetSize, lpMaximumWorkingSetSize, Flags)
     return win32_to_errcheck(res, errcheck)    
 
 def SetProcessWorkingSetSizeEx(hProcess, lpMinimumWorkingSetSize, lpMaximumWorkingSetSize, Flags, errcheck: bool = True):
-    SetProcessWorkingSetSizeEx = Kernel32.SetProcessWorkingSetSizeEx
+    SetProcessWorkingSetSizeEx = kernel32.SetProcessWorkingSetSizeEx
     res = SetProcessWorkingSetSizeEx(hProcess, lpMinimumWorkingSetSize, lpMaximumWorkingSetSize, Flags)
     return win32_to_errcheck(res, errcheck)    
 
 def GetWriteWatch(dwFlags, lpBaseAddress, dwRegionSize, lpAddresses, lpdwCount, lpdwGranularity, errcheck: bool = True):
-    GetWriteWatch = Kernel32.GetWriteWatch
+    GetWriteWatch = kernel32.GetWriteWatch
     GetWriteWatch.restype = UINT
     res = GetWriteWatch(dwFlags, lpBaseAddress, dwRegionSize, lpAddresses, lpdwCount, lpdwGranularity)
     return win32_to_errcheck(res, errcheck)    
 
 def ResetWriteWatch(lpBaseAddress, dwRegionSize, errcheck: bool = True):
-    ResetWriteWatch = Kernel32.ResetWriteWatch
+    ResetWriteWatch = kernel32.ResetWriteWatch
     ResetWriteWatch.restype = UINT
     res = ResetWriteWatch(lpBaseAddress, dwRegionSize)
     return win32_to_errcheck(res, errcheck)    
 
 
 def VirtualFreeEx(hProcess, lpAddress, dwSize, dwFreeType, errcheck: bool = True):
-    VirtualFreeEx = Kernel32.VirtualFreeEx
+    VirtualFreeEx = kernel32.VirtualFreeEx
     res = VirtualFreeEx(hProcess, lpAddress, dwSize, dwFreeType)
     return win32_to_errcheck(res, errcheck)    
 
@@ -760,25 +760,25 @@ class _OFFER_PRIORITY(enum.IntFlag):
 OFFER_PRIORITY = _OFFER_PRIORITY
 
 def DiscardVirtualMemory(VirtualAddress, Size, errcheck: bool = True):
-    DiscardVirtualMemory = Kernel32.DiscardVirtualMemory
+    DiscardVirtualMemory = kernel32.DiscardVirtualMemory
     DiscardVirtualMemory.restype = DWORD
     res = DiscardVirtualMemory(VirtualAddress, Size)
     return hresult_to_errcheck(res, errcheck)
 
 def OfferVirtualMemory(VirtualAddress, Size, Priority, errcheck: bool = True):
-    OfferVirtualMemory = Kernel32.OfferVirtualMemory
+    OfferVirtualMemory = kernel32.OfferVirtualMemory
     OfferVirtualMemory.restype = DWORD
     res = OfferVirtualMemory(VirtualAddress, Size, Priority)
     return hresult_to_errcheck(res, errcheck)    
 
 def ReclaimVirtualMemory(VirtualAddress, Size, errcheck: bool = True):
-    ReclaimVirtualMemory = Kernel32.ReclaimVirtualMemory
+    ReclaimVirtualMemory = kernel32.ReclaimVirtualMemory
     res = ReclaimVirtualMemory(VirtualAddress, Size)
     return hresult_to_errcheck(res, errcheck)    
 
 if _WIN32_WINNT >= _WIN32_WINNT_WIN8:
     def UnmapViewOfFileEx(BaseAddress, UnmapFlags, errcheck: bool = True):
-        UnmapViewOfFileEx = Kernel32.UnmapViewOfFileEx
+        UnmapViewOfFileEx = kernel32.UnmapViewOfFileEx
         res = UnmapViewOfFileEx(BaseAddress, UnmapFlags)
         return win32_to_errcheck(res, errcheck)        
 

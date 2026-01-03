@@ -12,7 +12,7 @@ class ComBaseClass(Structure):
     _fields_ = [('value', VOID)]
 
     @property
-    def value(self):
+    def value(self) -> int:
         return self.value
 
     @property
@@ -20,6 +20,10 @@ class ComBaseClass(Structure):
         value = self.value
         this = cast(value, POINTER(self.__class__))
         return this
+    
+    @property
+    def THIS(self):
+        return self.this
 
 ####################################################
 # unknwnbase.h
@@ -66,3 +70,29 @@ class IUnknown(ComBaseClass):
 
         res = Release(self.this)
         return res
+
+
+class IUnknownVtbl(IUnknown): pass
+
+'''
+def IUnknown_QueryInterface(This, riid, ppvObject): pass
+def IUnknown_AddRef(This): pass
+def IUnknown_Release(This): pass
+def IUnknown_QueryInterface_Proxy(This, riid, ppvObject): pass
+'''
+
+class AsyncIUnknown(IUnknown):
+    def Begin_QueryInterface(self, riid):
+        flags = ((_In_, 'riid'))
+        Begin_QueryInterface = CALLBACK(HRESULT, REFIID)
+        Begin_QueryInterface = Begin_QueryInterface(
+            3,
+            'Begin_QueryInterface',
+            flags
+        )
+
+        res = Begin_QueryInterface(self.THIS, riid)
+        return res
+    
+    def Finish_QueryInterface(): pass
+

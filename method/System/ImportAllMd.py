@@ -1,4 +1,6 @@
 # coding = 'utf-8'
+'''谨慎使用该模块，可能会导致某些方法冲突'''
+
 
 from method.System.combaseapi import *
 from method.System.commctrl import *

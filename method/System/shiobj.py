@@ -436,7 +436,7 @@ def ILCreateFromPath(pszPath: str, unicode: bool = True) -> int:
 
 
 def SHILCreateFromPath(pszPath, ppidl, rgfInOut, errcheck: bool = True):
-    SHILCreateFromPath = Kernel32.SHILCreateFromPath
+    SHILCreateFromPath = kernel32.SHILCreateFromPath
     res = SHILCreateFromPath(pszPath, ppidl, rgfInOut)
     return hresult_to_errcheck(res, errcheck)
 

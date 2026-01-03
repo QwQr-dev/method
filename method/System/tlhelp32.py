@@ -12,7 +12,7 @@ MAX_MODULE_NAME32 = 255
 
 
 def CreateToolhelp32Snapshot(dwFlags: int, th32ProcessID: int, errcheck: bool = True) -> int:
-    CreateToolhelp32Snapshot = Kernel32.CreateToolhelp32Snapshot
+    CreateToolhelp32Snapshot = kernel32.CreateToolhelp32Snapshot
     res = CreateToolhelp32Snapshot(dwFlags, th32ProcessID)
     return win32_to_errcheck(res, errcheck)
 
@@ -48,13 +48,13 @@ HF32_SHARED = 2
 
 
 def Heap32ListFirst(hSnapshot, lphl, errcheck: bool = True):
-    Heap32ListFirst = Kernel32.Heap32ListFirst
+    Heap32ListFirst = kernel32.Heap32ListFirst
     res = Heap32ListFirst(hSnapshot, lphl)
     return win32_to_errcheck(res, errcheck)
 
 
 def Heap32ListNext(hSnapshot, lphl, errcheck: bool = True):
-    Heap32ListNext = Kernel32.Heap32ListNext
+    Heap32ListNext = kernel32.Heap32ListNext
     res = Heap32ListNext(hSnapshot, lphl)
     return win32_to_errcheck(res, errcheck)
 
@@ -81,13 +81,13 @@ LF32_MOVEABLE = 0x00000004
 
 
 def Heap32First(lphe, th32ProcessID, th32HeapID, errcheck: bool = True):
-    Heap32First = Kernel32.Heap32First
+    Heap32First = kernel32.Heap32First
     res = Heap32First(lphe, th32ProcessID, th32HeapID)
     return win32_to_errcheck(res, errcheck)
 
 
 def Heap32Next(lphe, errcheck: bool = True):
-    Heap32Next = Kernel32.Heap32Next
+    Heap32Next = kernel32.Heap32Next
     res = Heap32Next(lphe)
     return win32_to_errcheck(res, errcheck)
 
@@ -101,7 +101,7 @@ def Toolhelp32ReadProcessMemory(
     errcheck: bool = True
 ):
     
-    Toolhelp32ReadProcessMemory = Kernel32.Toolhelp32ReadProcessMemory
+    Toolhelp32ReadProcessMemory = kernel32.Toolhelp32ReadProcessMemory
     res = Toolhelp32ReadProcessMemory(
         th32ProcessID, 
         lpBaseAddress, 
@@ -154,8 +154,8 @@ if UNICODE:
 
 
 def Process32First(hSnapshot: int, lppe: Any, unicode: bool = True, errcheck: bool = True):
-    Process32First = (Kernel32.Process32FirstW 
-                      if unicode else Kernel32.Process32First
+    Process32First = (kernel32.Process32FirstW 
+                      if unicode else kernel32.Process32First
     )
 
     res = Process32First(hSnapshot, lppe)
@@ -163,8 +163,8 @@ def Process32First(hSnapshot: int, lppe: Any, unicode: bool = True, errcheck: bo
 
 
 def Process32Next(hSnapshot: int, lppe: Any, unicode: bool = True, errcheck: bool = True):
-    Process32Next = (Kernel32.Process32NextW 
-                      if unicode else Kernel32.Process32Next
+    Process32Next = (kernel32.Process32NextW 
+                      if unicode else kernel32.Process32Next
     )
 
     res = Process32Next(hSnapshot, lppe)
@@ -187,13 +187,13 @@ LPTHREADENTRY32 = PTHREADENTRY32
 
 
 def Thread32First(hSnapshot, lpte, errcheck: bool = True):
-    Thread32First = Kernel32.Thread32First
+    Thread32First = kernel32.Thread32First
     res = Thread32First(hSnapshot, lpte)
     return win32_to_errcheck(res, errcheck)
 
 
 def Thread32Next(hSnapshot, lpte, errcheck: bool = True):
-    Thread32Next = Kernel32.Thread32Next
+    Thread32Next = kernel32.Thread32Next
     res = Thread32Next(hSnapshot, lpte)
     return win32_to_errcheck(res, errcheck)
 
@@ -239,13 +239,13 @@ if UNICODE:
 
 
 def Module32First(hSnapshot, lpme, unicode: bool = True, errcheck: bool = True):
-    Module32First = Kernel32.Module32FirstW if unicode else Kernel32.Module32First
+    Module32First = kernel32.Module32FirstW if unicode else kernel32.Module32First
     res = Module32First(hSnapshot, lpme)
     return win32_to_errcheck(res, errcheck)
 
 
 def Module32Next(hSnapshot, lpme, unicode: bool = True, errcheck: bool = True):
-    Module32Next = Kernel32.Module32NextW if unicode else Kernel32.Module32Next
+    Module32Next = kernel32.Module32NextW if unicode else kernel32.Module32Next
     res = Module32Next(hSnapshot, lpme)
     return win32_to_errcheck(res, errcheck)
 
