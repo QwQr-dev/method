@@ -19,6 +19,5 @@ if os.name != 'nt':
 if sys.version_info < (major, minor):
     raise ImportError(f'Your Python interpreter version is less than {major}.{minor}, please change the interpreter.')
 
-from .usumd import *
-from .killer import *
-from .System import *
+from method.usumd import *
+from method.System import *

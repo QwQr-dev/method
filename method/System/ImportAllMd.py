@@ -12,7 +12,7 @@ from method.System.knownfolders import *
 from method.System.libloaderapi import *
 from method.System.memoryapi import *
 from method.System.nserror import *
-from method.System.ntddk import *
+from method.System.ddk.ntddk import *
 from method.System.ntstatus import *
 from method.System.otherapi import *
 from method.System.processthreadsapi import *

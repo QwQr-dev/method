@@ -6,6 +6,7 @@ from method.System.sdkddkver import *
 from method.System.public_dll import *
 from method.System.winusutypes import *
 from method.System.errcheck import win32_to_errcheck
+from method.System.win32typing import WinFunctionType
 
 FARPROC = INT_PTR
 
@@ -50,64 +51,101 @@ GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT = 0x2
 GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS = 0x4
 
 
-def FindResource(hModule, lpName, lpType, unicode: bool = True, errcheck: bool = True):
+def FindResource(hModule: int, lpName: str | bytes, lpType, unicode: bool = True, errcheck: bool = True):
     FindResource = kernel32.FindResourceW if unicode else kernel32.FindResourceA
+    FindResource.argtypes = [
+        HMODULE,
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    FindResource.restype = HRSRC
     res = FindResource(hModule, lpName, lpType)
     return win32_to_errcheck(res, errcheck)    
 
 
-def EnumResourceNames(hModule, lpType, lpEnumFunc, lParam, unicode: bool = True, errcheck: bool = True):
+def EnumResourceNames(
+    hModule: int, 
+    lpType: str | bytes, 
+    lpEnumFunc: WinFunctionType, 
+    lParam: int, 
+    unicode: bool = True, 
+    errcheck: bool = True
+):
+    
     EnumResourceNames = (kernel32.EnumResourceNamesW 
                          if unicode else kernel32.EnumResourceNamesA
     )
 
+    EnumResourceNames.argtypes = [
+        HMODULE,
+        (LPCWSTR if unicode else LPCSTR),
+        (ENUMRESLANGPROCW if unicode else ENUMRESLANGPROCA),
+        LONG_PTR
+    ]
+
+    EnumResourceNames.restype = WINBOOL
     res = EnumResourceNames(hModule, lpType, lpEnumFunc, lParam)
     return win32_to_errcheck(res, errcheck)    
 
 
-def FreeResource(hResData, errcheck: bool = True):
+def FreeResource(hResData: Any, errcheck: bool = True):
     FreeResource = kernel32.FreeResource
+    FreeResource.argtypes = [HGLOBAL]
+    FreeResource.restype = WINBOOL
     res = FreeResource(hResData)
     return win32_to_errcheck(res, errcheck)    
 
 
-def LoadResource(hModule, hResInfo, errcheck: bool = True):
+def LoadResource(hModule: int, hResInfo: Any, errcheck: bool = True):
     LoadResource = kernel32.LoadResource
+    LoadResource.argtypes = [
+        HMODULE,
+        HRSRC
+    ]
+
+    LoadResource.restype = HGLOBAL
     res = LoadResource(hModule, hResInfo)
     return win32_to_errcheck(res, errcheck)  
 
 
-def LockResource(hResData, errcheck: bool = True):
+def LockResource(hResData: int, errcheck: bool = True):
     LockResource = kernel32.LockResource
+    LockResource.argtypes = [HGLOBAL]
     LockResource.restype = LPVOID
     res = LockResource(hResData)
     return win32_to_errcheck(res, errcheck)  
 
 
-def AddDllDirectory(NewDirectory, errcheck: bool = True):
+def AddDllDirectory(NewDirectory: str, errcheck: bool = True):
     AddDllDirectory = kernel32.AddDllDirectory
+    AddDllDirectory.argtypes = [PCWSTR]
+    AddDllDirectory.restype = DLL_DIRECTORY_COOKIE
     res = AddDllDirectory(NewDirectory)
     return win32_to_errcheck(res, errcheck)  
 
 
-def RemoveDllDirectory(Cookie, errcheck: bool = True):
+def RemoveDllDirectory(Cookie: Any, errcheck: bool = True):
     RemoveDllDirectory = kernel32.RemoveDllDirectory
+    RemoveDllDirectory.argtypes = [DLL_DIRECTORY_COOKIE]
+    RemoveDllDirectory.restype = WINBOOL
     res = RemoveDllDirectory(Cookie)
     return win32_to_errcheck(res, errcheck)    
 
 
-def SetDefaultDllDirectories(DirectoryFlags, errcheck: bool = True):
+def SetDefaultDllDirectories(DirectoryFlags: int, errcheck: bool = True):
     SetDefaultDllDirectories = kernel32.SetDefaultDllDirectories
+    SetDefaultDllDirectories.argtypes = [DWORD]
+    SetDefaultDllDirectories.restype = WINBOOL
     res = SetDefaultDllDirectories(DirectoryFlags)
     return win32_to_errcheck(res, errcheck)    
 
 
 def EnumResourceLanguages(
-    hModule, 
-    lpType, 
-    lpName, 
-    lpEnumFunc, 
-    lParam, 
+    hModule: int, 
+    lpType: str | bytes, 
+    lpName: str | bytes, 
+    lpEnumFunc: WinFunctionType, 
+    lParam: int, 
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -116,6 +154,15 @@ def EnumResourceLanguages(
                              if unicode else kernel32.EnumResourceLanguagesA
     )
 
+    EnumResourceLanguages.argtypes = [
+        HMODULE,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        (ENUMRESLANGPROCW if unicode else ENUMRESLANGPROCA),
+        LONG_PTR
+    ]
+
+    EnumResourceLanguages.restype = WINBOOL
     res = EnumResourceLanguages(
         hModule, 
         lpType, 
@@ -128,13 +175,13 @@ def EnumResourceLanguages(
 
 
 def EnumResourceLanguagesEx(
-    hModule, 
-    lpType, 
-    lpName, 
-    lpEnumFunc, 
-    lParam, 
-    dwFlags, 
-    LangId, 
+    hModule: int, 
+    lpType: str | bytes, 
+    lpName: str | bytes, 
+    lpEnumFunc: WinFunctionType, 
+    lParam: int, 
+    dwFlags: int, 
+    LangId: int, 
     unicode: bool = True,
     errcheck: bool  = True
 ):
@@ -143,6 +190,17 @@ def EnumResourceLanguagesEx(
                                if unicode else kernel32.EnumResourceLanguagesExA
     )
 
+    EnumResourceLanguagesEx.argtypes = [
+        HMODULE,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        (ENUMRESLANGPROCW if unicode else ENUMRESLANGPROCA),
+        LONG_PTR,
+        DWORD,
+        LANGID
+    ]
+
+    EnumResourceLanguagesEx.restype = WINBOOL
     res = EnumResourceLanguagesEx(
         hModule, 
         lpType, 
@@ -157,12 +215,12 @@ def EnumResourceLanguagesEx(
 
 
 def EnumResourceNamesEx(
-    hModule, 
-    lpType, 
-    lpEnumFunc, 
-    lParam, 
-    dwFlags, 
-    LangId, 
+    hModule: int, 
+    lpType: str | bytes, 
+    lpEnumFunc: WinFunctionType, 
+    lParam: int, 
+    dwFlags: int, 
+    LangId: int, 
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -171,6 +229,16 @@ def EnumResourceNamesEx(
                            if unicode else kernel32.EnumResourceNamesExA
     )
 
+    EnumResourceNamesEx.argtypes = [
+        HMODULE,
+        (LPCWSTR if unicode else LPCSTR),
+        (ENUMRESLANGPROCW if unicode else ENUMRESLANGPROCA),
+        LONG_PTR,
+        DWORD,
+        LANGID
+    ]
+
+    EnumResourceNamesEx.restype = WINBOOL
     res = EnumResourceNamesEx(
         hModule, 
         lpType, 
@@ -184,11 +252,11 @@ def EnumResourceNamesEx(
 
 
 def EnumResourceTypesEx(
-    hModule, 
-    lpEnumFunc, 
-    lParam, 
-    dwFlags, 
-    LangId, 
+    hModule: int, 
+    lpEnumFunc: WinFunctionType, 
+    lParam: int, 
+    dwFlags: int, 
+    LangId: int, 
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -197,6 +265,15 @@ def EnumResourceTypesEx(
                            if unicode else kernel32.EnumResourceTypesExA
     )
 
+    EnumResourceTypesEx.argtypes = [
+        HMODULE,
+        (ENUMRESLANGPROCW if unicode else ENUMRESLANGPROCA),
+        LONG_PTR,
+        DWORD,
+        LANGID
+    ]
+
+    EnumResourceTypesEx.restype = WINBOOL
     res = EnumResourceTypesEx(
         hModule, 
         lpEnumFunc, 
@@ -208,13 +285,22 @@ def EnumResourceTypesEx(
     return win32_to_errcheck(res, errcheck)    
 
 
-def QueryOptionalDelayLoadedAPI(CallerModule, lpDllName, lpProcName, Reserved, errcheck: bool = True):
+def QueryOptionalDelayLoadedAPI(
+    CallerModule: int, 
+    lpDllName: bytes, 
+    lpProcName: bytes, 
+    Reserved: bytes, 
+    errcheck: bool = True
+):
+
     QueryOptionalDelayLoadedAPI = kernel32.QueryOptionalDelayLoadedAPI
+    QueryOptionalDelayLoadedAPI.argtypes = [HMODULE, LPCSTR, LPCSTR, DWORD]
+    QueryOptionalDelayLoadedAPI.restype = WINBOOL
     res = QueryOptionalDelayLoadedAPI(CallerModule, lpDllName, lpProcName, Reserved)
     return win32_to_errcheck(res, errcheck)    
 
 
-def LoadLibrary(lpLibFileName: str, unicode: bool = True, errcheck: bool = True) -> int:
+def LoadLibrary(lpLibFileName: str | bytes, unicode: bool = True, errcheck: bool = True) -> int:
     LoadLibrary = (kernel32.LoadLibraryW 
                    if unicode else kernel32.LoadLibraryA
     )
@@ -225,28 +311,38 @@ def LoadLibrary(lpLibFileName: str, unicode: bool = True, errcheck: bool = True)
     return win32_to_errcheck(res, errcheck)  
 
 
-def FreeLibraryAndExitThread(hLibModule, dwExitCode, errcheck: bool = True) -> None:
+def FreeLibraryAndExitThread(hLibModule: int, dwExitCode: int) -> None:
     FreeLibraryAndExitThread = kernel32.FreeLibraryAndExitThread
+    FreeLibraryAndExitThread.argtypes = [HMODULE, DWORD]
+    FreeLibraryAndExitThread.restype = VOID
     FreeLibraryAndExitThread(hLibModule, dwExitCode)
 
 
-def DisableThreadLibraryCalls(hLibModule, errcheck: bool = True):
+def DisableThreadLibraryCalls(hLibModule: int, errcheck: bool = True):
     DisableThreadLibraryCalls = kernel32.DisableThreadLibraryCalls
+    DisableThreadLibraryCalls.argtypes = [HMODULE]
+    DisableThreadLibraryCalls.restype = WINBOOL
     res = DisableThreadLibraryCalls(hLibModule)
     return win32_to_errcheck(res, errcheck)  
 
 
-def FreeLibrary(hLibModule, errcheck: bool = True):
+def FreeLibrary(hLibModule: int, errcheck: bool = True):
     FreeLibrary = kernel32.FreeLibrary
+    FreeLibrary.argtypes = [HMODULE]
+    FreeLibrary.restype = WINBOOL
     res = FreeLibrary(hLibModule)
     return win32_to_errcheck(res, errcheck)  
 
 
-def GetProcAddress(hModule: int, lpProcName: str | int, encoding: str = 'ansi', errcheck: bool = True) -> int:
+def GetProcAddress(
+    hModule: int, 
+    lpProcName: str | int, 
+    errcheck: bool = True
+) -> int:
+    
     GetProcAddress = kernel32.GetProcAddress
-
     if isinstance(lpProcName, str):
-        lpProcName = lpProcName.encode(encoding)
+        lpProcName = lpProcName.encode('ansi')
 
     GetProcAddress.argtypes = [HMODULE, LPCSTR]
     GetProcAddress.restype = FARPROC
@@ -254,11 +350,25 @@ def GetProcAddress(hModule: int, lpProcName: str | int, encoding: str = 'ansi', 
     return win32_to_errcheck(res, errcheck)  
 
 
-def GetModuleFileName(hModule, lpFilename, nSize, unicode: bool = True, errcheck: bool = True):
+def GetModuleFileName(
+    hModule: int, 
+    lpFilename: str | bytes, 
+    nSize: int, 
+    unicode: bool = True, 
+    errcheck: bool = True
+):
+    
     GetModuleFileName = (kernel32.GetModuleFileNameW 
                          if unicode else kernel32.GetModuleFileNameA
     )
     
+    GetModuleFileName.argtypes = [
+        HMODULE,
+        (LPWSTR if unicode else LPSTR),
+        DWORD
+    ]
+
+    GetModuleFileName.restype = DWORD
     res = GetModuleFileName(hModule, lpFilename, nSize)
     return win32_to_errcheck(res, errcheck)
 
@@ -289,22 +399,33 @@ PCREDIRECTION_DESCRIPTOR = PREDIRECTION_DESCRIPTOR
 
 
 def FindStringOrdinal(
-    dwFindStringOrdinalFlags, 
-    lpStringSource, 
-    cchSource, 
-    lpStringValue, 
-    cchValue, 
-    bIgnoreCase,
+    dwFindStringOrdinalFlags: int, 
+    lpStringSource: str, 
+    cchSource: int, 
+    lpStringValue: str, 
+    cchValue: int, 
+    bIgnoreCase: int,
     errcheck: bool = True
 ):
     
     FindStringOrdinal = kernel32.FindStringOrdinal
-    res = FindStringOrdinal(dwFindStringOrdinalFlags, 
-                            lpStringSource, 
-                            cchSource, 
-                            lpStringValue, 
-                            cchValue, 
-                            bIgnoreCase
+    FindStringOrdinal.argtypes = [
+        DWORD,
+        LPCWSTR,
+        INT,
+        LPCWSTR,
+        INT,
+        WINBOOL
+    ]
+    
+    FindStringOrdinal.restype = INT
+    res = FindStringOrdinal(
+        dwFindStringOrdinalFlags, 
+        lpStringSource, 
+        cchSource, 
+        lpStringValue, 
+        cchValue, 
+        bIgnoreCase
     )
 
     return win32_to_errcheck(res, errcheck)
@@ -333,13 +454,29 @@ if NTDDI_VERSION >= NTDDI_WIN10_RS2:
     LOAD_LIBRARY_OS_INTEGRITY_CONTINUITY = 0x00008000
 
 
-def FindResourceEx(hModule, lpType, lpName, wLanguage, unicode: bool = True, errcheck: bool = True):
+def FindResourceEx(
+    hModule: int, 
+    lpType: str | bytes, 
+    lpName: str | bytes, 
+    wLanguage: int, 
+    unicode: bool = True, 
+    errcheck: bool = True
+):
+    
     FindResourceEx = kernel32.FindResourceExW if unicode else kernel32.FindResourceExA
+    FindResourceEx.argtypes = [
+        HMODULE,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        WORD
+    ]
+
+    FindResourceEx.restype = HRSRC
     res = FindResourceEx(hModule, lpType, lpName, wLanguage)
     return win32_to_errcheck(res, errcheck)  
 
 
-def GetModuleHandle(lpModuleName: str, unicode: bool = True, errcheck: bool = True) -> int:
+def GetModuleHandle(lpModuleName: str | bytes, unicode: bool = True, errcheck: bool = True) -> int:
     GetModuleHandle = (kernel32.GetModuleHandleW 
                        if unicode else kernel32.GetModuleHandleA
     )
@@ -347,13 +484,12 @@ def GetModuleHandle(lpModuleName: str, unicode: bool = True, errcheck: bool = Tr
     GetModuleHandle.argtypes = [LPCWSTR if unicode else LPCSTR]
     GetModuleHandle.restype = HMODULE
     res = GetModuleHandle(lpModuleName)
-
     return win32_to_errcheck(res, errcheck)  
 
 
 def GetModuleHandleEx(
     dwFlags: int, 
-    lpModuleName: str, 
+    lpModuleName: str | bytes, 
     phModule: Any, 
     unicode: bool = True,
     errcheck: bool = True
@@ -374,7 +510,7 @@ def GetModuleHandleEx(
 
 
 def LoadLibraryEx(
-        lpLibFileName: str, 
+        lpLibFileName: str | bytes, 
         hFile: int, 
         dwFlags: int, 
         unicode: bool = True,
@@ -391,8 +527,10 @@ def LoadLibraryEx(
     return win32_to_errcheck(res, errcheck)  
 
 
-def SizeofResource(hModule, hResInfo, errcheck: bool = True):
+def SizeofResource(hModule: int, hResInfo: int, errcheck: bool = True):
     SizeofResource = kernel32.SizeofResource
+    SizeofResource.argtypes = [HMODULE, HRSRC]
+    SizeofResource.restype = DWORD
     res = SizeofResource(hModule, hResInfo)
     return win32_to_errcheck(res, errcheck)  
 
@@ -402,13 +540,23 @@ PGET_MODULE_HANDLE_EXW = WINAPI(WINBOOL, DWORD, LPCWSTR, HMODULE)
 PGET_MODULE_HANDLE_EX = PGET_MODULE_HANDLE_EXW if UNICODE else PGET_MODULE_HANDLE_EXA
 
 
-def LoadString(hInstance, uID, lpBuffer, cchBufferMax, unicode: bool = True):
+def LoadString(hInstance: int, uID: int, lpBuffer: Any, cchBufferMax: int, unicode: bool = True):
     LoadString = user32.LoadStringW if unicode else user32.LoadStringA
+    LoadString.argtypes = [
+        HINSTANCE,
+        UINT,
+        (LPWSTR if unicode else LPSTR),
+        INT
+    ]
+
+    LoadString.restype = INT
     res = LoadString(hInstance, uID, lpBuffer, cchBufferMax)
     return res
 
 
-def LoadPackagedLibrary(lpwLibFileName, Reserved, errcheck: bool = True):
+def LoadPackagedLibrary(lpwLibFileName: str, Reserved: int, errcheck: bool = True):
     LoadPackagedLibrary = kernel32.LoadPackagedLibrary
+    LoadPackagedLibrary.argtypes = [LPCWSTR, DWORD]
+    LoadPackagedLibrary.restype = HMODULE
     res = LoadPackagedLibrary(lpwLibFileName, Reserved)
     return win32_to_errcheck(res, errcheck)  

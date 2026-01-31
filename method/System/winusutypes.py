@@ -11,7 +11,7 @@ from ctypes import (
     get_last_error, set_last_error, set_errno, string_at,
     BigEndianStructure, BigEndianUnion, wstring_at, cast, 
     windll, cdll, create_string_buffer, create_unicode_buffer,
-    addressof, FormatError, get_errno, pydll
+    addressof, FormatError, get_errno, pydll, ArgumentError
 )
 
 from ctypes import (
@@ -123,9 +123,7 @@ LCID = wintypes.LCID
 LCTYPE = wintypes.LCTYPE
 LGRPID = wintypes.LGRPID
 LONG = wintypes.LONG
-LONGLONG = (ctypes.c_int64 
-            if sys.maxsize > 2**32 else ctypes.c_double
-)
+LONGLONG = ctypes.c_long
 LONG_PTR = ctypes.c_ulonglong
 LONG32 = ctypes.c_int32
 LONG64 = ctypes.c_int64
@@ -152,6 +150,7 @@ LPWORD = wintypes.LPWORD
 LPWSTR = wintypes.LPWSTR
 LRESULT = LONG_PTR
 MAX_PATH = wintypes.MAX_PATH
+NTSTATUS = wintypes.LONG
 NULL = None
 nullptr = None
 PBOOL = wintypes.PBOOL
@@ -249,10 +248,8 @@ SC_HANDLE = wintypes.SC_HANDLE
 SC_LOCK = LPVOID
 SERVICE_STATUS_HANDLE = wintypes.SERVICE_STATUS_HANDLE
 SHORT = wintypes.SHORT
-SIZE_T = (ctypes.c_uint64 
-          if sys.maxsize > 2**32 else ctypes.c_ulong
-)
-SSIZE_T = LONG_PTR
+SIZE_T = ctypes.c_size_t
+SSIZE_T = ctypes.c_ssize_t
 TBYTE = (wintypes.WCHAR 
          if sys.maxunicode > 0xffff else c_uchar
 )
@@ -284,7 +281,6 @@ USN = LONGLONG
 VOID = ctypes.c_void_p
 WINBOOL = LONG
 WCHAR = wintypes.WCHAR
-WINAPI = WINFUNCTYPE
 WORD = wintypes.WORD
 WPARAM = wintypes.WPARAM
 
@@ -299,3 +295,4 @@ class _UNICODE_STRING(ctypes.Structure):
 UNICODE_STRING = _UNICODE_STRING
 PUNICODE_STRING = ctypes.POINTER(_UNICODE_STRING)
 
+WINAPI = WINFUNCTYPE

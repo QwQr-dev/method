@@ -3,9 +3,10 @@
 from typing import Any
 from method.System.guiddef import *
 from method.System.wtypesbase import *
+from method.System.unknwnbase import *
 from method.System.winusutypes import *
 from method.System.wmivirtualkey import *
-from method.System.unknwnbase import IUnknown, _In_, _Out_
+from method.System.unknwnbase import _In_, _Out_, COMFUNCTYPE
 
 OLESTR = LPCWSTR
 OLECHAR = WCHAR
@@ -340,7 +341,7 @@ VT_HRESULT = 25
 VT_PTR = 26
 VT_SAFEARRAY = 27
 VT_CARRAY = 28
-VT_USERDEFINED = 29
+VT_USEdefD = 29
 VT_LPSTR = 30
 VT_LPWSTR = 31
 VT_RECORD = 36
@@ -524,6 +525,289 @@ tagVARIANT._fields_ = [('__VARIANT_NAME_1', _VARIANT_NAME_1)]
 VARIANT = tagVARIANT
 VARIANTARG = VARIANT
 
+#############################################################
+
+def IWbemQualifierSet_QueryInterface(This,riid,ppvObject): return IUnknown_QueryInterface(This,riid,ppvObject)
+def IWbemQualifierSet_AddRef(This): return IUnknown_AddRef(This)
+def IWbemQualifierSet_Release(This): return IUnknown_Release(This)
+
+
+def IWbemQualifierSet_Get(This,wszName,lFlags,pVal,plFlavor) -> int:
+    flags = [
+        (_In_, 'wszName', LPCWSTR),
+        (_In_, 'lFlags', LONG),
+        (_In_, 'pVal', POINTER(VARIANT)),
+        (_In_, 'plFlavor', POINTER(LONG))
+    ]
+
+    IWbemQualifierSet_Get = COMFUNCTYPE(
+        3,
+        'Get',
+        argtypes=flags
+    )
+
+    res = IWbemQualifierSet_Get(This,wszName,lFlags,pVal,plFlavor)
+    return res
+
+
+def IWbemQualifierSet_Put(This,wszName,pVal,lFlavor) -> int:
+    flags = [
+        (_In_, 'wszName', LPCWSTR),
+        (_In_, 'pVal', POINTER(VARIANT)),
+        (_In_, 'lFlavor', LONG)
+    ]
+
+    IWbemQualifierSet_Put = COMFUNCTYPE(
+        4,
+        'Put',
+        argtypes=flags
+    )
+
+    res = IWbemQualifierSet_Put(This,wszName,pVal,lFlavor)
+    return res
+
+
+def IWbemQualifierSet_Delete(This,wszName) -> int:
+    IWbemQualifierSet_Delete = COMFUNCTYPE(
+        5,
+        'Delete',
+        argtypes=[(_In_, 'wszName', LPCWSTR)]
+    )
+
+    res = IWbemQualifierSet_Delete(This, wszName)
+    return res
+
+
+def IWbemQualifierSet_GetNames(This,lFlags,pNames) -> int:
+    IWbemQualifierSet_GetNames = COMFUNCTYPE(
+        6,
+        'GetNames',
+        argtypes=[
+            (_In_, 'lFlags', LONG),
+            (_In_, 'pNames', SAFEARRAY)
+        ]
+    )
+    
+    res = IWbemQualifierSet_GetNames(This,lFlags,pNames)
+    return res
+
+
+def IWbemQualifierSet_BeginEnumeration(This,lFlags):
+    IWbemQualifierSet_BeginEnumeration = COMFUNCTYPE(
+        7,
+        'BeginEnumeration',
+        argtypes=[
+            (_In_, 'lFlags', LONG)
+        ]
+    )
+
+    res = IWbemQualifierSet_BeginEnumeration(This,lFlags)
+    return res
+
+
+def IWbemQualifierSet_Next(This,lFlags,pstrName,pVal,plFlavor) -> int:
+    IWbemQualifierSet_Next = COMFUNCTYPE(
+        8,
+        'Next',
+        argtypes=[
+            (_In_, 'lFlags', LONG),
+            (_In_, 'pstrName', BSTR),
+            (_In_, 'pVal', VARIANT),
+            (_In_, 'plFlavor', LONG)
+        ]
+    )
+
+    res = IWbemQualifierSet_Next(This,lFlags,pstrName,pVal,plFlavor)
+    return res
+
+
+def IWbemQualifierSet_EndEnumeration(This) -> int:
+    IWbemQualifierSet_EndEnumeration = COMFUNCTYPE(9, 'EndEnumeration')
+    res = IWbemQualifierSet_EndEnumeration(This)
+    return res
+
+
+IID_IWbemQualifierSet = DEFINE_GUID(0xdc12a680, 0x737f, 0x11cf, 0x88,0x4d, 0x00,0xaa,0x00,0x4b,0x2e,0x24)
+class IWbemQualifierSet(IUnknown):
+    MIDL_INTERFACE = "dc12a680-737f-11cf-884d-00aa004b2e24"
+    def Get(self,wszName,lFlags,pVal,plFlavor): return IWbemQualifierSet_Get(self.this,wszName,lFlags,pVal,plFlavor)
+    def Put(self, wszName, pVal, lFlavor): return IWbemQualifierSet_Put(self.this, wszName, pVal, lFlavor)
+    def Delete(self, wszName): return IWbemQualifierSet_Delete(self.this, wszName)
+    def GetNames(self, lFlags, pNames): return IWbemQualifierSet_GetNames(self.this, lFlags, pNames)
+    def BeginEnumeration(self, lFlags): return IWbemQualifierSet_BeginEnumeration(self.this, lFlags)
+    def Next(self, lFlags, pstrName, pVal, plFlavor): return IWbemQualifierSet_Next(self.this, lFlags, pstrName, pVal, plFlavor)
+    def EndEnumeration(self): return IWbemQualifierSet_EndEnumeration(self.this)
+
+
+class IWbemQualifierSetVtbl(IWbemQualifierSet): pass
+
+
+def IWbemClassObject_QueryInterface(This,riid,ppvObject): return IUnknown_QueryInterface(This,riid,ppvObject)
+def IWbemClassObject_AddRef(This): return IUnknown_AddRef(This)
+def IWbemClassObject_Release(This): return IUnknown_Release(This)
+
+
+def IWbemClassObject_GetQualifierSet(This,ppQualSet) -> int:
+    IWbemClassObject_GetQualifierSet = COMFUNCTYPE(
+        3, 
+        'GetQualifierSet',
+        argtypes=[
+            (_In_, 'ppQualSet', POINTER(POINTER(IWbemQualifierSet)))
+        ]
+    )
+
+    res = IWbemClassObject_GetQualifierSet(This,ppQualSet)
+    return res
+
+
+def IWbemClassObject_Get(
+    This,
+    wszName,
+    lFlags,
+    pVal,
+    pType,
+    plFlavor
+) -> int:
+    
+    IWbemClassObject_Get = COMFUNCTYPE(
+        4,
+        'Get',
+        argtypes=[
+            (_In_, 'wszName', LPCWSTR),
+            (_In_, 'lFlags', LONG),
+            (_In_, 'pVal', POINTER(VARIANT)),
+            (_In_, 'pType', POINTER(CIMTYPE)),
+            (_In_, 'plFlavor', POINTER(LONG))
+        ]
+    )
+
+    res = IWbemClassObject_Get(
+        This,
+        wszName,
+        lFlags,
+        pVal,
+        pType,
+        plFlavor
+    )
+
+    return res
+
+'''
+def IWbemClassObject_Put(This,wszName,lFlags,pVal,Type) (This)->lpVtbl->Put(This,wszName,lFlags,pVal,Type)
+def IWbemClassObject_Delete(This,wszName) (This)->lpVtbl->Delete(This,wszName)
+def IWbemClassObject_GetNames(This,wszQualifierName,lFlags,pQualifierVal,pNames) (This)->lpVtbl->GetNames(This,wszQualifierName,lFlags,pQualifierVal,pNames)
+def IWbemClassObject_BeginEnumeration(This,lEnumFlags) (This)->lpVtbl->BeginEnumeration(This,lEnumFlags)
+def IWbemClassObject_Next(This,lFlags,strName,pVal,pType,plFlavor) (This)->lpVtbl->Next(This,lFlags,strName,pVal,pType,plFlavor)
+def IWbemClassObject_EndEnumeration(This) (This)->lpVtbl->EndEnumeration(This)
+def IWbemClassObject_GetPropertyQualifierSet(This,wszProperty,ppQualSet) (This)->lpVtbl->GetPropertyQualifierSet(This,wszProperty,ppQualSet)
+def IWbemClassObject_Clone(This,ppCopy) (This)->lpVtbl->Clone(This,ppCopy)
+def IWbemClassObject_GetObjectText(This,lFlags,pstrObjectText) (This)->lpVtbl->GetObjectText(This,lFlags,pstrObjectText)
+def IWbemClassObject_SpawnDerivedClass(This,lFlags,ppNewClass) (This)->lpVtbl->SpawnDerivedClass(This,lFlags,ppNewClass)
+def IWbemClassObject_SpawnInstance(This,lFlags,ppNewInstance) (This)->lpVtbl->SpawnInstance(This,lFlags,ppNewInstance)
+def IWbemClassObject_CompareTo(This,lFlags,pCompareTo) (This)->lpVtbl->CompareTo(This,lFlags,pCompareTo)
+def IWbemClassObject_GetPropertyOrigin(This,wszName,pstrClassName) (This)->lpVtbl->GetPropertyOrigin(This,wszName,pstrClassName)
+def IWbemClassObject_InheritsFrom(This,strAncestor) (This)->lpVtbl->InheritsFrom(This,strAncestor)
+def IWbemClassObject_GetMethod(This,wszName,lFlags,ppInSignature,ppOutSignature) (This)->lpVtbl->GetMethod(This,wszName,lFlags,ppInSignature,ppOutSignature)
+def IWbemClassObject_PutMethod(This,wszName,lFlags,pInSignature,pOutSignature) (This)->lpVtbl->PutMethod(This,wszName,lFlags,pInSignature,pOutSignature)
+def IWbemClassObject_DeleteMethod(This,wszName) (This)->lpVtbl->DeleteMethod(This,wszName)
+def IWbemClassObject_BeginMethodEnumeration(This,lEnumFlags) (This)->lpVtbl->BeginMethodEnumeration(This,lEnumFlags)
+def IWbemClassObject_NextMethod(This,lFlags,pstrName,ppInSignature,ppOutSignature) (This)->lpVtbl->NextMethod(This,lFlags,pstrName,ppInSignature,ppOutSignature)
+def IWbemClassObject_EndMethodEnumeration(This) (This)->lpVtbl->EndMethodEnumeration(This)
+def IWbemClassObject_GetMethodQualifierSet(This,wszMethod,ppQualSet) (This)->lpVtbl->GetMethodQualifierSet(This,wszMethod,ppQualSet)
+def IWbemClassObject_GetMethodOrigin(This,wszMethodName,pstrClassName) (This)->lpVtbl->GetMethodOrigin(This,wszMethodName,pstrClassName)
+'''
+
+class IWbemClassObject(IUnknown):
+    def BeginEnumeration(self, lEnumFlags):
+        flags = ((_In_, 'lEnumFlags'))
+        BeginEnumeration = CALLBACK(HRESULT, LONG)
+        BeginEnumeration = BeginEnumeration(
+            IWbemClassObject_BeginEnumeration_Idx,
+            'lEnumFlags',
+            flags
+        )
+        res = lEnumFlags(self.this, lEnumFlags)
+        return res
+    
+
+    def BeginMethodEnumeration(self, lEnumFlags):
+        flags = ((_In_, 'lEnumFlags'))
+        BeginMethodEnumeration = CALLBACK(HRESULT, LONG)
+        BeginMethodEnumeration = BeginMethodEnumeration(
+            IWbemClassObject_BeginMethodEnumeration_Idx,
+            'BeginMethodEnumeration',
+            flags
+        )
+        res = BeginMethodEnumeration(self.this, lEnumFlags)
+        return res
+    
+
+    def Clone(self, ppCopy):
+        flags = ((_In_, 'ppCopy'))
+        Clone = CALLBACK(HRESULT, IWbemClassObject)
+        Clone = Clone(IWbemClassObject_Clone_Idx,
+                      'Clone',
+                      flags
+        )
+        res = Clone(self.this, ppCopy)
+        return res
+    
+
+    def CompareTo(self, lFlags, pCompareTo):
+        flags = ((_In_, 'lFlags'), 
+                 (_In_, 'pCompareTo')
+        )
+        CompareTo = CALLBACK(HRESULT, LONG, IWbemClassObject)
+        CompareTo = CompareTo(IWbemClassObject_CompareTo_Idx,
+                              'CompareTo',
+                              flags
+        )
+        res = CompareTo(self.this, lFlags, pCompareTo)
+        return res
+    
+    def Get(
+        self,
+        wszName,
+        lFlags,
+        pVal,
+        pType,
+        plFlavor
+    ):
+        
+        flags = (
+            (_In_, 'wszName'),
+            (_In_, 'lFlags'),
+            (_In_, 'pVal'),
+            (_In_, 'pType'),
+            (_In_, 'plFlavor')
+        )
+
+        Get = CALLBACK(
+            HRESULT,
+            LPCWSTR,
+            LONG,
+            POINTER(VARIANT),
+            CIMTYPE,
+            LONG
+        )
+
+        Get = Get(
+            IWbemClassObject_Get_Idx,
+            'Get',
+            flags
+        )
+
+        res = Get(
+            self.this,
+            wszName,
+            lFlags,
+            pVal,
+            pType,
+            plFlavor
+        )
+
+        return res
+
 
 class IWbemContext(IUnknown):
     def Clone(self, ppNewCopy):
@@ -654,97 +938,6 @@ class IWbemContext(IUnknown):
         return res
     
 
-class IWbemClassObject(IUnknown):
-    def BeginEnumeration(self, lEnumFlags):
-        flags = ((_In_, 'lEnumFlags'))
-        BeginEnumeration = CALLBACK(HRESULT, LONG)
-        BeginEnumeration = BeginEnumeration(
-            IWbemClassObject_BeginEnumeration_Idx,
-            'lEnumFlags',
-            flags
-        )
-        res = lEnumFlags(self.this, lEnumFlags)
-        return res
-    
-
-    def BeginMethodEnumeration(self, lEnumFlags):
-        flags = ((_In_, 'lEnumFlags'))
-        BeginMethodEnumeration = CALLBACK(HRESULT, LONG)
-        BeginMethodEnumeration = BeginMethodEnumeration(
-            IWbemClassObject_BeginMethodEnumeration_Idx,
-            'BeginMethodEnumeration',
-            flags
-        )
-        res = BeginMethodEnumeration(self.this, lEnumFlags)
-        return res
-    
-
-    def Clone(self, ppCopy):
-        flags = ((_In_, 'ppCopy'))
-        Clone = CALLBACK(HRESULT, IWbemClassObject)
-        Clone = Clone(IWbemClassObject_Clone_Idx,
-                      'Clone',
-                      flags
-        )
-        res = Clone(self.this, ppCopy)
-        return res
-    
-
-    def CompareTo(self, lFlags, pCompareTo):
-        flags = ((_In_, 'lFlags'), 
-                 (_In_, 'pCompareTo')
-        )
-        CompareTo = CALLBACK(HRESULT, LONG, IWbemClassObject)
-        CompareTo = CompareTo(IWbemClassObject_CompareTo_Idx,
-                              'CompareTo',
-                              flags
-        )
-        res = CompareTo(self.this, lFlags, pCompareTo)
-        return res
-    
-    def Get(
-        self,
-        wszName,
-        lFlags,
-        pVal,
-        pType,
-        plFlavor
-    ):
-        
-        flags = (
-            (_In_, 'wszName'),
-            (_In_, 'lFlags'),
-            (_In_, 'pVal'),
-            (_In_, 'pType'),
-            (_In_, 'plFlavor')
-        )
-
-        Get = CALLBACK(
-            HRESULT,
-            LPCWSTR,
-            LONG,
-            POINTER(VARIANT),
-            CIMTYPE,
-            LONG
-        )
-
-        Get = Get(
-            IWbemClassObject_Get_Idx,
-            'Get',
-            flags
-        )
-
-        res = Get(
-            self.this,
-            wszName,
-            lFlags,
-            pVal,
-            pType,
-            plFlavor
-        )
-
-        return res
-
 
     # ......
 
@@ -868,31 +1061,21 @@ class IWbemLocator(IUnknown):
         ppNamespace
     ) -> int:
 
-        flags = ((_In_, 'strNetworkResource'),
-                 (_In_, 'strUser'),
-                 (_In_, 'strPassword'),
-                 (_In_, 'strLocale'),
-                 (_In_, 'lSecurityFlags'),
-                 (_In_, 'strAuthority'),
-                 (_In_, 'pCtx'),
-                 (_In_, 'ppNamespace')
-        )
+        flags = [
+            (_In_, 'strNetworkResource', BSTR, ),
+            (_In_, 'strUser', BSTR),
+            (_In_, 'strPassword', BSTR),
+            (_In_, 'strLocale', BSTR),
+            (_In_, 'lSecurityFlags', LONG),
+            (_In_, 'strAuthority', BSTR),
+            (_In_, 'pCtx', POINTER(IWbemContext)),
+            (_In_, 'ppNamespace', POINTER(IWbemServices))
+        ]
 
-        ConnectServer = CALLBACK(
-            HRESULT,
-            BSTR,
-            BSTR,
-            BSTR,
-            BSTR,
-            LONG,
-            BSTR,
-            POINTER(IWbemContext),
-            POINTER(IWbemServices)
-        )
-
-        ConnectServer = ConnectServer(
+        ConnectServer = COMFUNCTYPE(
             IWbemLocator_ConnectServer_Idx,
             'ConnectServer',
+            HRESULT,
             flags
         )
 

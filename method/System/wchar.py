@@ -81,3 +81,11 @@ def memcmp(buffer1, buffer2, count):
     memcmp.restype = c_int
     res = memcmp(buffer1, buffer2, count)
     return res
+
+
+def _wtoi(string: str) -> int:
+    _wtoi = msvcrt._wtoi
+    _wtoi.argtypes = [c_wchar_p]
+    _wtoi.restype = c_int
+    res = _wtoi(string)
+    return res

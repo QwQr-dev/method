@@ -1,14 +1,12 @@
 # coding = 'utf-8'
 
 import os
-from method.System.otherapi import *
+
+from method.System.commdlg import *
+from method.System.shlobj_core import *
 from method.System.winnt import ZeroMemory
 
-SupportTypes = (list[tuple[str, str]] | 
-                list[list[str, str]] | 
-                tuple[list[str, str]] | 
-                tuple[tuple[str, str]]
-)
+_SupportTypes = list[tuple[str, str]]
 
 askshellfolder_flags = (BIF_DONTGOBELOWDOMAIN | 
                         BIF_RETURNONLYFSDIRS | 
@@ -57,7 +55,7 @@ def askshellfolder(
     return strFolder.value
 
 
-def lpstrFilter(item: SupportTypes) -> str:
+def lpstrFilter(item: _SupportTypes) -> str:
     res = []
     for j in item:
         if len(j) != 2:

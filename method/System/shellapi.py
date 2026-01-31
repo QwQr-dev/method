@@ -888,6 +888,16 @@ def ShellExecute(
                     if unicode else shell32.ShellExecuteA
     )
 
+    ShellExecute.argtypes = [
+        HWND,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        INT
+    ]
+    
+    ShellExecute.restype = HINSTANCE
     res = ShellExecute(
         hwnd, 
         lpOperation, 
@@ -904,6 +914,9 @@ def ShellExecuteEx(pExecInfo: Any, unicode: bool = True, errcheck: bool = True):
     ShellExecuteEx = (shell32.ShellExecuteExW 
                       if unicode else shell32.ShellExecuteExA
     )
+    
+    ShellExecuteEx.argtypes = [POINTER(SHELLEXECUTEINFOW if unicode else SHELLEXECUTEINFOA)]
+    ShellExecuteEx.restype = WINBOOL
     res = ShellExecuteEx(pExecInfo)
     return win32_to_errcheck(res, errcheck)
 

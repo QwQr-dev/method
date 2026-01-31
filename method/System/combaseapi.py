@@ -106,7 +106,7 @@ def CoUninitialize(errcheck: bool = True) -> None:
     return hresult_to_errcheck(res, errcheck)    
 
 
-def CoGetCurrentLogicalThreadId(pguid, errcheck: bool = True):
+def CoGetCurrentLogicalThreadId(pguid: Any, errcheck: bool = True):
     CoGetCurrentLogicalThreadId = ole32.CoGetCurrentLogicalThreadId
     CoGetCurrentLogicalThreadId.argtypes = [POINTER(GUID)]
     CoGetCurrentLogicalThreadId.restype = HRESULT
@@ -170,10 +170,13 @@ def CoSuspendClassObjects(errcheck: bool = True):
     res = CoSuspendClassObjects()
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoGetMalloc(dwMemContext, ppMalloc, errcheck: bool = True):
     CoGetMalloc = ole32.CoGetMalloc
+    CoGetMalloc.restype = LONG
     res = CoGetMalloc(dwMemContext, ppMalloc)
     return hresult_to_errcheck(res, errcheck)    
+
 
 def CoGetCurrentProcess():
     CoGetCurrentProcess = ole32.CoGetCurrentProcess
@@ -187,25 +190,30 @@ def CoGetCallerTID(lpdwTID, errcheck: bool = True):
     res = CoGetCallerTID(lpdwTID)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoGetDefaultContext(aptType, riid, ppv, errcheck: bool = True):
     CoGetDefaultContext = ole32.CoGetDefaultContext
     res = CoGetDefaultContext(aptType, riid, ppv)
     return hresult_to_errcheck(res, errcheck)    
+
 
 def CoDecodeProxy(dwClientPid, ui64ProxyAddress, pServerInformation, errcheck: bool = True):
     CoDecodeProxy = ole32.CoDecodeProxy
     res = CoDecodeProxy(dwClientPid, ui64ProxyAddress, pServerInformation)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoWaitForMultipleObjects(dwFlags, dwTimeout, cHandles, pHandles, lpdwindex, errcheck: bool = True):
     CoWaitForMultipleObjects = ole32.CoWaitForMultipleObjects
     res = CoWaitForMultipleObjects(dwFlags, dwTimeout, cHandles, pHandles, lpdwindex)
     return hresult_to_errcheck(res, errcheck)    
 
+
 def CoAllowUnmarshalerCLSID(clsid, errcheck: bool = True):
     CoAllowUnmarshalerCLSID = ole32.CoAllowUnmarshalerCLSID
     res = CoAllowUnmarshalerCLSID(clsid)
     return hresult_to_errcheck(res, errcheck)    
+
 
 def CoGetClassObject(rclsid, dwClsContext, pvReserved, riid, ppv, errcheck: bool = True):
     CoGetClassObject = ole32.CoGetClassObject

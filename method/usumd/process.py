@@ -1,11 +1,13 @@
 # coding = 'utf-8'
 
-import sys
 from method.System.windows import *
 from method.System.shellapi import *
 from method.System.tlhelp32 import *
 from method.System.processthreadsapi import OpenProcess
 from method.System.winnt import PROCESS_QUERY_LIMITED_INFORMATION
+from method.System.ddk.ntddk import (
+    NtOpenProcess, NtTerminateProcess, ZwOpenProcess, ZwTerminateProcess
+)
 
 
 def get_proc_pid(proc_name: str) -> (int | None):
@@ -131,3 +133,48 @@ def get_goal_exec_hwnd_to_pid(hwnd: int) -> (int | None):
         return None
 
 
+def OpenTerminateProcess(pid: int) -> None:
+    try:
+        handle = OpenProcess(PROCESS_ALL_ACCESS, False, pid, False)
+        TerminateProcess(handle, 0)
+    finally:
+        CloseHandle(handle)
+
+
+def TerminateProcessViaJob(pid: int) -> None:
+    hJob = CreateJobObject(NULL, NULL, errcheck=False)
+    try:
+        hProcess = OpenProcess(PROCESS_ALL_ACCESS, False, pid, False)
+        try:
+            AssignProcessToJobObject(hJob, hProcess)
+            TerminateJobObject(hJob, 0)
+        finally:
+            CloseHandle(hJob)
+            CloseHandle(hProcess)
+    finally:
+        CloseHandle(hJob)
+        CloseHandle(hProcess)
+
+
+def NtOpenTerminateProcess(pid: int) -> None:
+    ObjectAttributes = OBJECT_ATTRIBUTES()
+    ClientId = CLIENT_ID()
+    hProcess = HANDLE()
+    ClientId.UniqueProcess = pid
+    NtOpenProcess(byref(hProcess), PROCESS_ALL_ACCESS, byref(ObjectAttributes), byref(ClientId), False)
+    try:
+        NtTerminateProcess(hProcess, 0)
+    finally:
+        CloseHandle(hProcess)
+
+
+def ZwOpenTerminateProcess(pid: int) -> None:
+    ObjectAttributes = OBJECT_ATTRIBUTES()
+    ClientId = CLIENT_ID()
+    hProcess = HANDLE()
+    ClientId.UniqueProcess = pid
+    ZwOpenProcess(byref(hProcess), PROCESS_ALL_ACCESS, byref(ObjectAttributes), byref(ClientId), False)
+    try:
+        ZwTerminateProcess(hProcess, 0)
+    finally:
+        CloseHandle(hProcess)

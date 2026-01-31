@@ -362,7 +362,7 @@ def ILCombine(pidl1: int, pidl2: int) -> int:
     return ILCombine(pidl1, pidl2)
 
 
-def ILFree(pidl: int) -> None:
+def ILFree(pidl: Any) -> None:
     ILFree = shell32.ILFree
     ILFree.argtypes = [VOID]
     ILFree.restype = VOID

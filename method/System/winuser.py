@@ -10,7 +10,6 @@ from method.System.errcheck import win32_to_errcheck, GetLastError
 
 QWORD = ULONGLONG
 _WIN32_WINNT = WIN32_WINNT
-
 _WIN32_WCE = 0
 
 #################################################
@@ -4232,8 +4231,18 @@ LPMSGBOXPARAMSW = PMSGBOXPARAMSW
 
 def EndTask(hwnd: int, fShutDown: bool, fForce: bool, errcheck: bool = True) -> None:
     EndTask = user32.EndTask
+    EndTask.argtypes = [HWND, BOOL, BOOL]
+    EndTask.restype = BOOL
     res = EndTask(hwnd, fShutDown, fForce)
     return win32_to_errcheck(res, errcheck)
+
+
+def SetForegroundWindow(hwnd: int) -> int:
+    SetForegroundWindow = user32.SetForegroundWindow
+    SetForegroundWindow.argtypes = [HWND]
+    SetForegroundWindow.restype = BOOL 
+    res = SetForegroundWindow(hwnd)
+    return res
 
 
 def GetForegroundWindow() -> int:
@@ -4298,11 +4307,13 @@ def IsWindowVisible(hwnd: int) -> bool:
 
 def IsUserAnAdmin() -> bool:
     IsUserAnAdmin = shell32.IsUserAnAdmin
+    IsUserAnAdmin.restype = BOOL
     return bool(IsUserAnAdmin())
 
 
 def ShowWindow(hwnd: int, nCmdShow: int) -> bool:
     ShowWindow = user32.ShowWindow
+    ShowWindow.restype = BOOL
     return bool(ShowWindow(hwnd, nCmdShow))
 
 
@@ -4316,6 +4327,14 @@ def MessageBox(
 ) -> int:
     
     MessageBox = user32.MessageBoxW if unicode else user32.MessageBoxA
+    MessageBox.argtypes = [
+        HWND,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        UINT
+    ]
+
+    MessageBox.restype = INT
     res = MessageBox(hwnd, lpText, lpCaption, uType)
     return win32_to_errcheck(res, errcheck)
 
@@ -4331,12 +4350,23 @@ def MessageBoxEx(
 ) -> int:
     
     MessageBoxEx = user32.MessageBoxExW if unicode else user32.MessageBoxExA
+    MessageBoxEx.argtypes = [
+        HWND,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        UINT,
+        WORD
+    ]
+
+    MessageBoxEx.restype = INT
     res = MessageBoxEx(hwnd, lpText, lpCaption, uType, wLanguageId)
     return win32_to_errcheck(res, errcheck)    
 
 
 def MessageBeep(uType: int, errcheck: bool = True) -> None:
     MessageBeep = user32.MessageBeep
+    MessageBeep.argtypes = [UINT]
+    MessageBeep.restype = INT
     res = MessageBeep(uType)
     return win32_to_errcheck(res, errcheck)
 
@@ -4346,6 +4376,8 @@ def MessageBoxIndirect(lpmbp, unicode: bool = True, errcheck: bool = True) -> in
                           if unicode else user32.MessageBoxIndirectA
     )
 
+    MessageBoxIndirect.argtypes = [POINTER(MSGBOXPARAMSW if unicode else MSGBOXPARAMSA)]
+    MessageBoxIndirect.restype = INT
     res = MessageBoxIndirect(lpmbp) 
     return win32_to_errcheck(res, errcheck)
 
@@ -4762,4 +4794,58 @@ def FindWindowEx(
     
     FindWindowEx = user32.FindWindowExW if unicode else user32.FindWindowExA
     res = FindWindowEx(hWndParent, hWndChildAfter, lpszClass, lpszWindow)
+    return win32_to_errcheck(res, errcheck)
+
+
+def UpdateWindow(hwnd: int) -> bool:
+    UpdateWindow = user32.UpdateWindow
+    UpdateWindow.argtypes = [HWND]
+    UpdateWindow.restype = BOOL 
+    res = UpdateWindow(hwnd)
+    return res
+    
+
+def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True, errcheck: bool = True) -> int:
+    GetWindowLongPtr = (user32.GetWindowLongPtrW 
+                        if unicode else user32.GetWindowLongPtrA
+    )
+
+    GetWindowLongPtr.argtypes = [HWND, INT]
+    GetWindowLongPtr.restype = LONG_PTR
+    res = GetWindowLongPtr(hwnd, nIndex)
+    return win32_to_errcheck(res, errcheck)
+
+
+def CheckDlgButton(hDlg, nIDButton, uCheck, errcheck: bool = True):
+    CheckDlgButton = user32.CheckDlgButton
+    res = CheckDlgButton(hDlg, nIDButton, uCheck)
+    return win32_to_errcheck(res, errcheck)    
+
+
+class DLGITEMTEMPLATE(ctypes.Structure):
+    _fields_ = [('style', DWORD),
+                ('dwExtendedStyle', DWORD),
+                ('x', SHORT),
+                ('y', SHORT),
+                ('cx', SHORT),
+                ('cy', SHORT),
+                ('id', WORD)
+    ]
+
+class DLGTEMPLATE(ctypes.Structure):
+    _fields_ = [('style', DWORD),
+                ('dwExtendedStyle', DWORD),
+                ('cdit', WORD),
+                ('x', SHORT),
+                ('y', SHORT),
+                ('cx', SHORT),
+                ('cy', SHORT)
+    ]
+
+
+def BringWindowToTop(hwnd: int, errcheck: bool = True) -> None:
+    BringWindowToTop = user32.BringWindowToTop
+    BringWindowToTop.argtypes = [HWND]
+    BringWindowToTop.restype = BOOL 
+    res = BringWindowToTop(hwnd)
     return win32_to_errcheck(res, errcheck)

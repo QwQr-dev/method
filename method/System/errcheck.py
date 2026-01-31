@@ -39,12 +39,6 @@ def RtlNtStatusToDosError(Status: int) -> int:
     return RtlNtStatusToDosError(Status)
 
 
-def CommDlgExtendedError() -> int:
-    CommDlgExtendedError = comdlg32.CommDlgExtendedError
-    CommDlgExtendedError.restype = DWORD
-    return CommDlgExtendedError()
-
-
 FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100
 
 FORMAT_MESSAGE_IGNORE_INSERTS  = 0x00000200
@@ -57,7 +51,7 @@ FORMAT_MESSAGE_MAX_WIDTH_MASK  = 0x000000FF
 
 def FormatMessage(
     dwFlags: int, 
-    lpSource, 
+    lpSource: Any, 
     dwMessageId: int, 
     dwLanguageId: int, 
     lpBuffer, 
@@ -86,7 +80,7 @@ def FormatMessage(
 
 def strerror(errnum: int) -> bytes:
     strerror = msvcrt.strerror
-    strerror.argtypes = [INT]
+    strerror.argtypes = [c_int]
     strerror.restype = c_char_p
     res = strerror(errnum)
     return res
@@ -128,38 +122,36 @@ def nullstr_to_zero(value) -> (int | Any):
     return value
 
 
-def hresult_to_errcheck(code: int, errcheck: bool = True) -> (int | None):
+def hresult_to_errcheck(code: int, errcheck: bool = True) -> int:
     if FAILED(code) and errcheck:
         raise WinError(code)
-    else:
-        return code
+    return code
     
 
-def ntstatus_to_errcheck(code: int, errcheck: bool = True) -> (int | None):
+def ntstatus_to_errcheck(code: int, errcheck: bool = True) -> int:
     if NT_ERROR(code) and errcheck:
         raise WinError(RtlNtStatusToDosError(code))
-    else:
-        return code
+    return code
     
 
-def win32_to_errcheck(code: int, errcheck: bool = True) -> (int | None):
+def win32_to_errcheck(code: int, errcheck: bool = True) -> int:
     error_code = GetLastError()
     if error_code != 0 and errcheck:
         raise WinError(error_code)
-    else:
-        return code
+    return code
     
 
-def errno_to_errcheck(code: int, errcheck: bool = True) -> (int | None):
+def errno_to_errcheck(code: int, errcheck: bool = True) -> int:
     if code and errcheck:
         raise OSError(strerror(code).decode(sys.getdefaultencoding()))
-    else:
-        return code
+    return code
     
 
-def winreg_to_errcheck(code: int, errcheck: bool = True) -> (int | None):
+def winreg_to_errcheck(code: int, errcheck: bool = True) -> int:
     if code and errcheck:
         raise WinError(code)
-    else:
-        return code
+    return code
     
+
+def com_to_errcheck(code: int, errcheck: bool = True) -> int:
+    return hresult_to_errcheck(code, errcheck)

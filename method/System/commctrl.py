@@ -17,8 +17,8 @@ SNDMSG = SendMessage
 
 def InitCommonControls():
     InitCommonControls = comctl32.InitCommonControls
+    InitCommonControls.argtypes = [VOID]
     InitCommonControls()
-
 
 
 class tagINITCOMMONCONTROLSEX(Structure):
@@ -50,6 +50,8 @@ ICC_LINK_CLASS = 0x8000
 
 def InitCommonControlsEx(picce, errcheck: bool = True):
     InitCommonControlsEx = comctl32.InitCommonControlsEx
+    InitCommonControlsEx.argtypes = [POINTER(INITCOMMONCONTROLSEX)]
+    InitCommonControlsEx.restype = WINBOOL
     res = InitCommonControlsEx(picce)
     return win32_to_errcheck(res, errcheck)
         
@@ -4468,6 +4470,16 @@ def TaskDialog(
 ) -> None:
     
     TaskDialog = comctl32.TaskDialog
+    TaskDialog.argtypes = [
+        HWND,
+        HINSTANCE,
+        PCWSTR,
+        PCWSTR,
+        PCWSTR,
+        TASKDIALOG_COMMON_BUTTON_FLAGS,
+        PCWSTR,
+        PINT
+    ]
     res = TaskDialog(
         hwndOwner,
         hInstance,
@@ -4481,6 +4493,7 @@ def TaskDialog(
 
     return hresult_to_errcheck(res, errcheck)    
 
+
 def TaskDialogIndirect(
     pTaskConfig: Any,
     pnButton: Any, 
@@ -4490,6 +4503,14 @@ def TaskDialogIndirect(
 ) -> None:
 
     TaskDialogIndirect = comctl32.TaskDialogIndirect
+    TaskDialogIndirect.argtypes = [
+        POINTER(TASKDIALOGCONFIG), 
+        POINTER(INT),
+        POINTER(INT),
+        POINTER(WINBOOL)
+    ]
+    
+    TaskDialogIndirect.restype = HRESULT
     res = TaskDialogIndirect(
         pTaskConfig,
         pnButton,

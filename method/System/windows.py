@@ -12,3 +12,5 @@ from method.System.winreg import *
 from method.System.wchar import *
 from method.System.wchar_s import *
 from method.System.winusutypes import *
+
+from method.System.winbase import *

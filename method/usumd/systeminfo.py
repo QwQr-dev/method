@@ -9,10 +9,10 @@ from method.System.sdkddkver import *
 from method.System.winusutypes import *
 from method.System.shellapi import CloseHandle
 from method.System.processthreadsapi import OpenProcessToken, GetCurrentProcess
-
-from method.System.otherapi import (
-    GetTokenInformation, IsValidSid, LookupAccountSid, GetSystemFirmwareTable,
-    LocalFree, ConvertSidToStringSid, RSMB, SMBIOS_HEADER
+from method.System.sysinfoapi import GetSystemFirmwareTable, RSMB, SMBIOS_HEADER
+from method.System.securitybaseapi import (
+    GetTokenInformation, IsValidSid, LookupAccountSid,
+    LocalFree, ConvertSidToStringSid
 )
 
 from method.System.winnt import (
@@ -30,9 +30,10 @@ def enum_reg_value(root: int, path: str) -> dict[str, Any]:
 
 
 class GetUserInfo:
-    def __init__(self):
+    def __init__(self, SystemName: str | None = None):
         token = HANDLE()
         return_length = DWORD()
+        self._SystemName = SystemName
         OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, byref(token))
         GetTokenInformation(token, TokenUser, 0, 0, byref(return_length), False)
         buffer = (CHAR * return_length.value)()
@@ -52,7 +53,7 @@ class GetUserInfo:
         sid_name_use = DWORD()
         user_sid = self.user_sid
         LookupAccountSid(
-            nullptr,  # 本地计算机
+            self._SystemName,
             PSID(user_sid),
             username_buffer,
             byref(username_size),
@@ -144,7 +145,7 @@ class GetSystemInfo:
         return f'{self.major}.{self.minor}'
     
     @property
-    def os_name(self) -> str:
+    def os_name(self) -> str:   # 该 os_name 不是返回 os.name 的值
         return platform.system()
     
     @property
@@ -172,7 +173,7 @@ class GetSystemInfo:
         smbiosSize = GetSystemFirmwareTable(RSMB, NULL, NULL, NULL, errcheck=False)
         pSmbios = (UBYTE * smbiosSize)()
 
-        if GetSystemFirmwareTable(RSMB, NULL, smbiosSize, pSmbios) != smbiosSize:
+        if GetSystemFirmwareTable(RSMB, NULL, smbiosSize, pSmbios, errcheck=False) != smbiosSize:
             return None
         
         smbios_data = bytes(pSmbios)

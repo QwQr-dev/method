@@ -13,6 +13,8 @@ MAX_MODULE_NAME32 = 255
 
 def CreateToolhelp32Snapshot(dwFlags: int, th32ProcessID: int, errcheck: bool = True) -> int:
     CreateToolhelp32Snapshot = kernel32.CreateToolhelp32Snapshot
+    CreateToolhelp32Snapshot.argtypes = [DWORD, DWORD]
+    CreateToolhelp32Snapshot.restype = HANDLE
     res = CreateToolhelp32Snapshot(dwFlags, th32ProcessID)
     return win32_to_errcheck(res, errcheck)
 
@@ -47,14 +49,18 @@ HF32_DEFAULT = 1
 HF32_SHARED = 2
 
 
-def Heap32ListFirst(hSnapshot, lphl, errcheck: bool = True):
+def Heap32ListFirst(hSnapshot: int, lphl: Any, errcheck: bool = True):
     Heap32ListFirst = kernel32.Heap32ListFirst
+    Heap32ListFirst.argtypes = [HANDLE, LPHEAPLIST32]
+    Heap32ListFirst.restype = WINBOOL
     res = Heap32ListFirst(hSnapshot, lphl)
     return win32_to_errcheck(res, errcheck)
 
 
-def Heap32ListNext(hSnapshot, lphl, errcheck: bool = True):
+def Heap32ListNext(hSnapshot: int, lphl: Any, errcheck: bool = True):
     Heap32ListNext = kernel32.Heap32ListNext
+    Heap32ListNext.argtypes = [HANDLE, LPHEAPLIST32]
+    Heap32ListNext.restype = WINBOOL
     res = Heap32ListNext(hSnapshot, lphl)
     return win32_to_errcheck(res, errcheck)
 
@@ -80,28 +86,41 @@ LF32_FREE = 0x00000002
 LF32_MOVEABLE = 0x00000004
 
 
-def Heap32First(lphe, th32ProcessID, th32HeapID, errcheck: bool = True):
+def Heap32First(lphe: Any, th32ProcessID: int, th32HeapID: int, errcheck: bool = True):
     Heap32First = kernel32.Heap32First
+    Heap32First.argtypes = [LPHEAPENTRY32, DWORD, ULONG_PTR]
+    Heap32First.restype = WINBOOL
     res = Heap32First(lphe, th32ProcessID, th32HeapID)
     return win32_to_errcheck(res, errcheck)
 
 
-def Heap32Next(lphe, errcheck: bool = True):
+def Heap32Next(lphe: Any, errcheck: bool = True):
     Heap32Next = kernel32.Heap32Next
+    Heap32Next.argtypes = [LPHEAPENTRY32]
+    Heap32Next.restype = WINBOOL
     res = Heap32Next(lphe)
     return win32_to_errcheck(res, errcheck)
 
 
 def Toolhelp32ReadProcessMemory(
-    th32ProcessID, 
-    lpBaseAddress, 
-    lpBuffer, 
-    cbRead, 
-    lpNumberOfBytesRead,
+    th32ProcessID: int, 
+    lpBaseAddress: Any, 
+    lpBuffer: int, 
+    cbRead: int, 
+    lpNumberOfBytesRead: Any,
     errcheck: bool = True
 ):
     
     Toolhelp32ReadProcessMemory = kernel32.Toolhelp32ReadProcessMemory
+    Toolhelp32ReadProcessMemory.argtypes = [
+        DWORD,
+        LPCVOID,
+        LPVOID,
+        SIZE_T,
+        PSIZE_T
+    ]
+
+    Toolhelp32ReadProcessMemory.restype = WINBOOL
     res = Toolhelp32ReadProcessMemory(
         th32ProcessID, 
         lpBaseAddress, 
@@ -158,6 +177,12 @@ def Process32First(hSnapshot: int, lppe: Any, unicode: bool = True, errcheck: bo
                       if unicode else kernel32.Process32First
     )
 
+    Process32First.argtypes = [
+        HANDLE, 
+        POINTER(PROCESSENTRY32W if unicode else tagPROCESSENTRY32)
+    ]
+    
+    Process32First.restype = WINBOOL
     res = Process32First(hSnapshot, lppe)
     return win32_to_errcheck(res, errcheck)
 
@@ -167,6 +192,12 @@ def Process32Next(hSnapshot: int, lppe: Any, unicode: bool = True, errcheck: boo
                       if unicode else kernel32.Process32Next
     )
 
+    Process32Next.argtypes = [
+        HANDLE, 
+        POINTER(PROCESSENTRY32W if unicode else tagPROCESSENTRY32)       
+    ]
+    
+    Process32Next.restype = WINBOOL
     res = Process32Next(hSnapshot, lppe)
     return win32_to_errcheck(res, errcheck)
 
@@ -186,14 +217,20 @@ PTHREADENTRY32 = POINTER(THREADENTRY32)
 LPTHREADENTRY32 = PTHREADENTRY32
 
 
-def Thread32First(hSnapshot, lpte, errcheck: bool = True):
+def Thread32First(hSnapshot: int, lpte: Any, errcheck: bool = True):
     Thread32First = kernel32.Thread32First
     res = Thread32First(hSnapshot, lpte)
     return win32_to_errcheck(res, errcheck)
 
 
-def Thread32Next(hSnapshot, lpte, errcheck: bool = True):
+def Thread32Next(hSnapshot: int, lpte: Any, errcheck: bool = True):
     Thread32Next = kernel32.Thread32Next
+    Thread32Next.argtypes = [
+        HANDLE,
+        LPTHREADENTRY32
+    ]
+
+    Thread32Next.restype = WINBOOL
     res = Thread32Next(hSnapshot, lpte)
     return win32_to_errcheck(res, errcheck)
 
@@ -238,14 +275,26 @@ if UNICODE:
     LPMODULEENTRY32 = LPMODULEENTRY32W
 
 
-def Module32First(hSnapshot, lpme, unicode: bool = True, errcheck: bool = True):
+def Module32First(hSnapshot: int, lpme: Any, unicode: bool = True, errcheck: bool = True):
     Module32First = kernel32.Module32FirstW if unicode else kernel32.Module32First
+    Module32First.argtypes = [
+        HANDLE,
+        POINTER(MODULEENTRY32W if unicode else tagMODULEENTRY32)
+    ]
+
+    Module32First.restype = WINBOOL
     res = Module32First(hSnapshot, lpme)
     return win32_to_errcheck(res, errcheck)
 
 
-def Module32Next(hSnapshot, lpme, unicode: bool = True, errcheck: bool = True):
+def Module32Next(hSnapshot: int, lpme: Any, unicode: bool = True, errcheck: bool = True):
     Module32Next = kernel32.Module32NextW if unicode else kernel32.Module32Next
+    Module32Next.argtypes = [
+        HANDLE,
+        POINTER(MODULEENTRY32W if unicode else tagMODULEENTRY32)      
+    ]
+
+    Module32Next.restype = WINBOOL
     res = Module32Next(hSnapshot, lpme)
     return win32_to_errcheck(res, errcheck)
 

@@ -6,37 +6,29 @@ from method.System.shiobj import *
 from method.System.sdkddkver import *
 from method.System.winusutypes import *
 from method.System.knownfolders import *
-
-from method.System.otherapi import (
+from method.System.sysinfoapi import (
     GetSystemDirectory, GetSystemWow64Directory, GetWindowsDirectory
 )
 
 def _SYSTEM32() -> str:
-    path = (TCHAR * MAX_PATH)()
-    GetSystemDirectory(path, MAX_PATH, UNICODE)
-    if UNICODE:
-        return path.value
-    return path.value.decode(sys.getdefaultencoding())
+    path = (WCHAR * MAX_PATH)()
+    GetSystemDirectory(path, MAX_PATH)
+    return path.value
 
 
 def _SYSWOW64() -> (str | None):
-    wow64_path = (TCHAR * MAX_PATH)()
+    wow64_path = (WCHAR * MAX_PATH)()
     try:
-        GetSystemWow64Directory(wow64_path, MAX_PATH, UNICODE)
+        GetSystemWow64Directory(wow64_path, MAX_PATH)
     except:
         return None
-    
-    if UNICODE:
-        return wow64_path.value
-    return wow64_path.value.decode(sys.getdefaultencoding())
+    return wow64_path.value
 
 
 def _WINDOWS() -> str:
-    path = (TCHAR * MAX_PATH)()
+    path = (WCHAR * MAX_PATH)()
     GetWindowsDirectory(path, MAX_PATH, UNICODE)
-    if UNICODE:
-        return path.value
-    return path.value.decode(sys.getdefaultencoding())
+    return path.value
 
 
 WINDOWS: str = _WINDOWS()

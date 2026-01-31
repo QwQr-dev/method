@@ -2,10 +2,12 @@
 
 import os, sys
 import subprocess
-from method.System.shellapi import *
-from method.System.otherapi import *
+from method.System import shellapi
 from method.System.winusutypes import *
 from method.System.winuser import IsUserAnAdmin
+from method.System.processenv import GetCommandLine
+from method.System.winbase import GetCurrentDirectory
+from method.System.securitybaseapi import GetTokenInformation
 from method.System.combaseapi import CoInitialize, CoUninitialize
 from method.System.winnt import TokenUIAccess, TOKEN_QUERY, PROCESS_QUERY_INFORMATION
 from method.System.shiobj import ILCreateFromPath, ILFree, SHOpenFolderAndSelectItems
@@ -39,17 +41,17 @@ def open_file_location(path: str) -> None:
     if not os.path.exists(path):
         raise FileNotFoundError(f'No such file or directory: {path}')
     
-    ShellExecute(
+    shellapi.ShellExecute(
         lpFile='explorer.exe', 
         lpParameters=f'/select, {path}',
         hwnd=None,
         lpDirectory=None,
         lpOperation=None,
-        nShowCmd=SW_NORMAL
+        nShowCmd=shellapi.SW_NORMAL
     )
 
 
-def open_file_location2(path: str, dwFlags: int = NULL) -> None:
+def open_file_location2(path: str, dwFlags: int = 0) -> None:
     """通过文件路径在文件资源管理器中打开文件所在位置并选中文件"""
     
     if path.startswith('.') or path.startswith('..'):
@@ -61,7 +63,7 @@ def open_file_location2(path: str, dwFlags: int = NULL) -> None:
     
     pidl = ILCreateFromPath(path)
     CoInitialize()
-    SHOpenFolderAndSelectItems(pidl, NULL, NULL, dwFlags=dwFlags)
+    SHOpenFolderAndSelectItems(pidl, 0, NULL, dwFlags=dwFlags)
     CoUninitialize()
     ILFree(pidl)
 
@@ -69,13 +71,13 @@ def open_file_location2(path: str, dwFlags: int = NULL) -> None:
 def IsUIAccess() -> bool:
     '''检查已运行的程序是否具有 UIAccess 权限'''
     Token = HANDLE()
-    Handle = OpenProcess(
+    Handle = shellapi.OpenProcess(
         PROCESS_QUERY_INFORMATION, 
         FALSE, 
-        GetCurrentProcessId()
+        shellapi.GetCurrentProcessId()
     )
 
-    OpenProcessToken(Handle, TOKEN_QUERY, byref(Token))
+    shellapi.OpenProcessToken(Handle, TOKEN_QUERY, byref(Token))
     UIAccess = DWORD()
     Return_Length = DWORD()
     GetTokenInformation(
@@ -86,18 +88,18 @@ def IsUIAccess() -> bool:
         byref(Return_Length)
     )
 
-    CloseHandle(Token)
+    shellapi.CloseHandle(Token)
     return bool(UIAccess.value)
 
 
 def RunAsAdmin(
     hwnd: int = NULL, 
-    fMask: int = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NO_CONSOLE, 
+    fMask: int = shellapi.SEE_MASK_NOCLOSEPROCESS | shellapi.SEE_MASK_NO_CONSOLE, 
     lpVerb: str | bytes = 'runas', 
     lpFile: str | bytes = sys.executable, 
     lpDirectory: str | bytes = '',
     lpParameters: str | bytes = os.path.normpath(subprocess.list2cmdline(sys.argv)), 
-    nShow: int = SW_NORMAL,
+    nShow: int = shellapi.SW_NORMAL,
     unicode: bool = True
 ) -> None:
     
@@ -116,7 +118,7 @@ def RunAsAdmin(
     if IsUserAnAdmin():
         return
     
-    mbr = (SHELLEXECUTEINFOW if unicode else SHELLEXECUTEINFOA)()
+    mbr = (shellapi.SHELLEXECUTEINFOW if unicode else shellapi.SHELLEXECUTEINFOA)()
     mbr.cbSize = sizeof(mbr)
     mbr.fMask = fMask
     mbr.hwnd = hwnd
@@ -126,7 +128,7 @@ def RunAsAdmin(
     mbr.lpDirectory = lpDirectory
     mbr.nShow = nShow
     try:
-        ShellExecuteEx(byref(mbr), unicode)
+        shellapi.ShellExecuteEx(byref(mbr), unicode)
     except:
         pass
     sys.exit(0)
@@ -138,7 +140,7 @@ def RunAsAdmin2(
     lpFile: str | bytes = sys.executable, 
     lpParameters: str | bytes = f'{os.path.abspath(sys.argv[0])} --admin',
     lpDirectory: str | bytes = '',
-    nShowCmd: int = SW_NORMAL,
+    nShowCmd: int = shellapi.SW_NORMAL,
     unicode: bool = True
 ) -> None:
     
@@ -159,7 +161,7 @@ def RunAsAdmin2(
     
     if ('--admin' if unicode else b'--admin') not in GetCommandLine(unicode):
         try:
-            ShellExecute(
+            shellapi.ShellExecute(
                 lpOperation=lpOperation,
                 lpFile=lpFile,
                 lpParameters=lpParameters,
