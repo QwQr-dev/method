@@ -12,7 +12,7 @@ from method.System import (
 )
 
 from method.System import (
-    ddk
+    ddk, debugapi
 )
 
 from method.System import (
@@ -40,7 +40,7 @@ from method.System import (
 )
 
 from method.System import (
-    memoryapi
+    memoryapi, minwinbase
 )
 
 from method.System import (

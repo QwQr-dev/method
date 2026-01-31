@@ -4,7 +4,7 @@ import os
 
 from method.System.commdlg import *
 from method.System.shlobj_core import *
-from method.System.winnt import ZeroMemory
+from method.System.winbase import ZeroMemory
 
 _SupportTypes = list[tuple[str, str]]
 

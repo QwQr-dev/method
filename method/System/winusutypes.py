@@ -3,6 +3,7 @@
 
 import sys
 import ctypes
+from typing import Any, NoReturn
 from ctypes import (
     wintypes, WINFUNCTYPE, CFUNCTYPE, Union, 
     Structure, byref, pointer, POINTER, WinError,

@@ -39,45 +39,6 @@ def RtlNtStatusToDosError(Status: int) -> int:
     return RtlNtStatusToDosError(Status)
 
 
-FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100
-
-FORMAT_MESSAGE_IGNORE_INSERTS  = 0x00000200
-FORMAT_MESSAGE_FROM_STRING     = 0x00000400
-FORMAT_MESSAGE_FROM_HMODULE    = 0x00000800
-FORMAT_MESSAGE_FROM_SYSTEM     = 0x00001000
-FORMAT_MESSAGE_ARGUMENT_ARRAY  = 0x00002000
-FORMAT_MESSAGE_MAX_WIDTH_MASK  = 0x000000FF
-
-
-def FormatMessage(
-    dwFlags: int, 
-    lpSource: Any, 
-    dwMessageId: int, 
-    dwLanguageId: int, 
-    lpBuffer, 
-    nSize: int, 
-    Arguments, 
-    unicode: bool = True,
-    errcheck: bool = True
-) -> int:
-    
-    FormatMessage = (kernel32.FormatMessageW 
-                     if unicode else kernel32.FormatMessageA
-    )
-
-    res = FormatMessage(
-        dwFlags, 
-        lpSource, 
-        dwMessageId, 
-        dwLanguageId, 
-        lpBuffer, 
-        nSize, 
-        Arguments
-    )
-
-    return win32_to_errcheck(res, errcheck)
-
-
 def strerror(errnum: int) -> bytes:
     strerror = msvcrt.strerror
     strerror.argtypes = [c_int]

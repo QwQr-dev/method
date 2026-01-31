@@ -6,10 +6,10 @@ import platform
 from typing import Any
 from method.System.sdkddkver import *
 from method.System.winusutypes import *
-from method.System.win32typing import CDataType
 from method.System.guiddef import GUID, DEFINE_GUID
 from method.System.errcheck import win32_to_errcheck
-from method.System.public_dll import ole32, kernel32, ntdll
+from method.System.public_dll import kernel32, ntdll
+from method.System.win32typing import CDataType as _CDataType
 from method.System.wchar import memcpy, memcmp, memset, memmove
 
 S_OK = 0    
@@ -44,7 +44,7 @@ def offsetof(Type: Structure | Union, Field: str) -> int:       # from stddef.h
 ##############################################################
 # winnt.h
 
-def TYPE_ALIGNMENT(t: CDataType) -> int:
+def TYPE_ALIGNMENT(t: _CDataType) -> int:
     class _ChTeTemp(Structure):
         _fields_ = [('x', CHAR),
                     ('test', t)
@@ -52,7 +52,7 @@ def TYPE_ALIGNMENT(t: CDataType) -> int:
     return offsetof(_ChTeTemp, 'test')
 
 
-def PROBE_ALIGNMENT(_s: CDataType) -> int:
+def PROBE_ALIGNMENT(_s: _CDataType) -> int:
     if platform.machine().lower() in ['amd64', 'i386']:
         return TYPE_ALIGNMENT(DWORD)
     elif platform.machine().lower() in ['ia64', 'aarch64', 'arm']:
@@ -504,29 +504,29 @@ MAXWORD = 0xffff
 MAXDWORD = 0xffffffff
 
 
-def FIELD_OFFSET(Type: CDataType, Field: str) -> int:
+def FIELD_OFFSET(Type: _CDataType, Field: str) -> int:
     return LONG(offsetof(Type, Field)).value
 
 
-def RTL_FIELD_SIZE(_type: CDataType, field: str) -> int:
+def RTL_FIELD_SIZE(_type: _CDataType, field: str) -> int:
     for name, field_type in type._fields_:
         if field == name:
             return sizeof(field_type)
     raise AttributeError(f"type object '{_type}' has no attribute '{field}'")
 
 
-def RTL_SIZEOF_THROUGH_FIELD(type: CDataType, field: str) -> int:
+def RTL_SIZEOF_THROUGH_FIELD(type: _CDataType, field: str) -> int:
     return FIELD_OFFSET(type, field) + RTL_FIELD_SIZE(type, field)
 
 
-def RTL_CONTAINS_FIELD(Struct: CDataType, Size: int, Field: str) -> bool:
+def RTL_CONTAINS_FIELD(Struct: _CDataType, Size: int, Field: str) -> bool:
     for name, field_type in Struct._fields_:
         if Field == name:
             return (offsetof(Struct, Field) + sizeof(field_type)) <= Size
     raise AttributeError(f"type object '{Struct}' has no attribute '{Field}'")
 
 
-def RTL_PADDING_BETWEEN_FIELDS(T: CDataType, F1: str, F2: str) -> int:
+def RTL_PADDING_BETWEEN_FIELDS(T: _CDataType, F1: str, F2: str) -> int:
     return ((FIELD_OFFSET(T,F2) - FIELD_OFFSET(T,F1) - RTL_FIELD_SIZE(T,F1)) 
             if FIELD_OFFSET(T,F2) > FIELD_OFFSET(T,F1) else (FIELD_OFFSET(T,F1) - FIELD_OFFSET(T,F2) - RTL_FIELD_SIZE(T,F2))
     )
@@ -551,11 +551,11 @@ def _ARRAYSIZE(A: Array) -> int:
     return RTL_NUMBER_OF_V1(A)
 
 
-def RTL_FIELD_TYPE(type: CDataType, field: str) -> int:
+def RTL_FIELD_TYPE(type: _CDataType, field: str) -> int:
     return offsetof(type, field)
 
 
-def RTL_NUMBER_OF_FIELD(type: CDataType, field: str) -> int:
+def RTL_NUMBER_OF_FIELD(type: _CDataType, field: str) -> int:
     return RTL_NUMBER_OF(RTL_FIELD_TYPE(type, field))
 
 
@@ -579,11 +579,11 @@ def RTL_BITS_OF(sizeOfArg):
     return sizeof(sizeOfArg) * 8
 
 
-def RTL_BITS_OF_FIELD(type: CDataType, field: str) -> int:
+def RTL_BITS_OF_FIELD(type: _CDataType, field: str) -> int:
     return RTL_BITS_OF(RTL_FIELD_TYPE(type, field))
 
 
-def CONTAINING_RECORD(address: int, type: CDataType, field: str) -> None:
+def CONTAINING_RECORD(address: int, type: _CDataType, field: str) -> None:
     setattr(type, field, (PCHAR(address).value - ULONG_PTR(offsetof(type, field)).value))
 
 
@@ -8973,6 +8973,16 @@ def RtlInstallFunctionTableCallback(
 ):
     
     RtlInstallFunctionTableCallback = kernel32.RtlInstallFunctionTableCallback
+    RtlInstallFunctionTableCallback.argtypes = [
+        DWORD64,
+        DWORD64,
+        DWORD,
+        PGET_RUNTIME_FUNCTION_CALLBACK,
+        PVOID,
+        PCWSTR
+    ]
+
+    RtlInstallFunctionTableCallback.restype = BOOLEAN
     res = RtlInstallFunctionTableCallback(
         TableIdentifier, 
         BaseAddress, 
@@ -8987,15 +8997,25 @@ def RtlInstallFunctionTableCallback(
 
 def RtlRestoreContext(ContextRecord, ExceptionRecord):
     RtlRestoreContext = kernel32.RtlRestoreContext
+    RtlRestoreContext.argtypes = [PCONTEXT, _EXCEPTION_RECORD]
     RtlRestoreContext(ContextRecord, ExceptionRecord)
 
 
-def RtlUnwind(TargetFrame, 
-              TargetIp, 
-              ExceptionRecord, 
-              ReturnValue):
+def RtlUnwind(
+    TargetFrame, 
+    TargetIp, 
+    ExceptionRecord, 
+    ReturnValue
+):
     
     RtlUnwind = kernel32.RtlUnwind
+    RtlUnwind.argtypes = [
+        PVOID,
+        PVOID,
+        PEXCEPTION_RECORD,
+        PVOID
+    ]
+
     RtlUnwind(TargetFrame, 
             TargetIp, 
             ExceptionRecord, 
@@ -9005,6 +9025,8 @@ def RtlUnwind(TargetFrame,
 
 def RtlPcToFileHeader(PcValue, BaseOfImage):
     RtlPcToFileHeader = kernel32.RtlPcToFileHeader
+    RtlPcToFileHeader.argtypes = [PVOID, POINTER(PVOID)]
+    RtlPcToFileHeader.restype = PVOID
     return RtlPcToFileHeader(PcValue, BaseOfImage)
 
 
@@ -9013,44 +9035,78 @@ def RtlPcToFileHeader(PcValue, BaseOfImage):
 
 def RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable):
     RtlLookupFunctionEntry = kernel32.RtlLookupFunctionEntry
+    RtlLookupFunctionEntry.argtypes = [
+        PDWORD64,
+        PDWORD64,
+        PUNWIND_HISTORY_TABLE
+    ]
+
+    RtlLookupFunctionEntry.restype = PRUNTIME_FUNCTION
     return RtlLookupFunctionEntry(ControlPc, ImageBase, HistoryTable)
 
 
-def RtlUnwindEx(TargetFrame, 
-                TargetIp, 
-                ExceptionRecord, 
-                ReturnValue, 
-                ContextRecord, 
-                HistoryTable):
+def RtlUnwindEx(
+    TargetFrame, 
+    TargetIp, 
+    ExceptionRecord, 
+    ReturnValue, 
+    ContextRecord, 
+    HistoryTable
+):
     
     RtlUnwindEx = kernel32.RtlUnwindEx
-    RtlUnwindEx(TargetFrame, 
-                TargetIp, 
-                ExceptionRecord, 
-                ReturnValue, 
-                ContextRecord, 
-                HistoryTable
+    RtlUnwindEx.argtypes = [
+        PVOID,
+        PVOID,
+        PEXCEPTION_RECORD,
+        PVOID,
+        PCONTEXT,
+        PUNWIND_HISTORY_TABLE
+    ]
+
+
+    RtlUnwindEx(
+        TargetFrame, 
+        TargetIp, 
+        ExceptionRecord, 
+        ReturnValue, 
+        ContextRecord, 
+        HistoryTable
     )
 
 
-def RtlVirtualUnwind(HandlerType, 
-                     ImageBase, 
-                     ControlPc, 
-                     FunctionEntry, 
-                     ContextRecord,
-                     HandlerData,
-                     EstablisherFrame,
-                     ContextPointers):
+def RtlVirtualUnwind(
+    HandlerType, 
+    ImageBase, 
+    ControlPc, 
+    FunctionEntry, 
+    ContextRecord,
+    HandlerData,
+    EstablisherFrame,
+    ContextPointers
+):
     
     RtlVirtualUnwind = kernel32.RtlVirtualUnwind
-    RtlVirtualUnwind(HandlerType, 
-                    ImageBase, 
-                    ControlPc, 
-                    FunctionEntry, 
-                    ContextRecord,
-                    HandlerData,
-                    EstablisherFrame,
-                    ContextPointers
+    RtlVirtualUnwind.argtypes = [
+        DWORD,
+        DWORD64,
+        DWORD64,
+        PRUNTIME_FUNCTION,
+        PCONTEXT,
+        PVOID,
+        PDWORD64,
+        PKNONVOLATILE_CONTEXT_POINTERS
+    ]
+
+    RtlVirtualUnwind(
+        HandlerType, 
+        ImageBase, 
+        ControlPc, 
+        FunctionEntry, 
+        ContextRecord,
+        HandlerData,
+        EstablisherFrame,
+        ContextPointers
     )
 
 
@@ -9101,36 +9157,59 @@ PSLIST_HEADER = POINTER(SLIST_HEADER)
 
 def RtlInitializeSListHead(ListHead: Any) -> None:
     RtlInitializeSListHead = ntdll.RtlInitializeSListHead
+    RtlInitializeSListHead.argtypes = [PSLIST_HEADER]
     RtlInitializeSListHead(ListHead)
 
 
 def RtlFirstEntrySList(ListHead: Any) -> int:
     RtlFirstEntrySList = ntdll.RtlFirstEntrySList
+    RtlFirstEntrySList.argtypes = [SLIST_HEADER]
+    RtlFirstEntrySList.restype = PSLIST_ENTRY
     return RtlFirstEntrySList(ListHead)
 
 
 def RtlInterlockedPopEntrySList(ListHead: Any) -> int:
     RtlInterlockedPopEntrySList = ntdll.RtlInterlockedPopEntrySList
+    RtlInterlockedPopEntrySList.argtypes = [SLIST_HEADER]
+    RtlInterlockedPopEntrySList.restype = PSLIST_ENTRY
     return RtlInterlockedPopEntrySList(ListHead)
 
 
 def RtlInterlockedPushEntrySList(ListHead: Any, ListEntry: Any) -> int:
     RtlInterlockedPushEntrySList = ntdll.RtlInterlockedPushEntrySList
+    RtlInterlockedPushEntrySList.argtypes = [
+        PSLIST_HEADER,
+        PSLIST_ENTRY
+    ]
+
+    RtlInterlockedPushEntrySList.restype = PSLIST_ENTRY
     return RtlInterlockedPushEntrySList(ListHead, ListEntry)
 
 
 def RtlInterlockedPushListSListEx(ListHead: Any, List: Any, ListEnd: Any, Count: int) -> int:
     RtlInterlockedPushListSListEx = ntdll.RtlInterlockedPushListSListEx
+    RtlInterlockedPushListSListEx.argtypes = [
+        PSLIST_HEADER,
+        PSLIST_ENTRY,
+        PSLIST_ENTRY,
+        DWORD
+    ]
+
+    RtlInterlockedPushListSListEx.restype = PSLIST_ENTRY
     return RtlInterlockedPushListSListEx(ListHead, List, ListEnd, Count)
 
 
 def RtlInterlockedFlushSList(ListHead: Any) -> int:
     RtlInterlockedFlushSList = ntdll.RtlInterlockedFlushSList
+    RtlInterlockedFlushSList.argtypes = [PSLIST_HEADER]
+    RtlInterlockedFlushSList.restype = PSLIST_ENTRY
     return RtlInterlockedFlushSList(ListHead)
 
 
 def RtlQueryDepthSList(ListHead: Any) -> int:
     RtlQueryDepthSList = ntdll.RtlQueryDepthSList
+    RtlQueryDepthSList.argtypes = [PSLIST_HEADER]
+    RtlQueryDepthSList.restype = WORD
     return RtlQueryDepthSList(ListHead)
 
 
@@ -9220,32 +9299,12 @@ COMPRESSION_ENGINE_STANDARD = 0x0000
 COMPRESSION_ENGINE_MAXIMUM = 0x0100
 COMPRESSION_ENGINE_HIBER = 0x0200
 
-def RtlEqualMemory(Destination, Source, Length):
-    return memcmp(Destination, Source, Length)
+def RtlEqualMemory(Destination, Source, Length): return memcmp(Destination, Source, Length)
+def RtlMoveMemory(Destination, Source, Length): return memmove(Destination, Source, Length)
+def RtlCopyMemory(Destination, Source, Length): return memcpy(Destination, Source, Length)
+def RtlFillMemory(Destination, Length, Fill): return memset(Destination, Fill, Length)
+def RtlZeroMemory(Destination, Length): memset(Destination, 0, Length)
 
-
-def RtlMoveMemory(Destination, Source, Length):
-    return memmove(Destination, Source, Length)
-
-
-def RtlCopyMemory(Destination, Source, Length):
-    return memcpy(Destination, Source, Length)
-
-
-def RtlFillMemory(Destination, Length, Fill):
-    return memset(Destination, Fill, Length)
-
-
-def RtlZeroMemory(Destination, Length):
-    try:
-        RtlZeroMemory = ntdll.RtlZeroMemory
-        RtlZeroMemory.argtypes = [VOID, SIZE_T]
-        RtlZeroMemory.restype = VOID
-        RtlZeroMemory(Destination, Length)
-    except:
-        return memset(Destination, 0, Length)
-
-ZeroMemory = RtlZeroMemory
 
 class _MESSAGE_RESOURCE_ENTRY(Structure):
     _fields_ = [('Length', WORD),

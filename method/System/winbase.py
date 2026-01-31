@@ -4,9 +4,12 @@
 from typing import Any
 from method.System.ntstatus import *
 from method.System.synchapi import *
+from method.System.errcheck import *
+from method.System.debugapi import *
 from method.System.sdkddkver import *
 from method.System.memoryapi import *
 from method.System.processenv import *
+from method.System.minwinbase import *
 from method.System.public_dll import *
 from method.System.sysinfoapi import *
 from method.System.winusutypes import *
@@ -15,7 +18,8 @@ from method.System.libloaderapi import *
 from method.System.errhandlingapi import *
 from method.System.securitybaseapi import *
 from method.System.processthreadsapi import *
-from method.System.errcheck import win32_to_errcheck
+
+va_list = c_char_p
 
 _WIN32_WINNT = WIN32_WINNT
 
@@ -164,18 +168,28 @@ def CreateJobObject(lpJobAttributes: Any, lpName: str, unicode: bool = True, err
                        if unicode else kernel32.CreateJobObjectA
     )
 
+    CreateJobObject.argtypes = [
+        LPSECURITY_ATTRIBUTES,
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    CreateJobObject.restype = HANDLE
     res = CreateJobObject(lpJobAttributes, lpName)
     return win32_to_errcheck(res, errcheck)
 
 
 def AssignProcessToJobObject(hJob: int, hProcess: int, errcheck: bool = True) -> int:
     AssignProcessToJobObject = kernel32.AssignProcessToJobObject
+    AssignProcessToJobObject.argtypes = [HANDLE, HANDLE]
+    AssignProcessToJobObject.restype = WINBOOL
     res = AssignProcessToJobObject(hJob, hProcess)
     return win32_to_errcheck(res, errcheck)
 
 
 def TerminateJobObject(hJob: int, uExitCode: int, errcheck: bool = True) -> int:
     TerminateJobObject = kernel32.TerminateJobObject
+    TerminateJobObject.argtypes = [HANDLE, UINT]
+    TerminateJobObject.restype = WINBOOL
     res = TerminateJobObject(hJob, uExitCode)
     return win32_to_errcheck(res, errcheck)
 
@@ -184,6 +198,11 @@ def GetCurrentDirectory(nBufferLength: int, lpBuffer: Any, unicode: bool = True,
     GetCurrentDirectory = (kernel32.GetCurrentDirectoryW 
                            if unicode else kernel32.GetCurrentDirectoryA
     )
+
+    GetCurrentDirectory.argtypes = [
+        DWORD, 
+        (LPWSTR if unicode else LPSTR)
+    ]
 
     GetCurrentDirectory.restype = DWORD
     res = GetCurrentDirectory(nBufferLength, lpBuffer)
@@ -204,12 +223,20 @@ def lstrcpyn(lpString1, lpString2, iMaxLength, unicode: bool = True, errcheck: b
 
 def lstrlen(lpString, unicode: bool = True):
     lstrlen = kernel32.lstrlenW if unicode else kernel32.lstrlenA
+    lstrlen.argtypes = [(LPCWSTR if unicode else LPCSTR)]
+    lstrlen.restype = INT
     res = lstrlen(lpString)
     return res
 
 
 def lstrcat(lpString1, lpString2, unicode: bool = True, errcheck: bool = True):
     lstrcat = kernel32.lstrcatW if unicode else kernel32.lstrcatA
+    lstrcat.argtypes = [
+        (LPWSTR if unicode else LPSTR),
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    lstrcat.restype = LPWSTR if unicode else LPSTR
     res = lstrcat(lpString1, lpString2)
     return win32_to_errcheck(res, errcheck)   
 
@@ -255,6 +282,54 @@ def CreateProcessWithToken(
         lpCurrentDirectory, 
         lpStartupInfo, 
         lpProcessInformation
+    )
+
+    return win32_to_errcheck(res, errcheck)
+
+
+FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100
+FORMAT_MESSAGE_IGNORE_INSERTS  = 0x00000200
+FORMAT_MESSAGE_FROM_STRING     = 0x00000400
+FORMAT_MESSAGE_FROM_HMODULE    = 0x00000800
+FORMAT_MESSAGE_FROM_SYSTEM     = 0x00001000
+FORMAT_MESSAGE_ARGUMENT_ARRAY  = 0x00002000
+FORMAT_MESSAGE_MAX_WIDTH_MASK  = 0x000000FF
+
+
+def FormatMessage(
+    dwFlags: int, 
+    lpSource: Any, 
+    dwMessageId: int, 
+    dwLanguageId: int, 
+    lpBuffer, 
+    nSize: int, 
+    Arguments, 
+    unicode: bool = True,
+    errcheck: bool = True
+) -> int:
+    
+    FormatMessage = (kernel32.FormatMessageW 
+                     if unicode else kernel32.FormatMessageA
+    )
+
+    FormatMessage.argtypes = [
+        DWORD,
+        LPCVOID,
+        DWORD,
+        DWORD,
+        (LPWSTR if unicode else LPSTR),
+        DWORD,
+        POINTER(va_list)
+    ]
+
+    res = FormatMessage(
+        dwFlags, 
+        lpSource, 
+        dwMessageId, 
+        dwLanguageId, 
+        lpBuffer, 
+        nSize, 
+        Arguments
     )
 
     return win32_to_errcheck(res, errcheck)
