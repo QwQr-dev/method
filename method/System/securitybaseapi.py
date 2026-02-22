@@ -262,8 +262,9 @@ def ImpersonateAnonymousToken(errcheck: bool = True):
     return win32_to_errcheck(res, errcheck)
 
 
-def ImpersonateLoggedOnUser(errcheck: bool = True):
+def ImpersonateLoggedOnUser(hToken: int, errcheck: bool = True):
     ImpersonateLoggedOnUser = advapi32.ImpersonateLoggedOnUser
+    ImpersonateLoggedOnUser.argtypes = [HANDLE]
     ImpersonateLoggedOnUser.restype = WINBOOL
     res = ImpersonateLoggedOnUser()
     return win32_to_errcheck(res, errcheck)
