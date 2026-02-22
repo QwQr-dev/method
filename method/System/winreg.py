@@ -1,15 +1,11 @@
 # coding = 'utf-8'
 # winreg.h
 
-from typing import NoReturn
+from method.System.winnt import *
 from method.System.errcheck import *
-from method.System.sdkddkver import *
+from method.System.wtypesbase import *
 from method.System.winusutypes import *
 from method.System.public_dll import advapi32
-from method.System.wtypesbase import LPSECURITY_ATTRIBUTES, PFILETIME
-from method.System.winnt import SECURITY_INFORMATION, PSECURITY_DESCRIPTOR
-
-_WIN32_WINNT = WIN32_WINNT
 
 RRF_RT_REG_NONE = 0x00000001
 RRF_RT_REG_SZ = 0x00000002
@@ -23,10 +19,9 @@ RRF_RT_DWORD = (RRF_RT_REG_BINARY | RRF_RT_REG_DWORD)
 RRF_RT_QWORD = (RRF_RT_REG_BINARY | RRF_RT_REG_QWORD)
 RRF_RT_ANY = 0x0000ffff
 
-if _WIN32_WINNT >= 0x0A00:
-    RRF_SUBKEY_WOW6464KEY = 0x00010000
-    RRF_SUBKEY_WOW6432KEY = 0x00020000
-    RRF_WOW64_MASK = 0x00030000
+RRF_SUBKEY_WOW6464KEY = 0x00010000
+RRF_SUBKEY_WOW6432KEY = 0x00020000
+RRF_WOW64_MASK = 0x00030000
 
 RRF_NOEXPAND = 0x10000000
 RRF_ZEROONFAILURE = 0x20000000
@@ -130,7 +125,7 @@ REG_MUI_STRING_TRUNCATE = 0x00000001
 
 REG_SECURE_CONNECTION = 1
 
-def RegOverridePredefKey(hKey, hNewHKey, errcheck: bool = True):
+def RegOverridePredefKey(hKey: int, hNewHKey: int, errcheck: bool = True):
     RegOverridePredefKey = advapi32.RegOverridePredefKey
     RegOverridePredefKey.argtypes = [HKEY, HKEY]
     RegOverridePredefKey.restype = LONG
@@ -138,7 +133,7 @@ def RegOverridePredefKey(hKey, hNewHKey, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegOpenUserClassesRoot(hToken, dwOptions, samDesired, phkResult, errcheck: bool = True):
+def RegOpenUserClassesRoot(hToken: int, dwOptions: int, samDesired: int, phkResult, errcheck: bool = True):
     RegOpenUserClassesRoot = advapi32.RegOpenUserClassesRoot
     RegOpenUserClassesRoot.argtypes = [
         HANDLE,
@@ -152,7 +147,7 @@ def RegOpenUserClassesRoot(hToken, dwOptions, samDesired, phkResult, errcheck: b
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegOpenCurrentUser(samDesired, phkResult, errcheck: bool = True):
+def RegOpenCurrentUser(samDesired: int, phkResult, errcheck: bool = True):
     RegOpenCurrentUser = advapi32.RegOpenCurrentUser
     RegOpenCurrentUser.argtypes = [REGSAM, PHKEY]
     RegOpenCurrentUser.restype = LONG
@@ -174,7 +169,7 @@ def RegDisablePredefinedCacheEx(errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegConnectRegistry(lpMachineName, hKey, phkResult, unicode: bool = True, errcheck: bool = True):
+def RegConnectRegistry(lpMachineName: str | bytes, hKey: int, phkResult, unicode: bool = True, errcheck: bool = True):
     RegConnectRegistry = (advapi32.RegConnectRegistryW 
                           if unicode else advapi32.RegConnectRegistryA
     )
@@ -190,7 +185,7 @@ def RegConnectRegistry(lpMachineName, hKey, phkResult, unicode: bool = True, err
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegConnectRegistryEx(lpMachineName, hKey, Flags, phkResult, unicode: bool = True, errcheck: bool = True):
+def RegConnectRegistryEx(lpMachineName: str | bytes, hKey: int, Flags: int, phkResult, unicode: bool = True, errcheck: bool = True):
     RegConnectRegistryEx = (advapi32.RegConnectRegistryExW 
                             if unicode else advapi32.RegConnectRegistryExA
     )
@@ -207,7 +202,7 @@ def RegConnectRegistryEx(lpMachineName, hKey, Flags, phkResult, unicode: bool = 
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegCreateKey(hKey, lpSubKey, phkResult, unicode: bool = True, errcheck: bool = True):
+def RegCreateKey(hKey: int, lpSubKey: str | bytes, phkResult, unicode: bool = True, errcheck: bool = True):
     RegCreateKey = (advapi32.RegCreateKeyW if unicode else advapi32.RegCreateKeyA)
     RegCreateKey.argtypes = [
         HKEY,
@@ -220,7 +215,7 @@ def RegCreateKey(hKey, lpSubKey, phkResult, unicode: bool = True, errcheck: bool
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegDeleteKey(hKey, lpSubKey, unicode: bool = True, errcheck: bool = True):
+def RegDeleteKey(hKey: int, lpSubKey: str | bytes, unicode: bool = True, errcheck: bool = True):
     RegDeleteKey = (advapi32.RegDeleteKeyW if unicode else advapi32.RegDeleteKeyA)
     RegDeleteKey.argtypes = [
         HKEY,
@@ -232,7 +227,7 @@ def RegDeleteKey(hKey, lpSubKey, unicode: bool = True, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegDisableReflectionKey(hBase, errcheck: bool = True):
+def RegDisableReflectionKey(hBase: int, errcheck: bool = True):
     RegDisableReflectionKey = advapi32.RegDisableReflectionKey
     RegDisableReflectionKey.argtypes = [HKEY]
     RegDisableReflectionKey.restype = LONG
@@ -240,7 +235,7 @@ def RegDisableReflectionKey(hBase, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegEnableReflectionKey(hBase, errcheck: bool = True):
+def RegEnableReflectionKey(hBase: int, errcheck: bool = True):
     RegEnableReflectionKey = advapi32.RegEnableReflectionKey
     RegEnableReflectionKey.argtypes = [HKEY]
     RegEnableReflectionKey.restype = LONG
@@ -248,7 +243,7 @@ def RegEnableReflectionKey(hBase, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegQueryReflectionKey(hBase, bIsReflectionDisabled, errcheck: bool = True):
+def RegQueryReflectionKey(hBase: int, bIsReflectionDisabled: bool, errcheck: bool = True):
     RegQueryReflectionKey = advapi32.RegQueryReflectionKey
     RegQueryReflectionKey.argtypes = [HKEY, WINBOOL]
     RegQueryReflectionKey.restype = LONG
@@ -256,7 +251,7 @@ def RegQueryReflectionKey(hBase, bIsReflectionDisabled, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegEnumKey(hKey, dwIndex, lpName, cchName, unicode: bool = True, errcheck: bool = True):
+def RegEnumKey(hKey: int, dwIndex: int, lpName: str | bytes, cchName: int, unicode: bool = True, errcheck: bool = True):
     RegEnumKey = (advapi32.RegEnumKeyW if unicode else advapi32.RegEnumKeyA)
     RegEnumKey.argtypes = [
         HKEY,
@@ -270,7 +265,7 @@ def RegEnumKey(hKey, dwIndex, lpName, cchName, unicode: bool = True, errcheck: b
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegFlushKey(hKey, errcheck: bool = True):
+def RegFlushKey(hKey: int, errcheck: bool = True):
     RegFlushKey = advapi32.RegFlushKey
     RegFlushKey.argtypes = [HKEY]
     RegFlushKey.restype = LONG
@@ -278,7 +273,7 @@ def RegFlushKey(hKey, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegGetKeySecurity(hKey, SecurityInformation, pSecurityDescriptor, lpcbSecurityDescriptor, errcheck: bool = True):
+def RegGetKeySecurity(hKey: int, SecurityInformation: int, pSecurityDescriptor, lpcbSecurityDescriptor, errcheck: bool = True):
     RegGetKeySecurity = advapi32.RegGetKeySecurity
     RegGetKeySecurity.argtypes = [
         HKEY,
@@ -292,7 +287,7 @@ def RegGetKeySecurity(hKey, SecurityInformation, pSecurityDescriptor, lpcbSecuri
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegLoadKey(hKey, lpSubKey, lpFile, unicode: bool = True, errcheck: bool = True):
+def RegLoadKey(hKey: int, lpSubKey: str | bytes, lpFile: str | bytes, unicode: bool = True, errcheck: bool = True):
     RegLoadKey = (advapi32.RegLoadKeyW if unicode else advapi32.RegLoadKeyA)
     RegLoadKey.argtypes = [
         HKEY,
@@ -305,7 +300,7 @@ def RegLoadKey(hKey, lpSubKey, lpFile, unicode: bool = True, errcheck: bool = Tr
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegOpenKey(hKey, lpSubKey, phkResult, unicode: bool = True, errcheck: bool = True):
+def RegOpenKey(hKey: int, lpSubKey: str | bytes, phkResult, unicode: bool = True, errcheck: bool = True):
     RegOpenKey = (advapi32.RegOpenKeyW if unicode else advapi32.RegOpenKeyA)
     RegOpenKey.argtypes = [
         HKEY,
@@ -318,7 +313,7 @@ def RegOpenKey(hKey, lpSubKey, phkResult, unicode: bool = True, errcheck: bool =
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegQueryValue(hKey, lpSubKey, lpData, lpcbData, unicode: bool = True, errcheck: bool = True):
+def RegQueryValue(hKey: int, lpSubKey: str | bytes, lpData, lpcbData, unicode: bool = True, errcheck: bool = True):
     RegQueryValue = (advapi32.RegQueryValueW if unicode else advapi32.RegQueryValueA)
     RegQueryValue.argtypes = [
         HKEY,
@@ -332,7 +327,7 @@ def RegQueryValue(hKey, lpSubKey, lpData, lpcbData, unicode: bool = True, errche
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegQueryMultipleValues(hKey, val_list, num_vals, lpValueBuf, ldwTotsize, unicode: bool = True, errcheck: bool = True):
+def RegQueryMultipleValues(hKey: int, val_list, num_vals: int, lpValueBuf, ldwTotsize, unicode: bool = True, errcheck: bool = True):
     RegQueryMultipleValues = (advapi32.RegQueryMultipleValuesW if unicode else advapi32.RegQueryMultipleValuesA)
     RegQueryMultipleValues.argtypes = [
         HKEY,
@@ -354,7 +349,7 @@ def RegQueryMultipleValues(hKey, val_list, num_vals, lpValueBuf, ldwTotsize, uni
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegReplaceKey(hKey, lpSubKey, lpNewFile, lpOldFile, unicode: bool = True, errcheck: bool = True):
+def RegReplaceKey(hKey: int, lpSubKey: str | bytes, lpNewFile: str | bytes, lpOldFile: str | bytes, unicode: bool = True, errcheck: bool = True):
     RegReplaceKey = (advapi32.RegReplaceKeyW if unicode else advapi32.RegReplaceKeyA)
     RegReplaceKey.argtypes = [
         HKEY,
@@ -368,7 +363,7 @@ def RegReplaceKey(hKey, lpSubKey, lpNewFile, lpOldFile, unicode: bool = True, er
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegRestoreKey(hKey, lpFile, dwFlags, unicode: bool = True, errcheck: bool = True):
+def RegRestoreKey(hKey: int, lpFile: str | bytes, dwFlags: int, unicode: bool = True, errcheck: bool = True):
     RegRestoreKey = (advapi32.RegRestoreKeyW if unicode else advapi32.RegRestoreKeyA)
     RegRestoreKey.argtypes = [
         HKEY,
@@ -381,7 +376,7 @@ def RegRestoreKey(hKey, lpFile, dwFlags, unicode: bool = True, errcheck: bool = 
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegSaveKey(hKey, lpFile, lpSecurityAttributes, unicode: bool = True, errcheck: bool = True):
+def RegSaveKey(hKey: int, lpFile: str | bytes, lpSecurityAttributes, unicode: bool = True, errcheck: bool = True):
     RegSaveKey = (advapi32.RegSaveKeyW if unicode else advapi32.RegSaveKeyA)
     RegSaveKey.argtypes = [
         HKEY,
@@ -394,7 +389,7 @@ def RegSaveKey(hKey, lpFile, lpSecurityAttributes, unicode: bool = True, errchec
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegSetKeySecurity(hKey, SecurityInformation, pSecurityDescriptor, errcheck: bool = True):
+def RegSetKeySecurity(hKey: int, SecurityInformation: int, pSecurityDescriptor, errcheck: bool = True):
     RegSetKeySecurity = advapi32.RegSetKeySecurity
     RegSetKeySecurity.argtypes = [
         HKEY,
@@ -407,7 +402,7 @@ def RegSetKeySecurity(hKey, SecurityInformation, pSecurityDescriptor, errcheck: 
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegSetValue(hKey, lpSubKey, dwType, lpData, cbData, unicode: bool = True, errcheck: bool = True):
+def RegSetValue(hKey: int, lpSubKey: str | bytes, dwType: int, lpData: str | bytes, cbData: int, unicode: bool = True, errcheck: bool = True):
     RegSetValue = (advapi32.RegSetValueW if unicode else advapi32.RegSetValueA)
     RegSetValue.argtypes = [
         HKEY,
@@ -429,7 +424,7 @@ def RegSetValue(hKey, lpSubKey, dwType, lpData, cbData, unicode: bool = True, er
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegUnLoadKey(hKey, lpSubKey, unicode: bool = True, errcheck: bool = True):
+def RegUnLoadKey(hKey: int, lpSubKey: str | bytes, unicode: bool = True, errcheck: bool = True):
     RegUnLoadKey = (advapi32.RegUnLoadKeyW if unicode else advapi32.RegUnLoadKeyA)
     RegUnLoadKey.argtypes = [
         HKEY,
@@ -475,7 +470,7 @@ def InitiateSystemShutdown(
     return win32_to_errcheck(res, errcheck)    
 
 
-def AbortSystemShutdown(lpMachineName, unicode: bool = True, errcheck: bool = True):
+def AbortSystemShutdown(lpMachineName: str | bytes, unicode: bool = True, errcheck: bool = True):
     AbortSystemShutdown = (advapi32.AbortSystemShutdownW if unicode else advapi32.AbortSystemShutdownA)
     AbortSystemShutdown.argtypes = [(LPWSTR if unicode else LPSTR)]
     AbortSystemShutdown.restype = WINBOOL
@@ -535,7 +530,7 @@ def InitiateSystemShutdownEx(
     return win32_to_errcheck(res, errcheck)
 
 
-def RegSaveKeyEx(hKey, lpFile, lpSecurityAttributes, Flags, unicode: bool = True, errcheck: bool = True):
+def RegSaveKeyEx(hKey: int, lpFile: str | bytes, lpSecurityAttributes, Flags: int, unicode: bool = True, errcheck: bool = True):
     RegSaveKeyEx = (advapi32.RegSaveKeyExW if unicode else advapi32.RegSaveKeyExA)
     RegSaveKeyEx.argtypes = [
         HKEY,
@@ -548,7 +543,7 @@ def RegSaveKeyEx(hKey, lpFile, lpSecurityAttributes, Flags, unicode: bool = True
     res = RegSaveKeyEx(hKey, lpFile, lpSecurityAttributes, Flags)
     return winreg_to_errcheck(res, errcheck)
 
-def Wow64Win32ApiEntry(dwFuncNumber, dwFlag, dwRes, errcheck: bool = True):
+def Wow64Win32ApiEntry(dwFuncNumber: int, dwFlag: int, dwRes: int, errcheck: bool = True):
     Wow64Win32ApiEntry = advapi32.Wow64Win32ApiEntry
     Wow64Win32ApiEntry.argtypes = [
         DWORD,
@@ -561,7 +556,7 @@ def Wow64Win32ApiEntry(dwFuncNumber, dwFlag, dwRes, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegCopyTree(hKeySrc, lpSubKey, hKeyDest, unicode: bool = True, errcheck: bool = True):
+def RegCopyTree(hKeySrc: int, lpSubKey: str | bytes, hKeyDest: int, unicode: bool = True, errcheck: bool = True):
     RegCopyTree = (advapi32.RegCopyTreeW if unicode else advapi32.RegCopyTreeA)
     RegCopyTree.argtypes = [
         HKEY,
@@ -575,16 +570,16 @@ def RegCopyTree(hKeySrc, lpSubKey, hKeyDest, unicode: bool = True, errcheck: boo
 
 
 def RegCreateKeyTransacted(
-    hKey, 
-    lpSubKey, 
-    Reserved, 
-    lpClass, 
-    dwOptions, 
-    samDesired, 
+    hKey: int, 
+    lpSubKey: str | bytes, 
+    Reserved: int, 
+    lpClass: str | bytes, 
+    dwOptions: int, 
+    samDesired: int, 
     lpSecurityAttributes,
     phkResult,
     lpdwDisposition,
-    hTransaction,
+    hTransaction: int,
     pExtendedParemeter,
     unicode: bool = True,
     errcheck: bool = True
@@ -627,11 +622,11 @@ def RegCreateKeyTransacted(
 
 
 def RegDeleteKeyTransacted(
-    hKey,
-    lpSubKey,
-    samDesired,
-    Reserved,
-    hTransaction,
+    hKey: int,
+    lpSubKey: str | bytes,
+    samDesired: int,
+    Reserved: int,
+    hTransaction: int,
     pExtendedParameter,
     unicode: bool = True,
     errcheck: bool = True
@@ -661,9 +656,9 @@ def RegDeleteKeyTransacted(
 
 
 def RegDeleteKeyValue(
-    hKey,
-    lpSubKey,
-    lpValueName,
+    hKey: int,
+    lpSubKey: str | bytes,
+    lpValueName: str | bytes,
     unicode: bool = True,
     errcheck: bool = True
 ): 
@@ -685,11 +680,11 @@ def RegDeleteKeyValue(
 
 
 def RegLoadAppKey(
-    lpFile,
+    lpFile: str | bytes,
     phkResult,
-    samDesired,
-    dwOptions,
-    Reserved,
+    samDesired: int,
+    dwOptions: int,
+    Reserved: int,
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -715,13 +710,13 @@ def RegLoadAppKey(
 
 
 def RegLoadMUIString(
-    hKey,
-    pszValue,
+    hKey: int,
+    pszValue: str | bytes,
     pszOutBuf,
-    cbOutBuf,
+    cbOutBuf: int,
     pcbData,
-    Flags,
-    pszDirectory,
+    Flags: int,
+    pszDirectory: str | bytes,
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -752,12 +747,12 @@ def RegLoadMUIString(
 
 
 def RegOpenKeyTransacted(
-    hKey, 
-    lpSubKey, 
-    ulOptions, 
-    samDesired, 
+    hKey: int, 
+    lpSubKey: str | bytes, 
+    ulOptions: int, 
+    samDesired: int, 
     phkResult,
-    hTransaction,
+    hTransaction: int,
     pExtendedParemeter,
     unicode: bool = True,
     errcheck: bool = True
@@ -790,9 +785,9 @@ def RegOpenKeyTransacted(
 
 
 def RegRenameKey(
-    hKey,
-    lpSubKeyName,
-    lpNewKeyName,
+    hKey: int,
+    lpSubKeyName: str,
+    lpNewKeyName: str,
     errcheck: bool = True
 ):
     RegRenameKey = advapi32.RegRenameKey
@@ -808,12 +803,12 @@ def RegRenameKey(
 
 
 def RegSetKeyValue(
-    hKey,
-    lpSubKey,
-    lpValueName,
-    dwType,
+    hKey: int,
+    lpSubKey: str | bytes,
+    lpValueName: str | bytes,
+    dwType: int,
     lpData,
-    cbData,
+    cbData: int,
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -888,7 +883,7 @@ def InitiateShutdown(
     return winreg_to_errcheck(res, errcheck)
 
 
-def CheckForHiberboot(pHiberboot, bClearFlag, errcheck: bool = True):
+def CheckForHiberboot(pHiberboot, bClearFlag: bool, errcheck: bool = True):
     CheckForHiberboot = advapi32.CheckForHiberboot
     CheckForHiberboot.argtypes = [
         PBOOLEAN,
@@ -900,7 +895,7 @@ def CheckForHiberboot(pHiberboot, bClearFlag, errcheck: bool = True):
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegCloseKey(hKey, errcheck: bool = True):
+def RegCloseKey(hKey: int, errcheck: bool = True):
     RegCloseKey = advapi32.RegCloseKey
     RegCloseKey.argtypes = [HKEY]
     RegCloseKey.restype = LONG
@@ -909,12 +904,12 @@ def RegCloseKey(hKey, errcheck: bool = True):
 
 
 def RegCreateKeyEx(
-    hKey,
-    lpSubKey,
-    Reserved,
-    lpClass,
-    dwOptions,
-    samDesired,
+    hKey: int,
+    lpSubKey: str | bytes,
+    Reserved: int,
+    lpClass: str | bytes,
+    dwOptions: int,
+    samDesired: int,
     lpSecurityAttributes,
     phkResult,
     lpdwDisposition,
@@ -952,10 +947,10 @@ def RegCreateKeyEx(
 
 
 def RegDeleteKeyEx(
-    hKey,
-    lpSubKey,
-    samDesired,
-    Reserved,
+    hKey: int,
+    lpSubKey: str | bytes,
+    samDesired: int,
+    Reserved: int,
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -979,7 +974,7 @@ def RegDeleteKeyEx(
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegDeleteValue(hKey, lpValueName, unicode: bool = True, errcheck: bool = True):
+def RegDeleteValue(hKey: int, lpValueName: str | bytes, unicode: bool = True, errcheck: bool = True):
     RegDeleteValue = (advapi32.RegDeleteValueW if unicode else advapi32.RegDeleteValueA)
     RegDeleteValue.argtypes = [
         HKEY,
@@ -992,12 +987,12 @@ def RegDeleteValue(hKey, lpValueName, unicode: bool = True, errcheck: bool = Tru
 
 
 def RegEnumKeyEx(
-    hKey,
-    dwIndex,
-    lpName,
+    hKey: int,
+    dwIndex: int,
+    lpName: str | bytes,
     lpcchName,
     lpReserved,
-    lpClass,
+    lpClass: str | bytes,
     lpcchClass,
     lpftLastWriteTime,
     unicode: bool = True,
@@ -1032,9 +1027,9 @@ def RegEnumKeyEx(
 
 
 def RegEnumValue(
-    hKey,
-    dwIndex,
-    lpValueName,
+    hKey: int,
+    dwIndex: int,
+    lpValueName: str | bytes,
     lpcchValueName,
     lpReserved,
     lpType,
@@ -1072,10 +1067,10 @@ def RegEnumValue(
 
 
 def RegGetValue(
-    hKey,
-    lpSubKey,
-    lpValue,
-    dwFlags,
+    hKey: int,
+    lpSubKey: str | bytes,
+    lpValue: str | bytes,
+    dwFlags: int,
     pdwType,
     pvData,
     pcbData,
@@ -1109,11 +1104,11 @@ def RegGetValue(
 
 
 def RegNotifyChangeKeyValue(
-    hKey,
-    bWatchSubtree,
-    dwNotifyFilter,
-    hEvent,
-    fAsynchronous,
+    hKey: int,
+    bWatchSubtree: bool,
+    dwNotifyFilter: int,
+    hEvent: int,
+    fAsynchronous: bool,
     errcheck: bool = True
 ):
     
@@ -1139,10 +1134,10 @@ def RegNotifyChangeKeyValue(
 
 
 def RegOpenKeyEx(
-    hKey,
-    lpSubKey,
-    ulOptions,
-    samDesired,
+    hKey: int,
+    lpSubKey: str | bytes,
+    ulOptions: int,
+    samDesired: int,
     phkResult,
     unicode: bool = True,
     errcheck: bool = True
@@ -1170,8 +1165,8 @@ def RegOpenKeyEx(
 
 
 def RegQueryInfoKey(
-    hKey,
-    lpClass,
+    hKey: int,
+    lpClass: str | bytes,
     lpcchClass,
     lpReserved,
     lpcSubKeys,
@@ -1222,8 +1217,8 @@ def RegQueryInfoKey(
 
 
 def RegQueryValueEx(
-    hKey,
-    lpValueName,
+    hKey: int,
+    lpValueName: str | bytes,
     lpReserved,
     lpType,
     lpData,
@@ -1256,12 +1251,12 @@ def RegQueryValueEx(
 
 
 def RegSetValueEx(
-    hKey,
-    lpValueName,
-    Reserved,
-    dwType,
+    hKey: int,
+    lpValueName: str | bytes,
+    Reserved: int,
+    dwType: int,
     lpData,
-    cbData,
+    cbData: int,
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -1289,7 +1284,7 @@ def RegSetValueEx(
     return winreg_to_errcheck(res, errcheck)
 
 
-def RegDeleteTree(hKey, lpSubKey, unicode: bool = True, errcheck: bool = True):
+def RegDeleteTree(hKey: int, lpSubKey: str | bytes, unicode: bool = True, errcheck: bool = True):
     RegDeleteTree = (advapi32.RegDeleteTreeW if unicode else advapi32.RegDeleteTreeA)
     RegDeleteTree.argtypes = [
         HKEY,

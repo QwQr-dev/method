@@ -12,11 +12,11 @@ RFD_NOSEPMEMORY_BOX     = 0x00000020
 
 
 def RunfileDlg(
-    hwndOwner: int, 
-    hIcon: int, 
-    lpszDirectory: str, 
-    lpszTitle: str, 
-    lpszDescription: str, 
+    hwndOwner: int | None, 
+    hIcon: int | None, 
+    lpszDirectory: str | bytes | None, 
+    lpszTitle: str | bytes | None, 
+    lpszDescription: str | bytes | None, 
     uFlags: int = RFD_USEFULLPATHDIR | RFD_WOW_APP,
     unicode: bool = True,
     index: int = 61

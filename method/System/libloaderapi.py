@@ -336,7 +336,7 @@ def FreeLibrary(hLibModule: int, errcheck: bool = True):
 
 def GetProcAddress(
     hModule: int, 
-    lpProcName: str | int, 
+    lpProcName: str | bytes | int, 
     errcheck: bool = True
 ) -> int:
     

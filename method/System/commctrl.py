@@ -4380,8 +4380,8 @@ PFTASKDIALOGCALLBACK = CALLBACK(
     LONG_PTR
 )
 
-class TASKDIALOGICON(ctypes.Union):
-    if sys.version_info > (3, 14):
+class TASKDIALOGICON(Union):
+    if sys.version_info > (3, 19):
         _layout_ = 'ms'
     else:
         _pack_ = 1
@@ -4390,8 +4390,8 @@ class TASKDIALOGICON(ctypes.Union):
                 ('pszMainIcon', PCWSTR)
     ]
 
-class TASKDIALOGFOOTICON(ctypes.Union):
-    if sys.version_info > (3, 14):
+class TASKDIALOGFOOTICON(Union):
+    if sys.version_info > (3, 19):
         _layout_ = 'ms'
     else:
         _pack_ = 1
@@ -4400,8 +4400,8 @@ class TASKDIALOGFOOTICON(ctypes.Union):
                 ('pszFooterIcon', PCWSTR)
     ]
 
-class TASKDIALOG_BUTTON(ctypes.Structure):
-    if sys.version_info > (3, 14):
+class TASKDIALOG_BUTTON(Structure):
+    if sys.version_info > (3, 19):
         _layout_ = 'ms'
     else:
         _pack_ = 1
@@ -4410,8 +4410,8 @@ class TASKDIALOG_BUTTON(ctypes.Structure):
                 ('pszButtonText', PCWSTR)
     ]
 
-class _TASKDIALOGCONFIG(ctypes.Structure):
-    if sys.version_info > (3, 14):
+class _TASKDIALOGCONFIG(Structure):
+    if sys.version_info > (3, 19):
         _layout_ = 'ms'
     else:
         _pack_ = 1

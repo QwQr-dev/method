@@ -14,13 +14,13 @@ def GetLastError() -> int:
     return GetLastError()
 
 
-def SetLastError(dwErrCode: int) -> None:
+def SetLastError(dwErrCode: int):
     SetLastError = kernel32.SetLastError
     SetLastError.argtypes = [DWORD]
     SetLastError(dwErrCode)
 
 
-def SetLastErrorEx(dwErrCode: int, dwType: Any = NULL) -> None:
+def SetLastErrorEx(dwErrCode: int, dwType: int | None = None):
     SetLastErrorEx = user32.SetLastErrorEx
     SetLastErrorEx.argtypes = [DWORD, DWORD]
     SetLastErrorEx(dwErrCode, dwType)
@@ -84,6 +84,7 @@ def nullstr_to_zero(value) -> (int | Any):
 
 
 def hresult_to_errcheck(code: int, errcheck: bool = True) -> int:
+    code = null_to_zero(code)
     if FAILED(code) and errcheck:
         raise WinError(code)
     return code
@@ -97,18 +98,20 @@ def ntstatus_to_errcheck(code: int, errcheck: bool = True) -> int:
 
 def win32_to_errcheck(code: int, errcheck: bool = True) -> int:
     error_code = GetLastError()
-    if error_code != 0 and errcheck:
+    if not code and error_code != 0 and errcheck:
         raise WinError(error_code)
     return code
     
 
 def errno_to_errcheck(code: int, errcheck: bool = True) -> int:
+    code = null_to_zero(code)
     if code and errcheck:
         raise OSError(strerror(code).decode(sys.getdefaultencoding()))
     return code
     
 
 def winreg_to_errcheck(code: int, errcheck: bool = True) -> int:
+    code = null_to_zero(code)
     if code and errcheck:
         raise WinError(code)
     return code
@@ -116,3 +119,9 @@ def winreg_to_errcheck(code: int, errcheck: bool = True) -> int:
 
 def com_to_errcheck(code: int, errcheck: bool = True) -> int:
     return hresult_to_errcheck(code, errcheck)
+
+
+def shell_to_errcheck(code: int, errcheck: bool = True) -> int:
+    if code < 32 and errcheck: 
+        win32_to_errcheck(1, errcheck)
+    return code

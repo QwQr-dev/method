@@ -2,13 +2,12 @@
 # shellapi.h
 
 import enum
-import ctypes
 from typing import Any
+from method.System.errcheck import *
 from method.System.sdkddkver import *
 from method.System.guiddef import GUID
 from method.System.public_dll import *
 from method.System.winusutypes import *
-from method.System.errcheck import GetLastError
 from method.System.windef import POINT, RECT
 from method.System.processthreadsapi import *
 from method.System.winuser import WM_USER, SendMessage
@@ -907,7 +906,7 @@ def ShellExecute(
         nShowCmd
     )
     
-    return win32_to_errcheck(res, errcheck)
+    return shell_to_errcheck(res, errcheck)
     
 
 def ShellExecuteEx(pExecInfo: Any, unicode: bool = True, errcheck: bool = True):
@@ -918,7 +917,7 @@ def ShellExecuteEx(pExecInfo: Any, unicode: bool = True, errcheck: bool = True):
     ShellExecuteEx.argtypes = [POINTER(SHELLEXECUTEINFOW if unicode else SHELLEXECUTEINFOA)]
     ShellExecuteEx.restype = WINBOOL
     res = ShellExecuteEx(pExecInfo)
-    return win32_to_errcheck(res, errcheck)
+    return shell_to_errcheck(res, errcheck)
 
 
 def OpenProcess(

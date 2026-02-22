@@ -83,7 +83,7 @@ def GetHGlobalFromStream(pstm, phglobal, errcheck: bool = True):
     return hresult_to_errcheck(res, errcheck)    
 
 
-def CoInitialize(pvReserved: int = NULL, errcheck: bool = True) -> None:
+def CoInitialize(pvReserved = NULL, errcheck: bool = True) -> None:
     CoInitialize = ole32.CoInitialize
     CoInitialize.argtypes = [LPVOID]
     CoInitialize.restype = HRESULT
@@ -91,7 +91,7 @@ def CoInitialize(pvReserved: int = NULL, errcheck: bool = True) -> None:
     return hresult_to_errcheck(res, errcheck)
 
 
-def CoInitializeEx(pvReserved: int, dwCoInit: int, errcheck: bool = True) -> None:
+def CoInitializeEx(pvReserved = NULL, dwCoInit: int = 0, errcheck: bool = True) -> None:
     CoInitializeEx = ole32.CoInitializeEx
     CoInitializeEx.argtypes = [REFIID, LPVOID]
     CoInitializeEx.restype = HRESULT

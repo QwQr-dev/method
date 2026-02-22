@@ -9,15 +9,15 @@
 import os
 import sys
 
-__version__ = 'Beta 0.8.60'
-major = 3
-minor = 13
+__version__ = 'Beta 0.8.61'
+_major = 3
+_minor = 13
 
 if os.name != 'nt':
     raise TypeError('Do not supported system')
 
-if sys.version_info < (major, minor):
-    raise ImportError(f'Your Python interpreter version is less than {major}.{minor}, please change the interpreter.')
+if sys.version_info < (_major, _minor):
+    raise ImportError(f'Your Python interpreter version is less than {_major}.{_minor}, please change the interpreter.')
 
 from method.usumd import *
 from method.System import *

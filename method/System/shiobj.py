@@ -48,10 +48,10 @@ PITEMID_CHILD            = LPITEMIDLIST
 PCITEMID_CHILD           = LPCITEMIDLIST
 PUITEMID_CHILD           = LPITEMIDLIST
 PCUITEMID_CHILD          = LPCITEMIDLIST
-PCUITEMID_CHILD_ARRAY    = (LPCITEMIDLIST)
-PCUIDLIST_RELATIVE_ARRAY = (LPCITEMIDLIST)
-PCIDLIST_ABSOLUTE_ARRAY  = (LPCITEMIDLIST)
-PCUIDLIST_ABSOLUTE_ARRAY = (LPCITEMIDLIST)
+PCUITEMID_CHILD_ARRAY    = LPCITEMIDLIST
+PCUIDLIST_RELATIVE_ARRAY = LPCITEMIDLIST
+PCIDLIST_ABSOLUTE_ARRAY  = LPCITEMIDLIST
+PCUIDLIST_ABSOLUTE_ARRAY = LPCITEMIDLIST
 
 #############################################################
 CSIDL_FLAG_CREATE = 0x8000
@@ -515,16 +515,20 @@ def SHCreateDirectoryEx(hwnd, pszPath, psa, unicode: bool = True, errcheck: bool
     return hresult_to_errcheck(res, errcheck)
 
 
+OFASI_EDIT = 0x0001
+OFASI_OPENDESKTOP = 0x0002
+
+
 def SHOpenFolderAndSelectItems(
     pidlFolder: int, 
     cidl: int, 
     apidl: Any, 
     dwFlags: int,
     errcheck: bool = True
-) -> None:
+):
     
     SHOpenFolderAndSelectItems = shell32.SHOpenFolderAndSelectItems
-    SHOpenFolderAndSelectItems.argtypes = [VOID, UINT, VOID, DWORD]
+    SHOpenFolderAndSelectItems.argtypes = [VOID, UINT, PCUITEMID_CHILD_ARRAY, DWORD]
     SHOpenFolderAndSelectItems.restype = HRESULT
     res = SHOpenFolderAndSelectItems(pidlFolder, cidl, apidl, dwFlags)
     return hresult_to_errcheck(res, errcheck)

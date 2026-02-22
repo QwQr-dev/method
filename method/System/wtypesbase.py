@@ -3,10 +3,9 @@
 
 import enum
 from typing import Any
+from method.System.guiddef import *
 from method.System.public_dll import *
 from method.System.winusutypes import *
-from method.System.sdkddkver import UNICODE
-from method.System.guiddef import GUID, IID, CLSID
 
 hyper = DOUBLE
 
@@ -215,24 +214,25 @@ class tagCLSCTX(enum.IntFlag):
 
 CLSCTX = tagCLSCTX
 
-CLSCTX_VALID_MASK = (CLSCTX_INPROC_SERVER | 
-                     CLSCTX_INPROC_HANDLER | 
-                     CLSCTX_LOCAL_SERVER | 
-                     CLSCTX_INPROC_SERVER16 | 
-                     CLSCTX_REMOTE_SERVER | 
-                     CLSCTX_NO_CODE_DOWNLOAD | 
-                     CLSCTX_NO_CUSTOM_MARSHAL | 
-                     CLSCTX_ENABLE_CODE_DOWNLOAD | 
-                     CLSCTX_NO_FAILURE_LOG | 
-                     CLSCTX_DISABLE_AAA | 
-                     CLSCTX_ENABLE_AAA | 
-                     CLSCTX_FROM_DEFAULT_CONTEXT | 
-                     CLSCTX_ACTIVATE_32_BIT_SERVER | 
-                     CLSCTX_ACTIVATE_64_BIT_SERVER | 
-                     CLSCTX_ENABLE_CLOAKING | 
-                     CLSCTX_APPCONTAINER | 
-                     CLSCTX_ACTIVATE_AAA_AS_IU | 
-                     CLSCTX_PS_DLL
+CLSCTX_VALID_MASK = (
+    CLSCTX_INPROC_SERVER | 
+    CLSCTX_INPROC_HANDLER | 
+    CLSCTX_LOCAL_SERVER | 
+    CLSCTX_INPROC_SERVER16 | 
+    CLSCTX_REMOTE_SERVER | 
+    CLSCTX_NO_CODE_DOWNLOAD | 
+    CLSCTX_NO_CUSTOM_MARSHAL | 
+    CLSCTX_ENABLE_CODE_DOWNLOAD | 
+    CLSCTX_NO_FAILURE_LOG | 
+    CLSCTX_DISABLE_AAA | 
+    CLSCTX_ENABLE_AAA | 
+    CLSCTX_FROM_DEFAULT_CONTEXT | 
+    CLSCTX_ACTIVATE_32_BIT_SERVER | 
+    CLSCTX_ACTIVATE_64_BIT_SERVER | 
+    CLSCTX_ENABLE_CLOAKING | 
+    CLSCTX_APPCONTAINER | 
+    CLSCTX_ACTIVATE_AAA_AS_IU | 
+    CLSCTX_PS_DLL
 )
 
 MSHLFLAGS_NORMAL = 0

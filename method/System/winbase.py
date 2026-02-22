@@ -1,7 +1,7 @@
 # coding = 'utf-8'
 # winbase.h
 
-from typing import Any
+from method.System.fileapi import *
 from method.System.ntstatus import *
 from method.System.synchapi import *
 from method.System.errcheck import *
@@ -20,8 +20,9 @@ from method.System.securitybaseapi import *
 from method.System.processthreadsapi import *
 
 va_list = c_char_p
-
 _WIN32_WINNT = WIN32_WINNT
+
+GetCurrentTime = GetTickCount
 
 FILE_BEGIN = 0
 FILE_CURRENT = 1
@@ -241,38 +242,82 @@ def lstrcat(lpString1, lpString2, unicode: bool = True, errcheck: bool = True):
     return win32_to_errcheck(res, errcheck)   
 
 
-def CreateProcessWithToken(
-    hToken: int, 
-    dwLogonFlags: int, 
-    lpApplicationName: str | bytes, 
-    lpCommandLine: str | bytes, 
-    dwCreationFlags: int, 
-    lpEnvironment: str | bytes, 
-    lpCurrentDirectory: str | bytes, 
-    lpStartupInfo: Any, 
+def CreateProcessWithLogonW(
+    lpUsername: str,
+    lpDomain: str,
+    lpPassword: str,
+    dwLogonFlags: int,
+    lpApplicationName: str,
+    lpCommandLine: str,
+    dwCreationFlags: int,
+    lpEnvironment: Any,
+    lpCurrentDirectory: str,
+    lpStartupInfo: Any,
     lpProcessInformation: Any,
-    unicode: bool = True,
     errcheck: bool = True
 ):
     
-    CreateProcessWithToken = (advapi32.CreateProcessWithTokenW 
-                              if unicode else advapi32.CreateProcessWithTokenA
-    )
-    
-    CreateProcessWithToken.argtypes = [
-        HANDLE,
+    CreateProcessWithLogonW = advapi32.CreateProcessWithLogonW
+    CreateProcessWithLogonW.argtypes = [
+        LPCWSTR,
+        LPCWSTR,
+        LPCWSTR,
         DWORD,
-        (LPCWSTR if unicode else LPSTR),
-        (LPWSTR if unicode else LPSTR),
+        LPCWSTR,
+        LPWSTR,
         DWORD,
         LPVOID,
-        (LPCWSTR if unicode else LPSTR),
-        (LPSTARTUPINFOW if unicode else LPSTARTUPINFOA),
+        LPCWSTR,
+        LPSTARTUPINFOW,
         LPPROCESS_INFORMATION
     ]
 
-    CreateProcessWithToken.restype = WINBOOL
-    res = CreateProcessWithToken(
+    CreateProcessWithLogonW.restype = BOOL
+    res = CreateProcessWithLogonW(
+        lpUsername,
+        lpDomain,
+        lpPassword,
+        dwLogonFlags,
+        lpApplicationName,
+        lpCommandLine,
+        dwCreationFlags,
+        lpEnvironment,
+        lpCurrentDirectory,
+        lpStartupInfo,
+        lpProcessInformation
+    )
+
+    return win32_to_errcheck(res, errcheck)
+
+
+def CreateProcessWithTokenW(
+    hToken: int, 
+    dwLogonFlags: int, 
+    lpApplicationName: str, 
+    lpCommandLine: str, 
+    dwCreationFlags: int, 
+    lpEnvironment: int, 
+    lpCurrentDirectory: str, 
+    lpStartupInfo: Any, 
+    lpProcessInformation: Any,
+    errcheck: bool = True
+):
+    
+    CreateProcessWithTokenW = advapi32.CreateProcessWithTokenW
+    CreateProcessWithTokenW.argtypes = [
+        HANDLE,
+        DWORD,
+        LPCWSTR,
+        LPWSTR,
+        DWORD,
+        LPVOID,
+        LPCWSTR,
+        LPSTARTUPINFOW,
+        LPPROCESS_INFORMATION
+    ]
+
+    CreateProcessWithTokenW.restype = WINBOOL
+    res = CreateProcessWithTokenW(
         hToken, 
         dwLogonFlags, 
         lpApplicationName, 
@@ -286,6 +331,9 @@ def CreateProcessWithToken(
 
     return win32_to_errcheck(res, errcheck)
 
+
+CreateProcessWithLogon = CreateProcessWithLogonW
+CreateProcessWithToken = CreateProcessWithTokenW
 
 FORMAT_MESSAGE_ALLOCATE_BUFFER = 0x00000100
 FORMAT_MESSAGE_IGNORE_INSERTS  = 0x00000200
@@ -333,3 +381,81 @@ def FormatMessage(
     )
 
     return win32_to_errcheck(res, errcheck)
+
+
+def LookupPrivilegeValue(
+    lpSystemName: str | bytes, 
+    lpName: str | bytes, 
+    lpLuid: Any,
+    unicode: bool = True,
+    errcheck: bool = True
+):
+    
+    LookupPrivilegeValue = (advapi32.LookupPrivilegeValueW 
+                            if unicode else advapi32.LookupPrivilegeValueA
+    )
+
+    LookupPrivilegeValue.argtypes = [
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR),
+        PLUID
+    ]
+
+    LookupPrivilegeValue.restype = BOOL
+    res = LookupPrivilegeValue(lpSystemName, lpName, lpLuid)
+    return win32_to_errcheck(res, errcheck)
+
+
+def LookupAccountSid(
+    lpSystemName: str | bytes, 
+    Sid: int, 
+    Name: str | bytes, 
+    cchName, 
+    ReferencedDomainName, 
+    cchReferencedDomainName, 
+    peUse, 
+    unicode: bool = True,
+    errcheck: bool = True
+) -> None:
+    
+    LookupAccountSid = (advapi32.LookupAccountSidW 
+                        if unicode else advapi32.LookupAccountSidA
+    )
+
+    LookupAccountSid.argtypes = [
+        (LPCWSTR if unicode else LPCSTR),
+        PSID,
+        (LPWSTR if unicode else LPSTR),
+        LPDWORD,
+        (LPWSTR if unicode else LPSTR),
+        LPDWORD,
+        PUINT
+    ]
+
+    LookupAccountSid.restype = BOOL
+    res = LookupAccountSid(
+        lpSystemName, 
+        Sid, 
+        Name, 
+        cchName, 
+        ReferencedDomainName, 
+        cchReferencedDomainName, 
+        peUse
+    )
+    return win32_to_errcheck(res, errcheck)
+
+
+def LocalAlloc(uFlags: int, uBytes: int, errcheck: bool = True):
+    LocalAlloc = kernel32.LocalAlloc
+    LocalAlloc.argtypes = [UINT, SIZE_T]
+    LocalAlloc.restype = HLOCAL
+    res = LocalAlloc(uFlags, uBytes)
+    return win32_to_errcheck(res, errcheck)
+
+
+def LocalFree(hMem: int) -> None:
+    LocalFree = kernel32.LocalFree
+    LocalFree.argtypes = [HLOCAL]
+    LocalFree.restype = HLOCAL
+    LocalFree(hMem)
+

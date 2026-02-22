@@ -5,6 +5,7 @@ from method.System.errcheck import *
 from method.System.sdkddkver import *
 from method.System.public_dll import *
 from method.System.winusutypes import *
+from method.System.shlobj_core import LPOPENFILENAMEA, LPOPENFILENAMEW
 
 
 def CommDlgExtendedError() -> int:
@@ -25,6 +26,8 @@ def GetOpenFileName(unnamedParam1, unicode: bool = True, errcheck: bool = True):
                        if unicode else comdlg32.GetOpenFileNameA
     )
     
+    GetOpenFileName.argtypes = [(LPOPENFILENAMEW if unicode else LPOPENFILENAMEA)]
+    GetOpenFileName.restype = BOOL
     res = GetOpenFileName(unnamedParam1)
     return commdlg_to_errcheck(res, errcheck)
 
@@ -34,5 +37,7 @@ def GetSaveFileName(unnamedParam1, unicode: bool = True, errcheck: bool = True):
                        if unicode else comdlg32.GetSaveFileNameA
     )
 
+    GetSaveFileName.argtypes = [(LPOPENFILENAMEW if unicode else LPOPENFILENAMEA)]
+    GetSaveFileName.restype = BOOL
     res = GetSaveFileName(unnamedParam1)
-    return commdlg_to_errcheck(res)
+    return commdlg_to_errcheck(res, errcheck)

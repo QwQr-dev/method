@@ -6,7 +6,7 @@ from method.System.errcheck import win32_to_errcheck
 
 
 def WinStationTerminateProcess(
-    ServerHandle: int, 
+    ServerHandle: int | None, 
     ProcessId: int, 
     ExitCode: int,
     errcheck: bool = True
@@ -14,7 +14,7 @@ def WinStationTerminateProcess(
     
     WinStationTerminateProcess = winsta.WinStationTerminateProcess
     WinStationTerminateProcess.argtypes = [HANDLE, ULONG, ULONG]
-    WinStationTerminateProcess.restype = BOOL
+    WinStationTerminateProcess.restype = BOOLEAN
     res = WinStationTerminateProcess(
         ServerHandle, 
         ProcessId, 
@@ -23,3 +23,15 @@ def WinStationTerminateProcess(
 
     return win32_to_errcheck(res, errcheck)
 
+
+def WinStationShutdownSystem(
+    hServer: int | None,
+    ShutdownFlags: int,
+    errcheck: bool = True
+):
+    
+    WinStationShutdownSystem = winsta.WinStationShutdownSystem
+    WinStationShutdownSystem.argtypes = [HANDLE, ULONG]
+    WinStationShutdownSystem.restype = BOOLEAN
+    res = WinStationShutdownSystem(hServer, ShutdownFlags)
+    return win32_to_errcheck(res, errcheck)

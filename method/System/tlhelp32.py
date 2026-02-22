@@ -3,7 +3,6 @@
 from typing import Any
 from method.System.public_dll import *
 from method.System.winusutypes import *
-from method.System.sdkddkver import UNICODE
 from method.System.errcheck import win32_to_errcheck
 
 # tlhelp32.h

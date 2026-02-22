@@ -7,7 +7,7 @@ from method.System import (
 )
 
 from method.System import (
-    combaseapi, commctrl, commdlg, commethod, ConsoleApi3,
+    combaseapi, commctrl, commdlg, commethod, consoleapi3,
     corerror
 )
 
@@ -20,7 +20,7 @@ from method.System import (
 )
 
 from method.System import (
-    fltwinerror
+    fltwinerror, fileapi
 )
 
 from method.System import (
@@ -73,7 +73,7 @@ from method.System import (
 )
 
 from method.System import (
-    wbemcli, wchar, wchar_s, win32typing, winbase, windef,
+    wbemcli, wchar, wchar_s, winbase, windef,
     windows, winerror, wingdi, winnt, winreg, winsvc, winuser,
     winusutypes, wow64apiset, wtypesbase
 )

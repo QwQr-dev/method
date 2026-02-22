@@ -23,6 +23,19 @@ def COMFUNCTYPE(
     call_type = CFUNCTYPE
 ):
     
+    '''
+    调用 COM 组件的方法
+
+    vtbl_index: COM 组件的索引值
+
+    func_name: COM 组件的名称
+
+    argtypes: 输入的类型，应为 list[tuple[int, str, _CDataType]] 当省略第一个参数时，则第一个参数默认的值为1
+
+    call_type: 调用的类型
+
+    剩余参数与 CFUNCTYPE 或 WINFUNCTYPE 相同
+    '''
     if not argtypes:
         return call_type(
             restype, 

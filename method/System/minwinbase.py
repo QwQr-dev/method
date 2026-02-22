@@ -21,13 +21,118 @@ SECURITY_ATTRIBUTES = _SECURITY_ATTRIBUTES
 PSECURITY_ATTRIBUTES = POINTER(SECURITY_ATTRIBUTES)
 LPSECURITY_ATTRIBUTES = PSECURITY_ATTRIBUTES
 
-'''
 class _OVERLAPPED(Structure):
-    class 
+    class DUMMYUNIONNAME(Union):
+        class DUMMYSTRUCTNAME(Structure):
+            _fields_ = [
+                ('Offset', DWORD),
+                ('OffsetHigh', DWORD)
+            ]
+        
+        _anonymous_ = ['DUMMYSTRUCTNAME']
+        _fields_ = [
+            ('DUMMYSTRUCTNAME', DUMMYSTRUCTNAME),
+            ('Pointer', PVOID)
+        ]
+    
+    _anonymous_ = ['DUMMYUNIONNAME']
     _fields_ = [
-
+        ('Internal', ULONG_PTR),
+        ('InternalHigh', ULONG_PTR),
+        ('DUMMYUNIONNAME', DUMMYUNIONNAME),
+        ('hEvent', HANDLE)
     ]
-'''
+
+OVERLAPPED = _OVERLAPPED
+LPOVERLAPPED = POINTER(OVERLAPPED)
+
+class _OVERLAPPED_ENTRY(Structure):
+    _fields_ = [
+        ('lpCompletionKey', ULONG_PTR),
+        ('lpOverlapped', LPOVERLAPPED),
+        ('Internal', ULONG_PTR),
+        ('dwNumberOfBytesTransferred', DWORD)
+    ]
+
+OVERLAPPED_ENTRY = _OVERLAPPED_ENTRY
+LPOVERLAPPED_ENTRY = POINTER(OVERLAPPED_ENTRY)
+
+class _FILETIME(Structure):
+    _fields_ = [
+        ('dwLowDateTime', DWORD),
+        ('dwHighDateTime', DWORD)
+    ]
+
+FILETIME = _FILETIME
+PFILETIME = POINTER(FILETIME)
+LPFILETIME = PFILETIME
+
+class _SYSTEMTIME(Structure):
+    _fields_ = [
+        ('wYear', WORD),
+        ('wMonth', WORD),
+        ('wDayOfWeek', WORD),
+        ('wDay', WORD),
+        ('wHour', WORD),
+        ('wMinute', WORD),
+        ('wSecond', WORD),
+        ('wMilliseconds', WORD)
+    ]
+
+SYSTEMTIME = _SYSTEMTIME
+PSYSTEMTIME = POINTER(SYSTEMTIME)
+LPSYSTEMTIME = PSYSTEMTIME
+
+class _WIN32_FIND_DATAA(Structure):
+    _fields_ = [
+        ('dwFileAttributes', DWORD),
+        ('ftCreationTime', FILETIME),
+        ('ftLastAccessTime', FILETIME),
+        ('ftLastWriteTime', FILETIME),
+        ('nFileSizeHigh', DWORD),
+        ('nFileSizeLow', DWORD),
+        ('dwReserved0', DWORD),
+        ('dwReserved1', DWORD),
+        ('cFileName', CHAR * MAX_PATH),
+        ('cAlternateFileName', CHAR * 14)
+    ]
+
+WIN32_FIND_DATAA = _WIN32_FIND_DATAA
+PWIN32_FIND_DATAA = POINTER(WIN32_FIND_DATAA)
+LPWIN32_FIND_DATAA = PWIN32_FIND_DATAA
+
+class _WIN32_FIND_DATAW(Structure):
+    _fields_ = [
+        ('dwFileAttributes', DWORD),
+        ('ftCreationTime', FILETIME),
+        ('ftLastAccessTime', FILETIME),
+        ('ftLastWriteTime', FILETIME),
+        ('nFileSizeHigh', DWORD),
+        ('nFileSizeLow', DWORD),
+        ('dwReserved0', DWORD),
+        ('dwReserved1', DWORD),
+        ('cFileName', WCHAR * MAX_PATH),
+        ('cAlternateFileName', WCHAR * 14)
+    ]
+
+WIN32_FIND_DATAW = _WIN32_FIND_DATAW
+PWIN32_FIND_DATAW = POINTER(WIN32_FIND_DATAW)
+LPWIN32_FIND_DATAW = PWIN32_FIND_DATAW
+
+WIN32_FIND_DATA = WIN32_FIND_DATAW if UNICODE else WIN32_FIND_DATAA
+PWIN32_FIND_DATA = PWIN32_FIND_DATAW if UNICODE else PWIN32_FIND_DATAA
+LPWIN32_FIND_DATA = LPWIN32_FIND_DATAW if UNICODE else LPWIN32_FIND_DATAA
+
+FindExInfoStandard = 0
+FindExInfoBasic = 1
+FindExInfoMaxInfoLevel = 2
+
+class _FINDEX_INFO_LEVELS(enum.Enum):
+    FindExInfoStandard = 0
+    FindExInfoBasic = 1
+    FindExInfoMaxInfoLevel = 2
+
+FINDEX_INFO_LEVELS = _FINDEX_INFO_LEVELS
 
 FIND_FIRST_EX_CASE_SENSITIVE = 0x00000001
 FIND_FIRST_EX_LARGE_FETCH = 0x00000002
@@ -40,8 +145,46 @@ CRITICAL_SECTION_DEBUG = RTL_CRITICAL_SECTION_DEBUG
 PCRITICAL_SECTION_DEBUG = PRTL_CRITICAL_SECTION_DEBUG
 LPCRITICAL_SECTION_DEBUG = PRTL_CRITICAL_SECTION_DEBUG
 
+LPOVERLAPPED_COMPLETION_ROUTINE = POINTER(WINAPI(VOID, DWORD, DWORD, LPOVERLAPPED))
+
 LOCKFILE_FAIL_IMMEDIATELY = 0x1
 LOCKFILE_EXCLUSIVE_LOCK = 0x2
+
+class _PROCESS_HEAP_ENTRY(Structure):
+    class DUMMYUNIONNAME(Union):
+        class Block(Structure):
+            _fields_ = [
+                ('hMem', HANDLE),
+                ('dwReserved', DWORD * 3)
+            ]
+
+        class Region(Structure):
+            _fields_ = [
+                ('dwCommittedSize', DWORD),
+                ('dwUnCommittedSize', DWORD),
+                ('lpFirstBlock', LPVOID),
+                ('lpLastBlock', LPVOID)
+            ]
+        
+        _anonymous_ = ['Block', 'Region']
+        _fields_ = [
+            ('Block', Block),
+            ('Region', Region)
+        ]
+    
+    _anonymous_ = ['DUMMYUNIONNAME']
+    _fields_ = [
+        ('lpData', PVOID),
+        ('cbData', DWORD),
+        ('cbOverhead', BYTE),
+        ('iRegionIndex', BYTE),
+        ('wFlags', WORD),
+        ('DUMMYUNIONNAME', DUMMYUNIONNAME)
+    ]
+
+PROCESS_HEAP_ENTRY = _PROCESS_HEAP_ENTRY
+PPROCESS_HEAP_ENTRY = POINTER(PROCESS_HEAP_ENTRY)
+LPPROCESS_HEAP_ENTRY = PPROCESS_HEAP_ENTRY
 
 PROCESS_HEAP_REGION = 0x1
 PROCESS_HEAP_UNCOMMITTED_RANGE = 0x2
@@ -246,7 +389,7 @@ NONZEROLHND = (LMEM_MOVEABLE)
 NONZEROLPTR = (LMEM_FIXED)
 
 
-def LocalReAlloc(hMem, uBytes, uFlags, errcheck: bool = True):
+def LocalReAlloc(hMem: int, uBytes: int, uFlags: int, errcheck: bool = True):
     LocalReAlloc = kernel32.LocalReAlloc
     LocalReAlloc.argtypes = [
         HLOCAL,
@@ -259,7 +402,7 @@ def LocalReAlloc(hMem, uBytes, uFlags, errcheck: bool = True):
     return win32_to_errcheck(res, errcheck)
 
 
-def LocalDiscard(h, errcheck: bool = True): 
+def LocalDiscard(h: int, errcheck: bool = True): 
     return LocalReAlloc(h, 0, LMEM_MOVEABLE, errcheck)
 
 LMEM_DISCARDED = 0x4000

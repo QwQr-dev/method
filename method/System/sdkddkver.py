@@ -11,8 +11,6 @@ def _nt_to_hex() -> int:
 
 
 WIN64 = True if calcsize('P') * 8 == 64 else False
-UNICODE = True if sys.maxunicode > 0xffff else False
-
 ####################################################################
 # sdkddkver.h
 

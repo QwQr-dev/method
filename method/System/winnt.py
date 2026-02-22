@@ -3,7 +3,6 @@
 import sys
 import enum
 import platform
-from typing import Any
 from method.System.sdkddkver import *
 from method.System.winusutypes import *
 from method.System.guiddef import GUID, DEFINE_GUID
@@ -12,7 +11,6 @@ from method.System.public_dll import kernel32, ntdll
 from method.System.win32typing import CDataType as _CDataType
 from method.System.wchar import memcpy, memcmp, memset, memmove
 
-S_OK = 0    
 
 class _OBJECT_ATTRIBUTES(Structure):
     _fields_ = [('Length', ULONG),
@@ -33,6 +31,7 @@ class _CLIENT_ID(Structure):
 ACCESS_MASK = ULONG
 OBJECT_ATTRIBUTES = _OBJECT_ATTRIBUTES
 POBJECT_ATTRIBUTES = ctypes.POINTER(OBJECT_ATTRIBUTES)
+PCOBJECT_ATTRIBUTES = POBJECT_ATTRIBUTES
 CLIENT_ID = _CLIENT_ID
 PCLIENT_ID = ctypes.POINTER(CLIENT_ID)
 
@@ -4755,7 +4754,6 @@ EVENT_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED |
 )
 
 MUTANT_QUERY_STATE = 0x0001
-
 MUTANT_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED |
                      SYNCHRONIZE | 
                      MUTANT_QUERY_STATE
@@ -8889,21 +8887,21 @@ class IMAGE_COR20_HEADER(Structure):
 PIMAGE_COR20_HEADER = POINTER(IMAGE_COR20_HEADER)
 
 
-def RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTrace, BackTraceHash):
+def RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTrace, BackTraceHash) -> int:
     RtlCaptureStackBackTrace = ntdll.RtlCaptureStackBackTrace
     RtlCaptureStackBackTrace.argtypes = [DWORD, DWORD, PVOID, PDWORD]
     RtlCaptureStackBackTrace.restype = WORD
-    RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTrace, BackTraceHash)
+    return RtlCaptureStackBackTrace(FramesToSkip, FramesToCapture, BackTrace, BackTraceHash)
 
 
 def RtlCaptureContext(ContextRecord):
     RtlCaptureContext = ntdll.RtlCaptureContext
     RtlCaptureContext.argtypes = [PCONTEXT]
     RtlCaptureContext.restype = VOID
-    return RtlCaptureContext()
+    RtlCaptureContext(ContextRecord)
 
 
-def RtlCompareMemory(Source1, Source2, Length):
+def RtlCompareMemory(Source1, Source2, Length) -> int:
     RtlCompareMemory = ntdll.RtlCompareMemory
     RtlCompareMemory.argtypes = [VOID, VOID, SIZE_T]
     RtlCompareMemory.restype = SIZE_T
@@ -9016,6 +9014,7 @@ def RtlUnwind(
         PVOID
     ]
 
+    RtlUnwind.restype = VOID
     RtlUnwind(TargetFrame, 
             TargetIp, 
             ExceptionRecord, 
@@ -9299,12 +9298,11 @@ COMPRESSION_ENGINE_STANDARD = 0x0000
 COMPRESSION_ENGINE_MAXIMUM = 0x0100
 COMPRESSION_ENGINE_HIBER = 0x0200
 
-def RtlEqualMemory(Destination, Source, Length): return memcmp(Destination, Source, Length)
-def RtlMoveMemory(Destination, Source, Length): return memmove(Destination, Source, Length)
-def RtlCopyMemory(Destination, Source, Length): return memcpy(Destination, Source, Length)
-def RtlFillMemory(Destination, Length, Fill): return memset(Destination, Fill, Length)
-def RtlZeroMemory(Destination, Length): memset(Destination, 0, Length)
-
+def RtlEqualMemory(Destination, Source, Length: int): return memcmp(Destination, Source, Length)
+def RtlMoveMemory(Destination, Source, Length: int): return memmove(Destination, Source, Length)
+def RtlCopyMemory(Destination, Source, Length: int): return memcpy(Destination, Source, Length)
+def RtlFillMemory(Destination, Length: int, Fill: int): return memset(Destination, Fill, Length)
+def RtlZeroMemory(Destination, Length: int): memset(Destination, 0, Length)
 
 class _MESSAGE_RESOURCE_ENTRY(Structure):
     _fields_ = [('Length', WORD),
@@ -9442,11 +9440,25 @@ VER_PLATFORM_WIN32s = 0
 VER_PLATFORM_WIN32_WINDOWS = 1
 VER_PLATFORM_WIN32_NT = 2
 
-VerSetConditionMask = NTAPI(ULONGLONG, ULONGLONG, DWORD, BYTE)
+
+def VerSetConditionMask(ConditionMask, TypeMask, Condition):
+    VerSetConditionMask = ntdll.VerSetConditionMask
+    VerSetConditionMask.argtypes = [ULONGLONG, DWORD, BYTE]
+    VerSetConditionMask.restype = ULONGLONG
+    res = VerSetConditionMask(ConditionMask, TypeMask, Condition)
+    return res
+
 
 VER_SET_CONDITION = VerSetConditionMask
 
-RtlGetProductInfo = NTAPI(BOOLEAN, DWORD, DWORD, DWORD, DWORD, PDWORD)
+
+def RtlGetProductInfo(OSMajorVersion, OSMinorVersion, SpMajorVersion, SpMinorVersion, ReturnedProductType):
+    RtlGetProductInfo = ntdll.RtlGetProductInfo
+    RtlGetProductInfo.argtypes = [DWORD, DWORD, DWORD, DWORD, PDWORD]
+    RtlGetProductInfo.restype = BOOLEAN
+    res = RtlGetProductInfo(OSMajorVersion, OSMinorVersion, SpMajorVersion, SpMinorVersion, ReturnedProductType)
+    return res
+
 
 RTL_UMS_VERSION = 0x0100
 
@@ -10975,31 +10987,32 @@ WOW64_FLOATING_SAVE_AREA = _WOW64_FLOATING_SAVE_AREA
 PWOW64_FLOATING_SAVE_AREA = POINTER(WOW64_FLOATING_SAVE_AREA)
 
 class _WOW64_CONTEXT(Structure):
-    _fields_ = [('ContextFlags', DWORD),
-                ('Dr0', DWORD),
-                ('Dr1', DWORD),
-                ('Dr2', DWORD),
-                ('Dr3', DWORD),
-                ('Dr6', DWORD),
-                ('Dr7', DWORD),
-                ('FloatSave', WOW64_FLOATING_SAVE_AREA),
-                ('SegGs', DWORD),
-                ('SegFs', DWORD),
-                ('SegEs', DWORD),
-                ('SegDs', DWORD),
-                ('Edi', DWORD),
-                ('Esi', DWORD),
-                ('Ebx', DWORD),
-                ('Edx', DWORD),
-                ('Ecx', DWORD),
-                ('Eax', DWORD),
-                ('Ebp', DWORD),
-                ('Eip', DWORD),
-                ('SegCs', DWORD),
-                ('EFlags', DWORD),
-                ('Esp', DWORD),
-                ('SegSs', DWORD),
-                ('ExtendedRegisters', BYTE * WOW64_MAXIMUM_SUPPORTED_EXTENSION)
+    _fields_ = [
+        ('ContextFlags', DWORD),
+        ('Dr0', DWORD),
+        ('Dr1', DWORD),
+        ('Dr2', DWORD),
+        ('Dr3', DWORD),
+        ('Dr6', DWORD),
+        ('Dr7', DWORD),
+        ('FloatSave', WOW64_FLOATING_SAVE_AREA),
+        ('SegGs', DWORD),
+        ('SegFs', DWORD),
+        ('SegEs', DWORD),
+        ('SegDs', DWORD),
+        ('Edi', DWORD),
+        ('Esi', DWORD),
+        ('Ebx', DWORD),
+        ('Edx', DWORD),
+        ('Ecx', DWORD),
+        ('Eax', DWORD),
+        ('Ebp', DWORD),
+        ('Eip', DWORD),
+        ('SegCs', DWORD),
+        ('EFlags', DWORD),
+        ('Esp', DWORD),
+        ('SegSs', DWORD),
+        ('ExtendedRegisters', BYTE * WOW64_MAXIMUM_SUPPORTED_EXTENSION)
     ]
 
 WOW64_CONTEXT = _WOW64_CONTEXT
@@ -11015,27 +11028,30 @@ class _WOW64_LDT_ENTRY(Structure):
             ]
         
         class Bits(Structure):
-            _fields_ = [('BaseMid', DWORD, 8),
-                        ('Type', DWORD, 5),
-                        ('Dpl', DWORD, 2),
-                        ('Pres', DWORD, 1),
-                        ('LimitHi', DWORD, 4),
-                        ('Sys', DWORD, 1),
-                        ('Reserved_0', DWORD, 1),
-                        ('Default_Big', DWORD, 1),
-                        ('Granularity', DWORD, 1),
-                        ('BaseHi', DWORD, 8)
+            _fields_ = [
+                ('BaseMid', DWORD, 8),
+                ('Type', DWORD, 5),
+                ('Dpl', DWORD, 2),
+                ('Pres', DWORD, 1),
+                ('LimitHi', DWORD, 4),
+                ('Sys', DWORD, 1),
+                ('Reserved_0', DWORD, 1),
+                ('Default_Big', DWORD, 1),
+                ('Granularity', DWORD, 1),
+                ('BaseHi', DWORD, 8)
             ]
         
         _anonymous_ = ['Bytes', 'Bits']
-        _fields_ = [('Bytes', Bytes),
-                    ('Bits', Bits)
+        _fields_ = [
+            ('Bytes', Bytes),
+            ('Bits', Bits)
         ]
     
     _anonymous_ = ['HighWord']
-    _fields_ = [('LimitLow', WORD),
-                ('BaseLow', WORD),
-                ('HighWord', HighWord),
+    _fields_ = [
+        ('LimitLow', WORD),
+        ('BaseLow', WORD),
+        ('HighWord', HighWord),
     ]
 
 WOW64_LDT_ENTRY = _WOW64_LDT_ENTRY

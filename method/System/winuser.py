@@ -4293,28 +4293,30 @@ def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any, errcheck: bool = Tru
     return win32_to_errcheck(res, errcheck)
 
 
-def IsWindow(hwnd: int = NULL) -> bool:
+def IsWindow(hwnd: int = NULL) -> int:
     IsWindow = user32.IsWindow
     IsWindow.argtypes = [HWND]
-    return bool(IsWindow(hwnd))
+    IsWindow.restype = BOOL
+    return IsWindow(hwnd)
 
 
-def IsWindowVisible(hwnd: int) -> bool:
+def IsWindowVisible(hwnd: int) -> int:
     IsWindowVisible = user32.IsWindowVisible
     IsWindowVisible.argtypes = [HWND]
-    return bool(IsWindowVisible(hwnd))
+    IsWindowVisible.restype = BOOL
+    return IsWindowVisible(hwnd)
 
 
-def IsUserAnAdmin() -> bool:
+def IsUserAnAdmin() -> int:
     IsUserAnAdmin = shell32.IsUserAnAdmin
     IsUserAnAdmin.restype = BOOL
-    return bool(IsUserAnAdmin())
+    return IsUserAnAdmin()
 
 
 def ShowWindow(hwnd: int, nCmdShow: int) -> bool:
     ShowWindow = user32.ShowWindow
     ShowWindow.restype = BOOL
-    return bool(ShowWindow(hwnd, nCmdShow))
+    return ShowWindow(hwnd, nCmdShow)
 
 
 def MessageBox(
@@ -4391,7 +4393,7 @@ def GetCurrentProcess() -> int:
 def LoadImage(
     hInst: int, 
     name: str | int, 
-    type: str, 
+    type: int, 
     cx: int, 
     cy: int, 
     fuLoad: int, 
@@ -4403,6 +4405,16 @@ def LoadImage(
                  if unicode else user32.LoadImageA
     )
 
+    LoadImage.argtypes = [
+        HINSTANCE,
+        (LPCWSTR if unicode else LPCSTR),
+        UINT,
+        INT,
+        INT,
+        UINT
+    ]
+
+    LoadImage.restype = HANDLE
     res = LoadImage(hInst, name, type, cx, cy, fuLoad)
     return win32_to_errcheck(res, errcheck)
 

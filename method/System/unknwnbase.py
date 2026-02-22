@@ -119,10 +119,7 @@ class AsyncIUnknownVtbl(AsyncIUnknown): pass
 def IClassFactory_QueryInterface(This,riid,ppvObject, errcheck: bool = True): return IUnknown_QueryInterface(This, riid, ppvObject, errcheck)
 def IClassFactory_AddRef(This, errcheck: bool = True): return IUnknown_AddRef(This, errcheck)
 def IClassFactory_Release(This, errcheck: bool = True): return IUnknown_Release(This, errcheck)
-
-
 def IClassFactory_CreateInstance(This, pUnkOuter, riid, ppvObject, errcheck: bool = True) -> int:
-
     IClassFactory_CreateInstance = COMFUNCTYPE(
         3, 
         'CreateInstance',
@@ -135,6 +132,7 @@ def IClassFactory_CreateInstance(This, pUnkOuter, riid, ppvObject, errcheck: boo
 
     res = IClassFactory_CreateInstance(This, pUnkOuter, riid, ppvObject)
     return com_to_errcheck(res, errcheck)
+
 
 def IClassFactory_LockServer(This, fLock, errcheck: bool = True) -> int:
     IClassFactory_LockServer = COMFUNCTYPE(
@@ -150,21 +148,7 @@ def IClassFactory_LockServer(This, fLock, errcheck: bool = True) -> int:
 IID_IClassFactory = DEFINE_GUID(0x00000001, 0x0000, 0x0000, 0xc0,0x00, 0x00,0x00,0x00,0x00,0x00,0x46)
 class IClassFactory(IUnknown):
     MIDL_INTERFACE = "00000001-0000-0000-c000-000000000046"
-    def CreateInstance(
-        self, 
-        pUnkOuter, 
-        riid, 
-        ppvObject,
-        errcheck: bool = True
-    ): 
-        return IClassFactory_CreateInstance(
-            self.this, 
-            pUnkOuter, 
-            riid, 
-            ppvObject,
-            errcheck
-        )
-    
+    def CreateInstance(self, pUnkOuter, riid, ppvObject, errcheck: bool = True): return IClassFactory_CreateInstance(self.this, pUnkOuter, riid, ppvObject, errcheck)
     def LockServer(self, fLock, errcheck: bool = True): return IClassFactory_LockServer(self.this, fLock, errcheck)
 
 class IClassFactoryVtbl(IClassFactory): pass

@@ -21,11 +21,8 @@ from ctypes import (
     c_long, c_longdouble, c_longlong, c_short, c_size_t,
     c_ssize_t, c_ubyte, c_uint, c_uint16, c_uint32,
     c_uint64, c_uint8, c_ulong, c_ulonglong, c_ushort, c_void_p, 
-    c_voidp, c_wchar, c_wchar_p, py_object
+    c_voidp, c_wchar, c_wchar_p, py_object, c_time_t
 )
-
-if sys.version_info >= (3, 13):
-    from ctypes import c_time_t
 
 if sys.version_info >= (3, 14):
     try:
@@ -105,7 +102,7 @@ HMONITOR = wintypes.HMONITOR
 HPALETTE = wintypes.HPALETTE
 HPEN = wintypes.HPEN
 HRESULT = wintypes.LONG
-ht = HRESULT
+hr = ht = HRESULT
 HRGN = wintypes.HRGN
 HRSRC = wintypes.HRSRC
 HSZ = wintypes.HANDLE
@@ -190,21 +187,8 @@ POINTER_32 = ctypes.POINTER(ctypes.c_uint32
 POINTER_64 = ctypes.POINTER(ctypes.c_uint64 
                             if sys.maxsize > 2**32 else ctypes.c_void_p
 )
-
-try:
-    POINTER_SIGNID = ctypes.POINTER(ctypes.c_ssize_t)
-except:
-    POINTER_SIGNID = ctypes.POINTER(ctypes.c_int32 
-                                    if ctypes.sizeof(ctypes.c_void_p) == 4 else ctypes.c_int64
-    )
-
-try:  
-    POINTER_UNSINGID = ctypes.POINTER(ctypes.c_size_t)
-except:
-    POINTER_UNSINGID = ctypes.POINTER(ctypes.c_uint32 
-                                      if ctypes.sizeof(ctypes.c_void_p) == 4 else ctypes.c_uint64
-    )
-
+POINTER_SIGNID = ctypes.POINTER(ctypes.c_ssize_t)
+POINTER_UNSINGID = ctypes.POINTER(ctypes.c_size_t)
 PSHORT = wintypes.PSHORT
 PSIZE_T = ctypes.POINTER(ctypes.c_int64 
                         if sys.maxsize > 2**32 else ctypes.c_long
@@ -232,7 +216,7 @@ PUINT8 = ctypes.POINTER(ctypes.c_ubyte)
 PUINT16 = ctypes.POINTER(ctypes.c_uint16)
 PUINT32 = ctypes.POINTER(ctypes.c_uint32)
 PUINT64 = ctypes.POINTER(ctypes.c_uint64)
-PULONG = ctypes.POINTER(wintypes.PULONG)
+PULONG = wintypes.PULONG
 PULONGLONG = ctypes.POINTER(ctypes.c_ulonglong)
 PULONG_PTR = ctypes.POINTER(ctypes.c_uint64 
                             if sys.maxsize > 2**32 else ctypes.c_ulong
@@ -285,14 +269,15 @@ WCHAR = wintypes.WCHAR
 WORD = wintypes.WORD
 WPARAM = wintypes.WPARAM
 
+UNICODE = True if sys.maxunicode > 0xffff else False
 
 class _UNICODE_STRING(ctypes.Structure):
-    _fields_ = [('Length', USHORT), 
-                ('MaximumLength', USHORT),
-                ('Buffer', PWSTR)
-        ]
+    _fields_ = [
+        ('Length', USHORT), 
+        ('MaximumLength', USHORT),
+        ('Buffer', PWSTR)
+    ]
     
-
 UNICODE_STRING = _UNICODE_STRING
 PUNICODE_STRING = ctypes.POINTER(_UNICODE_STRING)
 

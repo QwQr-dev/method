@@ -1,61 +1,61 @@
 # coding = 'utf-8'
 
 import os
-
-from method.System.commdlg import *
-from method.System.shlobj_core import *
+from method.System import shlobj_core
+from method.System.winusutypes import *
 from method.System.winbase import ZeroMemory
+from method.System.commdlg import GetOpenFileName
 
-_SupportTypes = list[tuple[str, str]]
-
-askshellfolder_flags = (BIF_DONTGOBELOWDOMAIN | 
-                        BIF_RETURNONLYFSDIRS | 
-                        BIF_NEWDIALOGSTYLE | 
-                        BIF_USENEWUI | 
-                        BIF_UAHINT
+_askshellfolder_flags = (
+    shlobj_core.BIF_DONTGOBELOWDOMAIN | 
+    shlobj_core.BIF_RETURNONLYFSDIRS | 
+    shlobj_core.BIF_NEWDIALOGSTYLE | 
+    shlobj_core.BIF_USENEWUI | 
+    shlobj_core.BIF_UAHINT
 )
 
-askopenfilenames_flags = (OFN_FILEMUSTEXIST | 
-                          OFN_ALLOWMULTISELECT | 
-                          OFN_HIDEREADONLY | 
-                          OFN_EXPLORER
+_askopenfilenames_flags = (
+    shlobj_core.OFN_FILEMUSTEXIST | 
+    shlobj_core.OFN_ALLOWMULTISELECT | 
+    shlobj_core.OFN_HIDEREADONLY | 
+    shlobj_core.OFN_EXPLORER
 )
 
-askopenfilename_flags = (OFN_FILEMUSTEXIST | 
-                         OFN_HIDEREADONLY | 
-                         OFN_EXPLORER
+_askopenfilename_flags = (
+    shlobj_core.OFN_FILEMUSTEXIST | 
+    shlobj_core.OFN_HIDEREADONLY | 
+    shlobj_core.OFN_EXPLORER
 )
 
-asksavefilenames_flags = askopenfilenames_flags
-asksavefilename_flags = askopenfilename_flags
+_asksavefilenames_flags = _askopenfilenames_flags
+_asksavefilename_flags = _askopenfilename_flags
 
 
 def askshellfolder(
-    title: str | bytes = '', 
+    title: str = '', 
     hwnd: int = NULL, 
-    pidlRoot: Any = LPCITEMIDLIST(), 
+    pidlRoot: Any = shlobj_core.LPCITEMIDLIST(), 
     pszDisplayName: Any = NULL, 
-    ulFlags: int = askshellfolder_flags, 
-    iImage: int = 0,
-    unicode: bool = True
-) -> (str | bytes):
+    ulFlags: int = _askshellfolder_flags, 
+    iImage: int = 0
+) -> str:
     
-    bi = (BROWSEINFOW if unicode else BROWSEINFOA)()
+    bi = shlobj_core.BROWSEINFOW()
     bi.hwndOwner = hwnd
     bi.pidlRoot = pidlRoot
     bi.pszDisplayName = pszDisplayName
     bi.lpszTitle = title
     bi.ulFlags = ulFlags
-    bi.lpfn = BFFCALLBACK()
+    bi.lpfn = shlobj_core.BFFCALLBACK()
     bi.iImage = iImage
 
-    strFolder = ((WCHAR if unicode else CHAR) * MAX_PATH)()
-    pidl = SHBrowseForFolder(byref(bi), unicode=unicode)
-    strFolder = SHGetPathFromIDList(pidl, strFolder, unicode=unicode)
+    strFolder = (WCHAR * MAX_PATH)()
+    pidl = shlobj_core.SHBrowseForFolder(byref(bi))
+    shlobj_core.SHGetPathFromIDList(pidl, strFolder)
     return strFolder.value
 
 
-def lpstrFilter(item: _SupportTypes) -> str:
+def lpstrFilter(item: list[tuple[str, str]]) -> str:
     res = []
     for j in item:
         if len(j) != 2:
@@ -72,172 +72,149 @@ def lpstrFilter(item: _SupportTypes) -> str:
     return ''.join(res) + '\0'
 
 
-def askopenfilename(
-    title: str | bytes = '', 
-    lpstrFilter: str | bytes = '\0', 
-    hwnd: int = NULL, 
-    Flags: int = askopenfilename_flags, 
-    buffer: int = 2**15-1, 
-    szPath: int = MAX_PATH, 
-    nFilterIndex: int = 1, 
-    unicode: bool = True
-) -> (str | bytes):
+def _OpenFileName(
+    title: str, 
+    lpstrFilter: str, 
+    hwnd: int, 
+    Flags: int, 
+    buffer: int, 
+    szPath: int, 
+    nFilterIndex: int
+):
     
-    szOpenFileNames = ((WCHAR if unicode else CHAR) * buffer)()
-    szPath = ((WCHAR if unicode else CHAR) * szPath)()
-
-    ofn = (OPENFILENAMEW if unicode else OPENFILENAMEA)()
+    szOpenFileNames = (WCHAR * buffer)()
+    szPath = (WCHAR * szPath)()
+    ofn = shlobj_core.OPENFILENAMEW()
     ZeroMemory(byref(ofn), sizeof(ofn))
-
     ofn.lStructSize = sizeof(ofn)
     ofn.hwndOwner = hwnd
-    ofn.lpstrFile = cast(szOpenFileNames, LPWSTR if unicode else LPSTR)
+    ofn.lpstrFile = cast(szOpenFileNames, LPWSTR)
     ofn.nMaxFile = buffer
     ofn.lpstrFilter = lpstrFilter
     ofn.nFilterIndex = nFilterIndex
     ofn.lpstrTitle = title
     ofn.Flags = Flags
-
-    GetOpenFileName(byref(ofn), unicode=unicode)
+    GetOpenFileName(byref(ofn))
     return szOpenFileNames.value
+
+
+def _OpenFileNames(
+    title: str, 
+    lpstrFilter: str, 
+    hwnd: int, 
+    Flags: int, 
+    buffer: int, 
+    szPath: int, 
+    nFilterIndex: int
+):
+    
+    szOpenFileNames = (WCHAR * buffer)()
+    szPath = (WCHAR * szPath)()
+    ofn = shlobj_core.OPENFILENAMEW()
+    ZeroMemory(byref(ofn), sizeof(ofn))
+    ofn.lStructSize = sizeof(ofn)
+    ofn.hwndOwner = hwnd
+    ofn.lpstrFile = cast(szOpenFileNames, LPWSTR)
+    ofn.nMaxFile = buffer
+    ofn.lpstrFilter = lpstrFilter
+    ofn.nFilterIndex = nFilterIndex
+    ofn.lpstrTitle = title
+    ofn.Flags = Flags
+    GetOpenFileName(byref(ofn))
+    path = szOpenFileNames.value
+    old_filenames = ''.join(szOpenFileNames)[len(path):].split('\x00')
+    new_filenames = []
+    if any(old_filenames):
+        for c in old_filenames:
+            if c: new_filenames.append(c)
+        return path, new_filenames
+    new_path = os.path.dirname(path)
+    new_filenames.append(path[len(new_path) + 1:])
+    return new_path, new_filenames
+
+
+def askopenfilename(
+    title: str = '', 
+    lpstrFilter: str = '\0', 
+    hwnd: int = NULL, 
+    Flags: int = _askopenfilename_flags, 
+    buffer: int = 2**15, 
+    szPath: int = MAX_PATH, 
+    nFilterIndex: int = 1
+) -> str:
+    
+    return _OpenFileName(
+        title=title,
+        lpstrFilter=lpstrFilter,
+        hwnd=hwnd,
+        Flags=Flags,
+        buffer=buffer,
+        szPath=szPath,
+        nFilterIndex=nFilterIndex
+    )
 
 
 def asksavefilename(
-    title: str | bytes = '', 
-    lpstrFilter: str | bytes = '\0', 
+    title: str = '', 
+    lpstrFilter: str = '\0', 
     hwnd: int = NULL, 
-    Flags: int = asksavefilename_flags, 
-    buffer: int = 2**15-1, 
+    Flags: int = _asksavefilename_flags, 
+    buffer: int = 2**15, 
     szPath: int = MAX_PATH, 
-    nFilterIndex: int = 1, 
-    unicode: bool = True
-) -> (str | bytes):
+    nFilterIndex: int = 1
+) -> str:
     
-    szOpenFileNames = ((WCHAR if unicode else CHAR) * buffer)()
-    szPath = ((WCHAR if unicode else CHAR) * szPath)()
-
-    ofn = (OPENFILENAMEW if unicode else OPENFILENAMEA)()
-    ZeroMemory(byref(ofn), sizeof(ofn))
-
-    ofn.lStructSize = sizeof(ofn)
-    ofn.hwndOwner = hwnd
-    ofn.lpstrFile = cast(szOpenFileNames, LPWSTR if unicode else LPSTR)
-    ofn.nMaxFile = buffer
-    ofn.lpstrFilter = lpstrFilter
-    ofn.nFilterIndex = nFilterIndex
-    ofn.lpstrTitle = title
-    ofn.Flags = Flags
-
-    GetSaveFileName(byref(ofn), unicode=unicode)
-    return szOpenFileNames.value
+    return _OpenFileName(
+        title=title,
+        lpstrFilter=lpstrFilter,
+        hwnd=hwnd,
+        Flags=Flags,
+        buffer=buffer,
+        szPath=szPath,
+        nFilterIndex=nFilterIndex
+    )
 
 
 def askopenfilenames(
-    title: str | bytes = '', 
-    lpstrFilter: str | bytes = '\0', 
+    title: str = '', 
+    lpstrFilter: str = '\0', 
     hwnd: int = NULL, 
-    Flags: int = askopenfilenames_flags, 
-    buffer: int = 2**15-1, 
+    Flags: int = _askopenfilenames_flags, 
+    buffer: int = 2**15, 
     szPath: int = MAX_PATH, 
-    nFilterIndex: int = 1, 
-    unicode: bool = True
-) -> tuple[str | bytes, list[str | bytes]]:
+    nFilterIndex: int = 1
+) -> tuple[str, list[str]]:
     
-    szOpenFileNames = ((WCHAR if unicode else CHAR) * buffer)()
-    szPath = ((WCHAR if unicode else CHAR) * szPath)()
-
-    ofn = (OPENFILENAMEW if unicode else OPENFILENAMEA)()
-    ZeroMemory(byref(ofn), sizeof(ofn))
-
-    ofn.lStructSize = sizeof(ofn)
-    ofn.hwndOwner = hwnd
-    ofn.lpstrFile = cast(szOpenFileNames, LPWSTR if unicode else LPSTR)
-    ofn.nMaxFile = buffer
-    ofn.lpstrFilter = lpstrFilter
-    ofn.nFilterIndex = nFilterIndex
-    ofn.lpstrTitle = title
-    ofn.Flags = Flags
-
-    GetOpenFileName(byref(ofn), unicode=unicode)
-
-    num = 0
-    res = []
-    for j in szOpenFileNames:
-        try:
-            if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
-                break
-            elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
-                break
-            res.append(j)
-            num += 1
-        except:
-            break
-
-    res = ('' if unicode else b'').join(res).split('\0' if unicode else b'\0')
-
-    if len(res) > 1:
-        path = res[0]
-        res.remove(res[0])
-    else:
-        path = os.path.dirname(res[0])
-        res.append(os.path.basename(res[0]))
-        res.remove(res[0])
-
-    return path, res
+    return _OpenFileNames(
+        title=title,
+        lpstrFilter=lpstrFilter,
+        hwnd=hwnd,
+        Flags=Flags,
+        buffer=buffer,
+        szPath=szPath,
+        nFilterIndex=nFilterIndex
+    )
 
 
 def asksavefilenames(
-    title: str | bytes = '', 
-    lpstrFilter: str | bytes = '\0', 
+    title: str = '', 
+    lpstrFilter: str = '\0', 
     hwnd: int = NULL, 
-    Flags: int = asksavefilenames_flags, 
-    buffer: int = 2**15-1, 
+    Flags: int = _asksavefilenames_flags, 
+    buffer: int = 2**15, 
     szPath: int = MAX_PATH, 
     nFilterIndex: int = 1, 
-    unicode: bool = True
-) -> tuple[str | bytes, list[str | bytes]]:
+) -> tuple[str, list[str]]:
     
-    szOpenFileNames = ((WCHAR if unicode else CHAR) * buffer)()
-    szPath = ((WCHAR if unicode else CHAR) * szPath)()
-
-    ofn = (OPENFILENAMEW if unicode else OPENFILENAMEA)()
-    ZeroMemory(byref(ofn), sizeof(ofn))
-
-    ofn.lStructSize = sizeof(ofn)
-    ofn.hwndOwner = hwnd
-    ofn.lpstrFile = cast(szOpenFileNames, LPWSTR if unicode else LPSTR)
-    ofn.nMaxFile = buffer
-    ofn.lpstrFilter = lpstrFilter
-    ofn.nFilterIndex = nFilterIndex
-    ofn.lpstrTitle = title
-    ofn.Flags = Flags
-
-    GetSaveFileName(byref(ofn), unicode=unicode)
-
-    num = 0
-    res = []
-    for j in szOpenFileNames:
-        try:
-            if szOpenFileNames[num] == '\0' and szOpenFileNames[num + 1] == '\0' and unicode:
-                break
-            elif szOpenFileNames[num] == b'\0' and szOpenFileNames[num + 1] == b'\0':
-                break
-            res.append(j)
-            num += 1
-        except:
-            break
-
-    res = ('' if unicode else b'').join(res).split('\0' if unicode else b'\0')
-
-    if len(res) > 1:
-        path = res[0]
-        res.remove(res[0])
-    else:
-        path = os.path.dirname(res[0])
-        res.append(os.path.basename(res[0]))
-        res.remove(res[0])
-        
-    return path, res
+    return _OpenFileNames(
+        title=title,
+        lpstrFilter=lpstrFilter,
+        hwnd=hwnd,
+        Flags=Flags,
+        buffer=buffer,
+        szPath=szPath,
+        nFilterIndex=nFilterIndex
+    )
 
 
 if __name__ == '__main__':

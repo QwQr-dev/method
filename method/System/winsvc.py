@@ -2,51 +2,12 @@
 # winsvc.h
 
 import enum
+from method.System.winnt import *
 from method.System.sdkddkver import *
 from method.System.winusutypes import *
 from method.System.public_dll import advapi32
-from method.System.errcheck import win32_to_errcheck, hresult_to_errcheck
-from method.System.winnt import SECURITY_INFORMATION, PSECURITY_INFORMATION, PSECURITY_DESCRIPTOR
+from method.System.errcheck import win32_to_errcheck
 
-##################################################################
-# from winnt.h
-
-DELETE  = 0x00010000
-READ_CONTROL  = 0x00020000
-WRITE_DAC  = 0x00040000
-WRITE_OWNER  = 0x00080000
-SYNCHRONIZE  = 0x00100000
-
-STANDARD_RIGHTS_REQUIRED  = 0x000F0000
-STANDARD_RIGHTS_READ = READ_CONTROL
-STANDARD_RIGHTS_WRITE = READ_CONTROL
-STANDARD_RIGHTS_EXECUTE = READ_CONTROL
-STANDARD_RIGHTS_ALL  = 0x001F0000
-
-SECTION_QUERY = 0x0001
-SECTION_MAP_WRITE = 0x0002
-SECTION_MAP_READ = 0x0004
-SECTION_MAP_EXECUTE = 0x0008
-SECTION_EXTEND_SIZE = 0x0010
-SECTION_MAP_EXECUTE_EXPLICIT = 0x0020
-
-SECTION_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | 
-                      SECTION_QUERY | 
-                      SECTION_MAP_WRITE | 
-                      SECTION_MAP_READ | 
-                      SECTION_MAP_EXECUTE | 
-                      SECTION_EXTEND_SIZE
-)
-
-SESSION_QUERY_ACCESS = 0x1
-SESSION_MODIFY_ACCESS = 0x2
-
-SESSION_ALL_ACCESS = (STANDARD_RIGHTS_REQUIRED | 
-                      SESSION_QUERY_ACCESS | 
-                      SESSION_MODIFY_ACCESS
-)
-
-##############################################################
 SERVICES_ACTIVE_DATABASEW = "ServicesActive"
 SERVICES_FAILED_DATABASEW = "ServicesFailed"
 
@@ -832,9 +793,9 @@ def NotifyBootConfigStatus(BootAcceptable, errcheck: bool = True):
 
 
 def OpenSCManager(
-    lpMachineName, 
-    lpDatabaseName, 
-    dwDesiredAccess, 
+    lpMachineName: str | bytes, 
+    lpDatabaseName: str | bytes, 
+    dwDesiredAccess: int, 
     unicode: bool = True,
     errcheck: bool = True
 ):
@@ -1262,4 +1223,4 @@ def NotifyServiceStatusChange(hService, dwNotifyMask, pNotifyBuffer, unicode: bo
     NotifyServiceStatusChange.argtypes = [SC_HANDLE, DWORD]
     NotifyServiceStatusChange.restype = DWORD
     res = NotifyServiceStatusChange(hService, dwNotifyMask, pNotifyBuffer)
-    return hresult_to_errcheck(res, errcheck)
+    return win32_to_errcheck(res, errcheck)

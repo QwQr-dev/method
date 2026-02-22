@@ -7,8 +7,6 @@ from method.System.sdkddkver import *
 from method.System.public_dll import *
 from method.System.winusutypes import *
 
-_WIN32_WINNT = WIN32_WINNT
-
 BIF_RETURNONLYFSDIRS =     0x00000001   # For finding a folder to start document searching
 BIF_DONTGOBELOWDOMAIN =    0x00000002   # For starting the Find Computer
 BIF_STATUSTEXT =           0x00000004   # Top of the dialog has 2 lines of text for BROWSEINFO.lpszTitle and one line if
@@ -69,39 +67,18 @@ OFN_SHAREAWARE =               0x00004000
 OFN_NOREADONLYRETURN =         0x00008000
 OFN_NOTESTFILECREATE =         0x00010000
 OFN_NONETWORKBUTTON =          0x00020000
-OFN_NOLONGNAMES =              0x00040000     # force no long names for 4.x modules
-
-if WINVER >= 0x0400:
-    OFN_EXPLORER =                 0x00080000     # new look commdlg
-    OFN_NODEREFERENCELINKS =       0x00100000
-    OFN_LONGNAMES =                0x00200000     # force long names for 3.x modules
-    # OFN_ENABLEINCLUDENOTIFY and OFN_ENABLESIZING require
-    # Windows 2000 or higher to have any effect.
-    OFN_ENABLEINCLUDENOTIFY =      0x00400000     # send include message to callback
-    OFN_ENABLESIZING =             0x00800000
-
-if (_WIN32_WINNT >= 0x0500):
-    OFN_DONTADDTORECENT =          0x02000000
-    OFN_FORCESHOWHIDDEN =          0x10000000    # Show All files including System and hidden files
-
-#FlagsEx Values
-if (_WIN32_WINNT >= 0x0500):
-    OFN_EX_NOPLACESBAR =         0x00000001
-
-# Return values for the registered message sent to the hook function
-# when a sharing violation occurs.  OFN_SHAREFALLTHROUGH allows the
-# filename to be accepted, OFN_SHARENOWARN rejects the name but puts
-# up no warning (returned when the app has already put up a warning
-# message), and OFN_SHAREWARN puts up the default warning message
-# for sharing violations.
-#
-# Note:  Undefined return values map to OFN_SHAREWARN, but are
-#        reserved for future use.
-
+OFN_NOLONGNAMES =              0x00040000   
+OFN_EXPLORER =                 0x00080000  
+OFN_NODEREFERENCELINKS =       0x00100000
+OFN_LONGNAMES =                0x00200000     
+OFN_ENABLEINCLUDENOTIFY =      0x00400000  
+OFN_ENABLESIZING =             0x00800000
+OFN_DONTADDTORECENT =          0x02000000
+OFN_FORCESHOWHIDDEN =          0x10000000    
+OFN_EX_NOPLACESBAR =         0x00000001
 OFN_SHAREFALLTHROUGH =     2
 OFN_SHARENOWARN =          1
 OFN_SHAREWARN =            0
-
 
 LPOFNHOOKPROC = CALLBACK(UINT_PTR, HWND, UINT, WPARAM, LPARAM)
 BFFCALLBACK = CALLBACK(INT, HWND, UINT, LPARAM, LPARAM)
@@ -224,7 +201,7 @@ def SHBrowseForFolder(lpbi, unicode: bool = True):
                          if unicode else shell32.SHBrowseForFolderA
     )
 
-    SHBrowseForFolder.argtypes = [POINTER(BROWSEINFOW) if unicode else POINTER(BROWSEINFOA)]
+    SHBrowseForFolder.argtypes = [POINTER(BROWSEINFOW if unicode else BROWSEINFOA)]
     SHBrowseForFolder.restype = VOID
     return SHBrowseForFolder(lpbi)
 
@@ -234,8 +211,9 @@ def SHGetPathFromIDList(pidl, pszPath, unicode: bool = True, errcheck: bool = Tr
                            if unicode else shell32.SHGetPathFromIDListA
     )
 
-    SHGetPathFromIDList.argtypes = [VOID, 
-                                    (LPWSTR if unicode else LPSTR)
+    SHGetPathFromIDList.argtypes = [
+        VOID, 
+        (LPWSTR if unicode else LPSTR)
     ]
     
     SHGetPathFromIDList.restype = BOOL

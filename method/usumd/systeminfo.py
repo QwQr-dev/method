@@ -5,19 +5,14 @@ import platform
 from typing import Any
 import winreg as _winreg
 from struct import calcsize
+from method.System.winbase import *
 from method.System.sdkddkver import *
 from method.System.winusutypes import *
 from method.System.shellapi import CloseHandle
+from method.System.sddl import ConvertSidToStringSid
+from method.System.winnt import TOKEN_QUERY, TokenUser, PTOKEN_USER, PSID
 from method.System.processthreadsapi import OpenProcessToken, GetCurrentProcess
 from method.System.sysinfoapi import GetSystemFirmwareTable, RSMB, SMBIOS_HEADER
-from method.System.securitybaseapi import (
-    GetTokenInformation, IsValidSid, LookupAccountSid,
-    LocalFree, ConvertSidToStringSid
-)
-
-from method.System.winnt import (
-    TOKEN_QUERY, TokenUser, PTOKEN_USER, PSID
-)
 
 
 def enum_reg_value(root: int, path: str) -> dict[str, Any]:
@@ -52,15 +47,18 @@ class GetUserInfo:
         domain_size = DWORD(256)
         sid_name_use = DWORD()
         user_sid = self.user_sid
-        LookupAccountSid(
-            self._SystemName,
-            PSID(user_sid),
-            username_buffer,
-            byref(username_size),
-            domain_buffer,
-            byref(domain_size),
-            byref(sid_name_use)
-        )
+        try:
+            LookupAccountSid(
+                self._SystemName,
+                PSID(user_sid),
+                username_buffer,
+                byref(username_size),
+                domain_buffer,
+                byref(domain_size),
+                byref(sid_name_use)
+            )
+        except:
+            return None, None
 
         username = username_buffer.value
         domain = domain_buffer.value
