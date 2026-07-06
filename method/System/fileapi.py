@@ -211,9 +211,8 @@ def GetFullPathName(lpFileName, nBufferLength, lpBuffer, lpFilePart, unicode: bo
     return res
 
 
-def GetLogicalDrives():
+def GetLogicalDrives() -> int:
     GetLogicalDrives = kernel32.GetLogicalDrives
-
     GetLogicalDrives.restype = DWORD
     res = GetLogicalDrives()
     return res
@@ -324,7 +323,7 @@ def AreShortNamesEnabled(Handle, Enabled, errcheck: bool = True):
     return win32_to_errcheck(res, errcheck)
 
 
-def GetLongPathName(lpszShortPath, lpszLongPath, cchBuffer, unicode: bool = True):
+def GetLongPathName(lpszShortPath, lpszLongPath, cchBuffer, unicode: bool = True) -> int:
     GetLongPathName = kernel32.GetLongPathNameW if unicode else kernel32.GetLongPathNameA
     GetLongPathName.argtypes = [(LPCWSTR if unicode else LPCSTR), (LPWSTR if unicode else LPSTR), DWORD]
     GetLongPathName.restype = DWORD

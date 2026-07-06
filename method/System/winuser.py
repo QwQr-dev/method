@@ -1,12 +1,13 @@
 # coding = 'utf-8'
 
+from ctypes.wintypes import PRECT
 import sys
 from typing import Any, NoReturn
 from method.System.sdkddkver import *
 from method.System.public_dll import *
 from method.System.winusutypes import *
+from method.System.errcheck import win32_to_errcheck
 from method.System.windef import RECT, POINT, TRUE, LPRECT
-from method.System.errcheck import win32_to_errcheck, GetLastError
 
 QWORD = ULONGLONG
 _WIN32_WINNT = WIN32_WINNT
@@ -159,7 +160,7 @@ class tagKBDLLHOOKSTRUCT(Structure):
                 ('scanCode', DWORD),
                 ('flags', DWORD),
                 ('time', DWORD),
-                ('dwExtraInfo', ULONG_PTR),
+                ('dwExtraInfo', ULONG_PTR)
     ]
 
 KBDLLHOOKSTRUCT = tagKBDLLHOOKSTRUCT
@@ -227,14 +228,12 @@ LPMENUTEMPLATEW = PVOID
 WNDPROC = CALLBACK(LRESULT, HWND, UINT, WPARAM, LPARAM)
 
 
-
-def VkKeyScan(ch: str | bytes, 
-              unicode: bool = True) -> int:
-    
+def VkKeyScan(ch: str | bytes, unicode: bool = True) -> int:
     VkKeyScan = (user32.VkKeyScanW 
                  if unicode else user32.VkKeyScanA
     )
 
+    VkKeyScan.argtypes = [(LPCWSTR if unicode else LPCSTR)]
     VkKeyScan.restype = SHORT
     res = VkKeyScan(ch)
     return res
@@ -267,10 +266,15 @@ def LoadKeyboardLayout(
     LoadKeyboardLayout = (user32.LoadKeyboardLayoutW 
                           if unicode else user32.LoadKeyboardLayoutA
     )
+    LoadKeyboardLayout.argtypes = [
+        (LPCWSTR if unicode else LPCSTR),
+        UINT
+    ]
 
     LoadKeyboardLayout.restype = HKL
     res = LoadKeyboardLayout(pwszKLID, Flags)
     return win32_to_errcheck(res, errcheck)
+
 
 def ActivateKeyboardLayout(hkl: int, Flags: int, errcheck: bool = True) -> int:
     ActivateKeyboardLayout = user32.ActivateKeyboardLayout
@@ -279,9 +283,31 @@ def ActivateKeyboardLayout(hkl: int, Flags: int, errcheck: bool = True) -> int:
     res = ActivateKeyboardLayout(hkl, Flags)
     return win32_to_errcheck(res, errcheck)
 
-def GetKeyboardState(lpKeyState, errcheck: bool = True) -> None:
+def GetKeyboardState(lpKeyState, errcheck: bool = True):
     GetKeyboardState = user32.GetKeyboardState
+    GetKeyboardState.argtypes = [PBYTE]
+    GetKeyboardState.restype = WINBOOL
     res = GetKeyboardState(lpKeyState)
+    return win32_to_errcheck(res, errcheck)
+
+
+def SetKeyboardState(lpKeyState, errcheck: bool = True):
+    SetKeyboardState = user32.SetKeyboardState
+    SetKeyboardState.argtypes = [LPBYTE]
+    SetKeyboardState.restype = WINBOOL
+    res = SetKeyboardState(lpKeyState)
+    return win32_to_errcheck(res, errcheck)
+
+
+def GetKeyNameText(lParam, lpString, cchSize: int, unicode: bool = True, errcheck: bool = True):
+    GetKeyNameText = user32.GetKeyNameTextW if unicode else user32.GetKeyNameTextA
+    GetKeyNameText.argtypes = [
+        LONG,
+        (LPWSTR if unicode else LPSTR),
+        INT
+    ]
+    GetKeyNameText.restype = INT
+    res = GetKeyNameText(lParam, lpString, cchSize)
     return win32_to_errcheck(res, errcheck)
 
 
@@ -323,6 +349,8 @@ def ToUnicode(
 ) -> int:
     
     ToUnicode = user32.ToUnicode
+    ToUnicode.argtypes = [UINT, UINT, PBYTE, LPWSTR, INT, UINT]
+    ToUnicode.restype = INT
     res = ToUnicode(
         wVirtKey, 
         wScanCode, 
@@ -334,6 +362,39 @@ def ToUnicode(
 
     return res
 
+
+def ToAsciiEx(
+    wVirtKey: int, 
+    wScanCode: int, 
+    lpKeyState, 
+    pwszBuff, 
+    cchBuff: int, 
+    wFlags: int,
+    dwhkl: int
+):
+    
+    ToAsciiEx = user32.ToAsciiEx
+    ToAsciiEx.argtypes = [UINT, UINT, PBYTE, LPWSTR, INT, UINT, HKL]
+    ToAsciiEx.restype = INT
+    res = ToAsciiEx(
+        wVirtKey, 
+        wScanCode, 
+        lpKeyState, 
+        pwszBuff, 
+        cchBuff, 
+        wFlags,
+        dwhkl
+    )
+
+    return res
+
+
+def ToUnicode(wVirtKey, wScanCode, lpKeyState, pwszBuff, cchBuff, wFlags):
+    ToUnicode = user32.ToUnicode
+    ToUnicode.argtypes = [UINT, UINT, PBYTE, LPWSTR, INT, UINT]
+    ToUnicode.restype = INT
+    res = ToUnicode(wVirtKey, wScanCode, lpKeyState, pwszBuff, cchBuff, wFlags)
+    return res
 
 def MapVirtualKey(
     uCode: int, 
@@ -380,13 +441,13 @@ EDITWORDBREAKPROCW = CALLBACK(INT, LPWSTR, INT, INT, INT)
 
 DRAWSTATEPROC = CALLBACK(BOOL, HDC, LPARAM, WPARAM, INT, INT)
 
-FARPROC = CALLBACK(INT_PTR, )
+FARPROC = CALLBACK(LRESULT, INT_PTR, WPARAM, LPARAM)
 
 DLGPROC = FARPROC
 
 TIMERPROC = FARPROC
 GRAYSTRINGPROC = FARPROC
-WNDENUMPROC = FARPROC
+# WNDENUMPROC = FARPROC
 HOOKPROC = FARPROC
 SENDASYNCPROC = FARPROC
 
@@ -1070,12 +1131,29 @@ class tagUSEROBJECTFLAGS(Structure):
 
 def GetUserObjectInformation(hObj, nIndex, pvInfo, nLength, lpnLengthNeeded, unicode: bool = True, errcheck: bool = True):
     GetUserObjectInformation = user32.GetUserObjectInformationW if unicode else user32.GetUserObjectInformationA
+    GetUserObjectInformation.argtypes = [
+        HANDLE,
+        INT,
+        PVOID,
+        DWORD,
+        LPDWORD
+    ]
+
+    GetUserObjectInformation.restype = WINBOOL
     res = GetUserObjectInformation(hObj, nIndex, pvInfo, nLength, lpnLengthNeeded)
     return win32_to_errcheck(res, errcheck)
 
 
 def SetUserObjectInformation(hObj, nIndex, pvInfo, nLength, unicode: bool = True, errcheck: bool = True):
     SetUserObjectInformation = user32.SetUserObjectInformationW if unicode else user32.SetUserObjectInformationA
+    SetUserObjectInformation.argtypes = [
+        HANDLE,
+        INT,
+        PVOID,
+        DWORD,
+    ]
+
+    SetUserObjectInformation.restype = WINBOOL
     res = SetUserObjectInformation(hObj, nIndex, pvInfo, nLength)
     return win32_to_errcheck(res, errcheck)
 
@@ -1169,12 +1247,15 @@ LPWNDCLASS = LPWNDCLASSW if UNICODE else LPWNDCLASSA
 
 def IsHungAppWindow(hwnd, errcheck: bool = True):
     IsHungAppWindow = user32.IsHungAppWindow
+    IsHungAppWindow.argtypes = [HWND]
+    IsHungAppWindow.restype = WINBOOL
     res = IsHungAppWindow(hwnd)
     return win32_to_errcheck(res, errcheck)
 
 
 def DisableProcessWindowsGhosting():
     DisableProcessWindowsGhosting = user32.DisableProcessWindowsGhosting
+    DisableProcessWindowsGhosting.restype = VOID
     DisableProcessWindowsGhosting()
 
 
@@ -1314,10 +1395,18 @@ WM_COPYDATA = 0x004A
 WM_CANCELJOURNAL = 0x004B
 
 class tagCOPYDATASTRUCT(Structure):
-    pass
+    _fields_ = [
+        ('dwData', ULONG_PTR),
+        ('cbData', DWORD),
+        ('lpData', PVOID)
+    ]
 
 class tagMDINEXTMENU(Structure):
-    pass
+    _fields_ = [
+        ('hmenuIn', HMENU),
+        ('hmenuNext', HMENU),
+        ('hwndNext', HWND)
+    ]
 
 WM_NOTIFY = 0x004E
 WM_INPUTLANGCHANGEREQUEST = 0x0050
@@ -1463,9 +1552,9 @@ WHEEL_DELTA = 120
 def GET_WHEEL_DELTA_WPARAM(wParam):
     return SHORT(HIWORD(wParam)).value
 
-# from limits.h
-INT_MAX = 0x7fffffff
-UINT_MAX = INT_MAX * 2 + 1
+
+INT_MAX = 0x7fffffff    # from limits.h
+UINT_MAX = INT_MAX * 2 + 1  # from limits.h
 
 WHEEL_PAGESCROLL = UINT_MAX
 
@@ -1573,10 +1662,9 @@ WM_TABLET_FIRST = 0x02c0
 WM_TABLET_LAST = 0x02df
 WM_DPICHANGED = 0x02e0
 
-if WINVER >= 0x0605:
-    WM_DPICHANGED_BEFOREPARENT = 0x02e2
-    WM_DPICHANGED_AFTERPARENT = 0x02e3
-    WM_GETDPISCALEDSIZE = 0x02e4
+WM_DPICHANGED_BEFOREPARENT = 0x02e2
+WM_DPICHANGED_AFTERPARENT = 0x02e3
+WM_GETDPISCALEDSIZE = 0x02e4
 
 WM_CUT = 0x0300
 WM_COPY = 0x0301
@@ -1733,12 +1821,13 @@ WS_TILED = WS_OVERLAPPED
 WS_ICONIC = WS_MINIMIZE
 WS_SIZEBOX = WS_THICKFRAME
 
-WS_OVERLAPPEDWINDOW = (WS_OVERLAPPED | 
-                        WS_CAPTION | 
-                        WS_SYSMENU | 
-                        WS_THICKFRAME | 
-                        WS_MINIMIZEBOX | 
-                        WS_MAXIMIZEBOX
+WS_OVERLAPPEDWINDOW = (
+    WS_OVERLAPPED | 
+    WS_CAPTION | 
+    WS_SYSMENU | 
+    WS_THICKFRAME | 
+    WS_MINIMIZEBOX | 
+    WS_MAXIMIZEBOX
 )
 
 WS_POPUPWINDOW = (WS_POPUP | WS_BORDER | WS_SYSMENU)
@@ -4248,7 +4337,8 @@ def SetForegroundWindow(hwnd: int) -> int:
 def GetForegroundWindow() -> int:
     GetForegroundWindow = user32.GetForegroundWindow
     GetForegroundWindow.restype = HWND
-    return GetForegroundWindow()
+    res = GetForegroundWindow()
+    return res
 
 
 EnumWindowsProc = CALLBACK(BOOL, HWND, LPARAM)
@@ -4258,7 +4348,8 @@ def GetWindowTextLength(hwnd: int, unicode: bool = True) -> int:
     GetWindowTextLength = (user32.GetWindowTextLengthW 
                            if unicode else user32.GetWindowTextLengthA
     )
-
+    GetWindowTextLength.argtypes = [HWND]
+    GetWindowTextLength.restype = INT
     res = GetWindowTextLength(hwnd)
     return res
 
@@ -4271,58 +4362,78 @@ def GetWindowText(hwnd, lpString, nMaxCount, unicode: bool = True, errcheck: boo
         INT
     ]
 
+    GetWindowText.restype = INT
     res = GetWindowText(hwnd, lpString, nMaxCount)
     return win32_to_errcheck(res, errcheck)
 
 
 def EnumWindows(lpEnumFunc, lParam, errcheck: bool = True) -> None:
     EnumWindows = user32.EnumWindows
+    EnumWindows.argtypes = [WNDENUMPROC, LPARAM]
+    EnumWindows.restype = BOOL
     res = EnumWindows(lpEnumFunc, lParam)
     return win32_to_errcheck(res, errcheck)
-
-
-def IsWindowVisible(hwnd) -> bool:
-    IsWindowVisible = user32.IsWindowVisible
-    IsWindowVisible.restype = BOOL
-    return bool(IsWindowVisible(hwnd))
-
-
-def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any, errcheck: bool = True) -> None:
-    GetWindowThreadProcessId = user32.GetWindowThreadProcessId
-    res = GetWindowThreadProcessId(hwnd, lpdwProcessId)
-    return win32_to_errcheck(res, errcheck)
-
-
-def IsWindow(hwnd: int = NULL) -> int:
-    IsWindow = user32.IsWindow
-    IsWindow.argtypes = [HWND]
-    IsWindow.restype = BOOL
-    return IsWindow(hwnd)
 
 
 def IsWindowVisible(hwnd: int) -> int:
     IsWindowVisible = user32.IsWindowVisible
     IsWindowVisible.argtypes = [HWND]
     IsWindowVisible.restype = BOOL
-    return IsWindowVisible(hwnd)
+    res = IsWindowVisible(hwnd)
+    return res
+
+
+def GetWindowThreadProcessId(hwnd: int, lpdwProcessId: Any, errcheck: bool = True) -> None:
+    GetWindowThreadProcessId = user32.GetWindowThreadProcessId
+    GetWindowThreadProcessId.argtypes = [HWND, LPDWORD]
+    GetWindowThreadProcessId.restype = DWORD
+    res = GetWindowThreadProcessId(hwnd, lpdwProcessId)
+    return win32_to_errcheck(res, errcheck)
+
+
+def IsWindow(hwnd: int) -> int:
+    IsWindow = user32.IsWindow
+    IsWindow.argtypes = [HWND]
+    IsWindow.restype = BOOL
+    res = IsWindow(hwnd)
+    return res
+
+
+def IsWindowVisible(hwnd: int) -> int:
+    IsWindowVisible = user32.IsWindowVisible
+    IsWindowVisible.argtypes = [HWND]
+    IsWindowVisible.restype = BOOL
+    res = IsWindowVisible(hwnd)
+    return res
 
 
 def IsUserAnAdmin() -> int:
     IsUserAnAdmin = shell32.IsUserAnAdmin
     IsUserAnAdmin.restype = BOOL
-    return IsUserAnAdmin()
+    res = IsUserAnAdmin()
+    return res
 
 
 def ShowWindow(hwnd: int, nCmdShow: int) -> bool:
     ShowWindow = user32.ShowWindow
+    ShowWindow.argtypes = [HWND, INT]
     ShowWindow.restype = BOOL
-    return ShowWindow(hwnd, nCmdShow)
+    res = ShowWindow(hwnd, nCmdShow)
+    return res
+
+
+def AnimateWindow(hwnd: int, dwTime: int, dwFlags: int, errcheck: bool = True):
+    AnimateWindow = user32.AnimateWindow
+    AnimateWindow.argtypes = [HWND, DWORD, DWORD]
+    AnimateWindow.restype = WINBOOL
+    res = AnimateWindow(hwnd, dwTime, dwFlags)
+    return win32_to_errcheck(res, errcheck)
 
 
 def MessageBox(
     hwnd: int, 
-    lpText: str, 
-    lpCaption: str, 
+    lpText: str | bytes, 
+    lpCaption: str | bytes, 
     uType: int, 
     unicode: bool = True,
     errcheck: bool = True
@@ -4343,8 +4454,8 @@ def MessageBox(
 
 def MessageBoxEx(
     hwnd: int, 
-    lpText: str, 
-    lpCaption: str, 
+    lpText: str | bytes, 
+    lpCaption: str | bytes, 
     uType: int, 
     wLanguageId: int, 
     unicode: bool = True,
@@ -4387,12 +4498,13 @@ def MessageBoxIndirect(lpmbp, unicode: bool = True, errcheck: bool = True) -> in
 def GetCurrentProcess() -> int:
     GetCurrentProcess = kernel32.GetCurrentProcess
     GetCurrentProcess.restype = HANDLE
-    return GetCurrentProcess()
+    res = GetCurrentProcess()
+    return res
 
 
 def LoadImage(
     hInst: int, 
-    name: str | int, 
+    name: str | bytes, 
     type: int, 
     cx: int, 
     cy: int, 
@@ -4420,18 +4532,24 @@ def LoadImage(
 
 def ExitWindowsEx(uFlags: int, dwReason: int, errcheck: bool = True) -> NoReturn:
     ExitWindowsEx = user32.ExitWindowsEx
+    ExitWindowsEx.argtypes = [UINT, DWORD]
+    ExitWindowsEx.restype = BOOL
     res = ExitWindowsEx(uFlags, dwReason)
     return win32_to_errcheck(res, errcheck)
 
 
 def EnableMenuItem(hMenu: int, uIDEnableItem: int, uEnable: int) -> int:
     EnableMenuItem = user32.EnableMenuItem
+    EnableMenuItem.argtypes = [HMENU, UINT, UINT]
+    EnableMenuItem.restype = BOOL
     res = EnableMenuItem(hMenu, uIDEnableItem, uEnable)
     return res
 
 
 def DrawMenuBar(hwnd: int, errcheck: bool = True) -> None:
     DrawMenuBar = user32.DrawMenuBar
+    DrawMenuBar.argtypes = [HWND]
+    DrawMenuBar.restype = BOOL
     res = DrawMenuBar(hwnd)
     return win32_to_errcheck(res, errcheck)
 
@@ -4447,8 +4565,56 @@ def InsertMenu(
 ) -> None:
     
     InsertMenu = user32.InsertMenuW if unicode else user32.InsertMenuA
+    InsertMenu.argtypes = [
+        HMENU,
+        UINT,
+        UINT,
+        UINT_PTR,
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    InsertMenu.restype = BOOL
     res = InsertMenu(hMenu, uPosition, uFlags, uIDNewItem, lpNewItem)
     return win32_to_errcheck(res, errcheck)
+
+
+class tagMENUITEMINFOA(Structure):
+    _fields_ = [
+        ('cbSize', UINT),
+        ('fMask', UINT),
+        ('fType', UINT),
+        ('fState', UINT),
+        ('wID', UINT),
+        ('hSubMenu', HMENU),
+        ('hbmpChecked', HBITMAP),
+        ('hbmpUnchecked', HBITMAP),
+        ('dwItemData', ULONG_PTR),
+        ('dwTypeData', LPSTR),
+        ('cch', UINT),
+        ('hbmpItem', HBITMAP)
+    ]
+
+MENUITEMINFOA = tagMENUITEMINFOA
+LPCMENUITEMINFOA = LPMENUITEMINFOA = POINTER(MENUITEMINFOA)
+
+class tagMENUITEMINFOW(Structure):
+    _fields_ = [
+        ('cbSize', UINT),
+        ('fMask', UINT),
+        ('fType', UINT),
+        ('fState', UINT),
+        ('wID', UINT),
+        ('hSubMenu', HMENU),
+        ('hbmpChecked', HBITMAP),
+        ('hbmpUnchecked', HBITMAP),
+        ('dwItemData', ULONG_PTR),
+        ('dwTypeData', LPWSTR),
+        ('cch', UINT),
+        ('hbmpItem', HBITMAP)
+    ]
+
+MENUITEMINFOW = tagMENUITEMINFOW
+LPCMENUITEMINFOW = LPMENUITEMINFOW = POINTER(MENUITEMINFOW)
 
 
 def InsertMenuItem(
@@ -4461,12 +4627,22 @@ def InsertMenuItem(
 ) -> None:
     
     InsertMenuItem = user32.InsertMenuItemW if unicode else user32.InsertMenuItemA
+    InsertMenuItem.argtypes = [
+        HMENU,
+        UINT,
+        BOOL,
+        (LPCMENUITEMINFOW if unicode else LPCMENUITEMINFOA)
+    ]
+
+    InsertMenuItem.restype = WINBOOL
     res = InsertMenuItem(hmenu, item, fByPosition, lpmi)
     return win32_to_errcheck(res, errcheck)
 
 
 def LoadMenuIndirect(lpMenuTemplate: Any, unicode: bool = True, errcheck: bool = True) -> None:
     LoadMenuIndirect = user32.LoadMenuIndirectW if unicode else user32.LoadMenuIndirectA
+    LoadMenuIndirect.argtypes = [(MENUTEMPLATEW if unicode else MENUTEMPLATEA)]
+    LoadMenuIndirect.restype = HMENU
     res = LoadMenuIndirect(lpMenuTemplate)
     return win32_to_errcheck(res, errcheck)
 
@@ -4482,18 +4658,39 @@ def ModifyMenu(
 ) -> None:
     
     ModifyMenu = user32.ModifyMenuW if unicode else user32.ModifyMenuA
+    ModifyMenu.argtypes = [
+        HMENU,
+        UINT,
+        UINT,
+        UINT_PTR,
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    ModifyMenu.restype = WINBOOL
     res = ModifyMenu(hMnu, uPosition, uFlags, uIDNewItem, lpNewItem)
     return win32_to_errcheck(res, errcheck)
 
 
 def SetMenuItemInfo(hmenu, item, fByPositon, lpmii, unicode: bool = True, errcheck: bool = True) -> None:
     SetMenuItemInfo = user32.SetMenuItemInfoW if unicode else user32.SetMenuItemInfoA
+    SetMenuItemInfo.argtypes = [
+        HMENU,
+        UINT,
+        WINBOOL,
+        (LPCMENUITEMINFOW if unicode else LPCMENUITEMINFOA)
+    ]
+
+    SetMenuItemInfo.restype = WINBOOL
     res = SetMenuItemInfo(hmenu, item, fByPositon, lpmii)
     return win32_to_errcheck(res, errcheck)
 
 
 def GetSystemMenu(hwnd: int, bRevert: bool) -> int:
-    return user32.GetSystemMenu(hwnd, bRevert)
+    GetSystemMenu = user32.GetSystemMenu
+    GetSystemMenu.argtypes = [HWND, WINBOOL]
+    GetSystemMenu.restype = HMENU
+    res = GetSystemMenu(hwnd, bRevert)
+    return res
 
 
 class tagMSG(Structure):
@@ -4513,6 +4710,8 @@ LPMSG = PMSG
 
 def RegisterClass(lpWndClass, unicode: bool = True, errcheck: bool = True):
     RegisterClass = user32.RegisterClassW if unicode else user32.RegisterClassA
+    RegisterClass.argtypes = [POINTER(WNDCLASSW if unicode else WNDCLASSA)]
+    RegisterClass.restype = ATOM
     res = RegisterClass(lpWndClass)
     return win32_to_errcheck(res, errcheck)
 
@@ -4604,40 +4803,62 @@ def CreateWindow(
 
 def LoadCursor(hInstance, lpCursorName, unicode: bool = True, errcheck: bool = True):
     LoadCursor = user32.LoadCursorW if unicode else user32.LoadCursorA
+    LoadCursor.argtypes = [
+        HINSTANCE,
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    LoadCursor.restype = HCURSOR
     res = LoadCursor(hInstance, lpCursorName)
     return win32_to_errcheck(res, errcheck)
 
+
 def GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax, unicode: bool = True, errcheck: bool = True):
     GetMessage = user32.GetMessageW if unicode else user32.GetMessageA
+    GetMessage.argtypes = [LPMSG, HWND, UINT, UINT]
+    GetMessage.restype = WINBOOL
     res = GetMessage(lpMsg, hWnd, wMsgFilterMin, wMsgFilterMax)
     return win32_to_errcheck(res, errcheck)
     
 
 def DispatchMessage(lpMsg, unicode: bool = True):
     DispatchMessage = user32.DispatchMessageW if unicode else user32.DispatchMessageA
+    DispatchMessage.argtypes = [MSG]
+    DispatchMessage.restype = LRESULT
     res = DispatchMessage(lpMsg)
     return res
 
 
 def PostQuitMessage(nExitCode: int) -> NoReturn:
     PostQuitMessage = user32.PostQuitMessage
+    PostQuitMessage.argtypes = [INT]
+    PostQuitMessage.restype = VOID
     PostQuitMessage(nExitCode)
 
 
 def BeginPaint(hWnd, lpPaint, errcheck: bool = True):
     BeginPaint = user32.BeginPaint
+    BeginPaint.argtypes = [HWND, LPPAINTSTRUCT]
+    BeginPaint.restype = HDC
     res = BeginPaint(hWnd, lpPaint)
     return win32_to_errcheck(res, errcheck)
 
-def FillRect(hDC, lprc, hbr, errcheck: bool = True):
-    FillRect = user32.FillRect
-    res = FillRect(hDC, lprc, hbr)
-    return win32_to_errcheck(res, errcheck)
 
 def EndPaint(hWnd, lpPaint, errcheck: bool = True):
     EndPaint = user32.EndPaint
+    EndPaint.argtypes = [HWND, PPAINTSTRUCT]
+    EndPaint.restype = WINBOOL
     res = EndPaint(hWnd, lpPaint)
     return win32_to_errcheck(res, errcheck)
+
+
+def FillRect(hDC, lprc, hbr, errcheck: bool = True):
+    FillRect = user32.FillRect
+    FillRect.argtypes = [HDC, PRECT, HBRUSH]
+    FillRect.restype = INT
+    res = FillRect(hDC, lprc, hbr)
+    return win32_to_errcheck(res, errcheck)
+
 
 def DefWindowProc(hWnd, Msg, wParam, lParam, unicode: bool = True):
     DefWindowProc = user32.DefWindowProcW if unicode else user32.DefWindowProcA
@@ -4649,6 +4870,8 @@ def DefWindowProc(hWnd, Msg, wParam, lParam, unicode: bool = True):
 
 def TranslateMessage(lpMsg):
     TranslateMessage = user32.TranslateMessage
+    TranslateMessage.argtypes = [LPMSG]
+    TranslateMessage.restype = WINBOOL
     res = TranslateMessage(lpMsg)
     return res
 
@@ -4748,6 +4971,8 @@ def SendInput(
 
 def GetWindowDisplayAffinity(hwnd: int, pdwAffinity: Any, errcheck: bool = True) -> None:
     GetWindowDisplayAffinity = user32.GetWindowDisplayAffinity
+    GetWindowDisplayAffinity.argtypes = [HWND, PDWORD]
+    GetWindowDisplayAffinity.restype = WINBOOL
     res = GetWindowDisplayAffinity(hwnd, pdwAffinity)
     return win32_to_errcheck(res, errcheck)
 
@@ -4755,30 +4980,31 @@ def GetWindowDisplayAffinity(hwnd: int, pdwAffinity: Any, errcheck: bool = True)
 def SetWindowDisplayAffinity(hwnd: int, dwAffinity: int, errcheck: bool = True) -> None:
     SetWindowDisplayAffinity = user32.SetWindowDisplayAffinity
     SetWindowDisplayAffinity.argtypes = [HWND, UINT]
-    SetWindowDisplayAffinity.restype = BOOL
+    SetWindowDisplayAffinity.restype = WINBOOL
     res = SetWindowDisplayAffinity(hwnd, dwAffinity)
     return win32_to_errcheck(res, errcheck)
 
 
-def SetWindowLongPtr(hwnd, nIndex, dwNewLong, unicode: bool = True, errcheck: bool = True):
-    SetWindowLongPtr = user32.SetWindowLongPtrW if unicode else user32.SetWindowLongPtrA
-    res = SetWindowLongPtr(hwnd, nIndex, dwNewLong)
-    return win32_to_errcheck(res, errcheck)
-
-def DestroyWindow(hwnd, errcheck: bool = True):
+def DestroyWindow(hwnd: int, errcheck: bool = True):
     DestroyWindow = user32.DestroyWindow
+    DestroyWindow.argtypes = [HWND]
+    DestroyWindow.restype = WINBOOL
     res = DestroyWindow(hwnd)
     return win32_to_errcheck(res, errcheck)
 
 
-def GetWindowRect(hwnd, lpRect, errcheck: bool = True):
+def GetWindowRect(hwnd: int, lpRect, errcheck: bool = True):
     GetWindowRect = user32.GetWindowRect
+    GetWindowRect.argtypes = [HWND, LPRECT]
+    GetWindowRect.restype = WINBOOL
     res = GetWindowRect(hwnd, lpRect)
     return win32_to_errcheck(res, errcheck)
 
 
-def SetLayeredWindowAttributes(hwnd, crKey, bAlpha, dwFlags, errcheck: bool = True):
+def SetLayeredWindowAttributes(hwnd: int, crKey: int, bAlpha: int, dwFlags: int, errcheck: bool = True):
     SetLayeredWindowAttributes = user32.SetLayeredWindowAttributes
+    SetLayeredWindowAttributes.argtypes = [HWND, COLORREF, BYTE, DWORD]
+    SetLayeredWindowAttributes.restype = WINBOOL
     res = SetLayeredWindowAttributes(hwnd, crKey, bAlpha, dwFlags)
     return win32_to_errcheck(res, errcheck)
 
@@ -4791,6 +5017,12 @@ def FindWindow(
 ) -> int:
     
     FindWindow = user32.FindWindowW if unicode else user32.FindWindowA
+    FindWindow.argtypes = [
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    FindWindow.restype = HWND
     res = FindWindow(lpClassName, lpWindowName)
     return win32_to_errcheck(res, errcheck)
 
@@ -4805,6 +5037,14 @@ def FindWindowEx(
 ) -> int:
     
     FindWindowEx = user32.FindWindowExW if unicode else user32.FindWindowExA
+    FindWindowEx.argtypes = [
+        HWND,
+        HWND,
+        (LPCWSTR if unicode else LPCSTR),
+        (LPCWSTR if unicode else LPCSTR)
+    ]
+
+    FindWindowEx.restype = HWND
     res = FindWindowEx(hWndParent, hWndChildAfter, lpszClass, lpszWindow)
     return win32_to_errcheck(res, errcheck)
 
@@ -4815,7 +5055,23 @@ def UpdateWindow(hwnd: int) -> bool:
     UpdateWindow.restype = BOOL 
     res = UpdateWindow(hwnd)
     return res
-    
+
+
+def GetWindowLong(hwnd, nIndex, unicode: bool = True, errcheck: bool = True) -> int:
+    GetWindowLong = user32.GetWindowLongW if unicode else user32.GetWindowLongA
+    GetWindowLong.argtypes = [HWND, INT]
+    GetWindowLong.restype = LONG
+    res = GetWindowLong(hwnd, nIndex)
+    return win32_to_errcheck(res, errcheck)
+
+
+def SetWindowLong(hwnd, nIndex, dwNewLong, unicode: bool = True, errcheck: bool = True) -> int:
+    SetWindowLong = user32.SetWindowLongW if unicode else user32.SetWindowLongA
+    SetWindowLong.argtypes = [HWND, INT, LONG]
+    SetWindowLong.restype = LONG
+    res = SetWindowLong(hwnd, nIndex, dwNewLong)
+    return win32_to_errcheck(res, errcheck)
+
 
 def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True, errcheck: bool = True) -> int:
     GetWindowLongPtr = (user32.GetWindowLongPtrW 
@@ -4828,8 +5084,18 @@ def GetWindowLongPtr(hwnd: int, nIndex: int, unicode: bool = True, errcheck: boo
     return win32_to_errcheck(res, errcheck)
 
 
-def CheckDlgButton(hDlg, nIDButton, uCheck, errcheck: bool = True):
+def SetWindowLongPtr(hwnd, nIndex, dwNewLong, unicode: bool = True, errcheck: bool = True) -> int:
+    SetWindowLongPtr = user32.SetWindowLongPtrW if unicode else user32.SetWindowLongPtrA
+    SetWindowLongPtr.argtypes = [HWND, INT, LONG_PTR]
+    SetWindowLongPtr.restype = LONG_PTR
+    res = SetWindowLongPtr(hwnd, nIndex, dwNewLong)
+    return win32_to_errcheck(res, errcheck)
+
+
+def CheckDlgButton(hDlg: int, nIDButton: int, uCheck: int, errcheck: bool = True):
     CheckDlgButton = user32.CheckDlgButton
+    CheckDlgButton.argtypes = [HWND, INT, UINT]
+    CheckDlgButton.restype = WINBOOL
     res = CheckDlgButton(hDlg, nIDButton, uCheck)
     return win32_to_errcheck(res, errcheck)    
 
@@ -4861,3 +5127,29 @@ def BringWindowToTop(hwnd: int, errcheck: bool = True) -> None:
     BringWindowToTop.restype = BOOL 
     res = BringWindowToTop(hwnd)
     return win32_to_errcheck(res, errcheck)
+
+
+def SetWindowPos(
+    hwnd: int, 
+    hWndInsertAfter: int, 
+    X: int, 
+    Y: int, 
+    cx: int, 
+    cy: int, 
+    uFlags: int,
+    errcheck: bool = True
+):
+    
+    SetWindowPos = user32.SetWindowPos
+    SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
+    SetWindowPos.restype = BOOL
+    res = SetWindowPos(hwnd, hWndInsertAfter, X, Y, cx, cy, uFlags)
+    return win32_to_errcheck(res, errcheck)
+
+
+def WindowFromPoint(Point) -> int:
+    WindowFromPoint = user32.WindowFromPoint
+    WindowFromPoint.argtypes = [POINT]
+    WindowFromPoint.restype = HWND
+    res = WindowFromPoint(Point)
+    return res

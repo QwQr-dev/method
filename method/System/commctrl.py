@@ -17,7 +17,7 @@ SNDMSG = SendMessage
 
 def InitCommonControls():
     InitCommonControls = comctl32.InitCommonControls
-    InitCommonControls.argtypes = [VOID]
+    InitCommonControls.restype = [VOID]
     InitCommonControls()
 
 

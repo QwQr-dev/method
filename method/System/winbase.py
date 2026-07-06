@@ -242,6 +242,31 @@ def lstrcat(lpString1, lpString2, unicode: bool = True, errcheck: bool = True):
     return win32_to_errcheck(res, errcheck)   
 
 
+def QueryFullProcessImageName(
+    hProcess: int, 
+    dwFlags: int, 
+    lpExeName: Any,
+    lpdwSize: Any,
+    unicode: bool = True,
+    errcheck: bool = True
+) -> str:
+    
+    QueryFullProcessImageName = (kernel32.QueryFullProcessImageNameW 
+                                 if unicode else kernel32.QueryFullProcessImageNameA
+    )
+    
+    QueryFullProcessImageName.argtypes = [
+        HANDLE,
+        DWORD,
+        (LPWSTR if unicode else LPSTR),
+        PDWORD
+    ]
+
+    QueryFullProcessImageName.restype = WINBOOL
+    res = QueryFullProcessImageName(hProcess, dwFlags, lpExeName, lpdwSize)
+    return win32_to_errcheck(res, errcheck)
+
+
 def CreateProcessWithLogonW(
     lpUsername: str,
     lpDomain: str,
@@ -370,6 +395,7 @@ def FormatMessage(
         POINTER(va_list)
     ]
 
+    FormatMessage.restype = DWORD
     res = FormatMessage(
         dwFlags, 
         lpSource, 
@@ -453,7 +479,7 @@ def LocalAlloc(uFlags: int, uBytes: int, errcheck: bool = True):
     return win32_to_errcheck(res, errcheck)
 
 
-def LocalFree(hMem: int) -> None:
+def LocalFree(hMem: int):
     LocalFree = kernel32.LocalFree
     LocalFree.argtypes = [HLOCAL]
     LocalFree.restype = HLOCAL

@@ -444,7 +444,7 @@ def InitiateSystemShutdown(
     bRebootAfterShutdown: bool,
     unicode: bool = True,
     errcheck: bool = True
-) -> NoReturn:
+):
     
     InitiateSystemShutdown = (advapi32.InitiateSystemShutdownW 
                               if unicode else advapi32.InitiateSystemShutdownA
@@ -502,7 +502,7 @@ def InitiateSystemShutdownEx(
     dwReason: int, 
     unicode: bool = True,
     errcheck: bool = True
-) -> NoReturn:
+):
     
     InitiateSystemShutdownEx = (advapi32.InitiateSystemShutdownExW 
                                 if unicode else advapi32.InitiateSystemShutdownExA

@@ -581,7 +581,6 @@ def CreateService(
     return win32_to_errcheck(res, errcheck)    
 
 
-
 def DeleteService(hService, errcheck: bool = True):
     DeleteService = advapi32.DeleteService
     DeleteService.argtypes = [SC_HANDLE]
@@ -781,7 +780,6 @@ def LockServiceDatabase(hSCManager, errcheck: bool = True):
     LockServiceDatabase.restype = SC_LOCK
     res = LockServiceDatabase(hSCManager)
     return win32_to_errcheck(res, errcheck)    
-
 
 
 def NotifyBootConfigStatus(BootAcceptable, errcheck: bool = True):
@@ -1198,7 +1196,6 @@ class _SERVICE_SID_INFO(Structure):
 
 SERVICE_SID_INFO = _SERVICE_SID_INFO
 LPSERVICE_SID_INFO = POINTER(SERVICE_SID_INFO)
-
 
 
 def ControlServiceEx(hService, dwControl, dwInfoLevel, pControlParams, unicode: bool = True, errcheck: bool = True):

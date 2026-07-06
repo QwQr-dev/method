@@ -218,6 +218,8 @@ LPTHREADENTRY32 = PTHREADENTRY32
 
 def Thread32First(hSnapshot: int, lpte: Any, errcheck: bool = True):
     Thread32First = kernel32.Thread32First
+    Thread32First.argtypes = [HANDLE, LPTHREADENTRY32]
+    Thread32First.restype = WINBOOL
     res = Thread32First(hSnapshot, lpte)
     return win32_to_errcheck(res, errcheck)
 

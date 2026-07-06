@@ -9,32 +9,6 @@ from method.System.errcheck import win32_to_errcheck
 _WIN32_WINNT = WIN32_WINNT
 
 
-def SetWindowPos(
-    hwnd: int, 
-    hWndInsertAfter: int, 
-    X: int, 
-    Y: int, 
-    cx: int, 
-    cy: int, 
-    uFlags: int,
-    errcheck: bool = True
-):
-    
-    SetWindowPos = user32.SetWindowPos
-    SetWindowPos.argtypes = [HWND, HWND, INT, INT, INT, INT, UINT]
-    SetWindowPos.restype = BOOL 
-    res = SetWindowPos(hwnd, hWndInsertAfter, X, Y, cx, cy, uFlags)
-    return win32_to_errcheck(res, errcheck)
-
-
-def GetWindowBand(hwnd: int, pdwBand: int, errcheck: bool = True) -> None:
-    GetWindowBand = user32.GetWindowBand
-    GetWindowBand.argtypes = [HWND, DWORD]
-    GetWindowBand.restype = BOOL
-    res = GetWindowBand(hwnd, pdwBand)
-    return win32_to_errcheck(res, errcheck)
-
-
 def CreateWindowInBand(
     dwExStyle: int, 
     lpClassName: str, 
@@ -53,6 +27,8 @@ def CreateWindowInBand(
 ) -> int:
     
     CreateWindowInBand = user32.CreateWindowInBand
+    CreateWindowInBand.argtypes = [DWORD, LPCWSTR, LPCWSTR, DWORD, INT, INT, INT, INT, HWND, HMENU, HINSTANCE, LPVOID, DWORD]
+    CreateWindowInBand.restype = HWND
     res = CreateWindowInBand(
         dwExStyle, 
         lpClassName, 
@@ -92,6 +68,8 @@ def CreateWindowInBandEx(
 ) -> int:
     
     CreateWindowInBandEx = user32.CreateWindowInBandEx
+    CreateWindowInBandEx.argtypes = [DWORD, LPCWSTR, LPCWSTR, DWORD, INT, INT, INT, INT, HWND, HMENU, HINSTANCE, LPVOID, DWORD, DWORD]
+    CreateWindowInBandEx.restype = HWND
     res = CreateWindowInBandEx(
         dwExStyle, 
         lpClassName, 
@@ -112,14 +90,20 @@ def CreateWindowInBandEx(
     return win32_to_errcheck(res, errcheck)
 
 
+def GetWindowBand(hwnd: int, pdwBand, errcheck: bool = True):
+    GetWindowBand = user32.GetWindowBand
+    GetWindowBand.argtypes = [HWND, PDWORD]
+    GetWindowBand.restype = BOOL
+    res = GetWindowBand(hwnd, pdwBand)
+    return win32_to_errcheck(res, errcheck)
 
-def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int, errcheck: bool = True) -> None:
+
+def SetWindowBand(hwnd: int, hwndInsertAfter: int, dwBand: int, errcheck: bool = True):
     SetWindowBand = user32.SetWindowBand
     SetWindowBand.argtypes = [HWND, HWND, DWORD]
     SetWindowBand.restype = BOOL
     res = SetWindowBand(hwnd, hwndInsertAfter, dwBand)
     return win32_to_errcheck(res, errcheck)
-
 
 
 if _WIN32_WINNT >= WIN32_WINNT_WIN8:
@@ -177,10 +161,8 @@ def zorder_band_names(zbid: int = NULL) -> str:
         res["Lock Screen"] = ZBID_LOCK
         res["Above Lock UX"] = ZBID_ABOVELOCK_UX
 
-    num = 0
-    for j in res:
+    for num, j in enumerate(res):
         if num == zbid:
             return j
-        num += 1
     raise IndexError('Dict index out of range')
 

@@ -14,4 +14,4 @@ oleaut32 = WinDLL('oleaut32.dll', use_last_error=True)
 comdlg32 = WinDLL('Comdlg32.dll', use_last_error=True)
 wtsapi32 = WinDLL('wtsapi32.dll', use_last_error=True)
 msvcrt = CDLL('msvcrt.dll', use_last_error=True, use_errno=True)
-
+Psapi = WinDLL('psapi.dll', use_last_error=True)

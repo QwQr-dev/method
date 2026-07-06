@@ -16,7 +16,7 @@ def CommDlgExtendedError() -> int:
 
 def commdlg_to_errcheck(code: int, errcheck: bool = True) -> int:
     error_code = CommDlgExtendedError()
-    if (not code and  error_code != 0) and errcheck:
+    if (not code and error_code != 0) and errcheck:
         raise WinError(error_code)
     return code
 

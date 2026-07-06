@@ -6,5 +6,6 @@ from method.System.winusutypes import *
 
 def GetConsoleWindow() -> int:
     GetConsoleWindow = kernel32.GetConsoleWindow
+    GetConsoleWindow.restype = HANDLE
     return GetConsoleWindow()
 

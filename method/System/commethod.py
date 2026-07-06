@@ -74,15 +74,15 @@ def COMFUNCTYPE(
 
 
 class ComBaseClass(Structure):
-    _fields_ = [('value', VOID)]
+    _fields_ = [('_value', VOID)]
 
     @property
-    def value(self) -> int:
-        return self.value
+    def _value(self) -> int:
+        return self._value
 
     @property
     def this(self):
-        return cast(self.value, POINTER(self.__class__))
+        return cast(self._value, POINTER(self.__class__))
     
     @property
     def THIS(self):

@@ -167,7 +167,7 @@ CREATE_EVENT_MANUAL_RESET = 0x1
 CREATE_EVENT_INITIAL_SET = 0x2
 
 
-def Sleep(dwMilliseconds: int):     # 该函数无法使用
+def Sleep(dwMilliseconds: int):     # 该函数无法使用，请使用time.sleep()替代
     Sleep = kernel32.Sleep
     Sleep.argtypes = [DWORD]
     Sleep.restype = VOID

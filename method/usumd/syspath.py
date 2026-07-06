@@ -1,9 +1,7 @@
 # coding = 'utf-8'
 
 import os
-import sys
 from method.System.winusutypes import *
-from method.System.sdkddkver import WIN64
 from method.System import shiobj, knownfolders
 from method.System.wow64apiset import GetSystemWow64Directory
 from method.System.sysinfoapi import GetSystemDirectory, GetWindowsDirectory
@@ -52,15 +50,29 @@ USERPROFILE: str = os.environ['USERPROFILE']
 HOME: str = HOMEDRIVE + HOMEPATH
 TEMP: str = os.environ['TEMP']
 TMP: str = os.environ['TMP']
-WBEM: str = f'{WINDOWS}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\wbem'     # WMI path
-DRIVERS: str = f'{WINDOWS}\\{'System32' if sys.maxsize > 2 ** 32 else ('SysWOW64' if sys.maxsize < 2 ** 32 else 'System32')}\\drivers'
+
+
+def WBEM(wow64: bool = False) -> str:       # WMI path
+    if wow64:
+        path = f'{SYSWOW64}\\wbem'
+    else:
+        path = f'{SYSTEM32}\\wbem'
+    return path
+
+
+def DRIVERS(wow64: bool = False) -> str:
+    if wow64:
+        path = f'{SYSWOW64}\\drivers'
+    else:
+        path = f'{SYSTEM32}\\drivers'
+    return path
 
 
 ##############################################################################
 def _get_folder(csidl: int) -> (str | None):
     path = (WCHAR * MAX_PATH)()
     shiobj.SHGetFolderPath(NULL, csidl | shiobj.CSIDL_FLAG_NO_ALIAS, NULL, shiobj.SHGFP_TYPE_CURRENT, path)
-    return path.value if os.path.exists(path.value) else None
+    return os.path.normpath(path.value) if os.path.exists(path.value) else None
 
 
 def Desktop(common: bool = False):
@@ -160,8 +172,8 @@ def Links():
 
 
 def Program_Files(X86: bool = False):
-    return _get_folder(shiobj.CSIDL_PROGRAM_FILESX86 if X86 and WIN64 else shiobj.CSIDL_PROGRAM_FILES)
+    return _get_folder(shiobj.CSIDL_PROGRAM_FILESX86 if X86 else shiobj.CSIDL_PROGRAM_FILES)
 
 
 def Common_Files(X86: bool = False):
-    return _get_folder(shiobj.CSIDL_PROGRAM_FILES_COMMONX86 if X86 and WIN64 else shiobj.CSIDL_PROGRAM_FILES_COMMON)
+    return _get_folder(shiobj.CSIDL_PROGRAM_FILES_COMMONX86 if X86 else shiobj.CSIDL_PROGRAM_FILES_COMMON)

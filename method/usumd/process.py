@@ -87,6 +87,14 @@ def get_proc_path(proc_name: str) -> (str | None):
         return GetProcessOrServPathById(get_proc_pid(proc_name))
     except:
         return None
+    
+
+def get_proc_name(pid: int):
+    '''通过已运行的程序的 PID 来获取文件名'''
+    try:
+        return os.path.basename(GetProcessOrServPathById(pid))
+    except:
+        return None
 
 
 def get_exec_title_from_hwnd(hwnd: int) -> (str | None):
@@ -112,11 +120,11 @@ def get_exec_hwnd_from_title(title: str) -> list[int]:
     return hwnds
 
 
-def get_all_exec_hwnd(get_visible_window_hwnd: bool = False) -> list[int]:
+def get_all_exec_hwnd(get_invisible_window_hwnd: bool = False) -> list[int]:
     '''获取所有已运行程序的 hwnd'''
     window_hwnds = []
     def foreach_window(hWnd, lParam):
-        if windows.IsWindowVisible(hWnd) or get_visible_window_hwnd:
+        if windows.IsWindowVisible(hWnd) or get_invisible_window_hwnd:
             window_hwnds.append(hWnd)
         return True
     windows.EnumWindows(windows.EnumWindowsProc(foreach_window), 0)
@@ -131,14 +139,25 @@ def get_all_exec_title() -> list[str | None]:
     return titles
 
 
-def get_exec_hwnd_from_pid(pid: int) -> (int | None):
+def get_exec_hwnd_from_pid(pid: int, pass_invisible: bool = True, change_win_settings_hwnd: bool = False) -> (int | None):
     '''通过目标程序的 PID 来获取 hwnd'''
     if not isinstance(pid, int):
         raise TypeError(f"The object should be of int, not {type(pid).__name__}")
     
-    hwnds = get_all_exec_hwnd(True)
+    # Warning:
+    # 争对 Windows 10 （Windows 8 和 Windows 8.1 未测试）以上的“设置”的 hwnd     
+    # 应将其改为 ApplicationFrameHost 的 hwnd（某种意义上为一种特性）
+    # 该决策可通过 change_win_settings_hwnd 选项进行更改
+    if windows.WIN32_WINNT >= windows.WIN32_WINNT_WIN10 and change_win_settings_hwnd:         
+        try:
+            if get_proc_name(pid).lower() == 'SystemSettings.exe'.lower():      
+                pid = get_proc_pid('ApplicationFrameHost.exe')
+        except:
+            return None
+    
+    hwnds = get_all_exec_hwnd(False if pass_invisible else True)
     for hwnd in hwnds:
-        process_id = HANDLE()
+        process_id = DWORD()
         try:
             windows.GetWindowThreadProcessId(hwnd, byref(process_id))
         except:
@@ -156,7 +175,7 @@ def get_exec_pid_from_hwnd(hwnd: int) -> (int | None):
         raise TypeError(f"The object should be of int, not {type(hwnd).__name__}")
     
     try:
-        pid = HANDLE()
+        pid = DWORD()
         windows.GetWindowThreadProcessId(hwnd, byref(pid))
         return pid.value
     except:

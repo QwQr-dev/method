@@ -37,3 +37,4 @@ from method.System.wtypesbase import *
 from method.System.errcheck import *
 from method.System.wchar_s import *
 from method.System.wchar import *
+from method.System.psapi import *

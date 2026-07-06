@@ -920,45 +920,11 @@ def ShellExecuteEx(pExecInfo: Any, unicode: bool = True, errcheck: bool = True):
     return shell_to_errcheck(res, errcheck)
 
 
-def OpenProcess(
-    dwDesiredAccess: int, 
-    bInheritHandle: bool, 
-    dwProcessId: int,
-    errcheck: bool = True
-) -> int:
-    
-    OpenProcess = kernel32.OpenProcess
-    res = OpenProcess(
-        dwDesiredAccess, 
-        bInheritHandle, 
-        dwProcessId
-    )
-
-    return win32_to_errcheck(res, errcheck)
-
-
 def CloseHandle(hObject: int, errcheck: bool = True) -> None:
     CloseHandle = kernel32.CloseHandle
     CloseHandle.argtypes = [HANDLE]
     CloseHandle.restype = BOOL
     res = CloseHandle(hObject)
-    return win32_to_errcheck(res, errcheck)
-
-
-def QueryFullProcessImageName(
-    hProcess: int, 
-    dwFlags: int, 
-    lpExeName: Any,
-    lpdwSize: Any,
-    unicode: bool = True,
-    errcheck: bool = True
-) -> str:
-    
-    QueryFullProcessImageName = (kernel32.QueryFullProcessImageNameW 
-                                 if unicode else kernel32.QueryFullProcessImageNameA
-    )
-    
-    res = QueryFullProcessImageName(hProcess, dwFlags, lpExeName, lpdwSize)
     return win32_to_errcheck(res, errcheck)
 
 
@@ -969,12 +935,20 @@ def ShellAbout(
     hIcon: int, 
     unicode: bool = True,
     errcheck: bool = True
-) -> None:
+):
     
     ShellAbout = (shell32.ShellAboutW 
                   if unicode else shell32.ShellAboutA
     )
 
+    ShellAbout.argtypes = [
+        HWND, 
+        (LPCWSTR if unicode else LPCSTR), 
+        (LPCWSTR if unicode else LPCSTR), 
+        HICON
+    ]
+
+    ShellAbout.restype = INT
     res = ShellAbout(hwnd, szApp, szOtherStuff, hIcon)
     return win32_to_errcheck(res, errcheck)
 

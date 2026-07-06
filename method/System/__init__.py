@@ -52,7 +52,7 @@ from method.System import (
 )
 
 from method.System import (
-    processenv, processthreadsapi, public_dll
+    processenv, processthreadsapi, public_dll, psapi
 )
 
 from method.System import (

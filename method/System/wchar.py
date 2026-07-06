@@ -89,3 +89,10 @@ def _wtoi(string: str) -> int:
     _wtoi.restype = c_int
     res = _wtoi(string)
     return res
+
+
+def getchar() -> int:
+    getchar = msvcrt.getchar
+    getchar.restype = c_int
+    res = getchar()
+    return res

@@ -108,7 +108,8 @@ def GlobalMemoryStatusEx(errcheck: bool = True):
 def GetTickCount() -> int:
     GetTickCount = kernel32.GetTickCount
     GetTickCount.restype = DWORD
-    return GetTickCount()
+    res = GetTickCount()
+    return res
 
 
 def GetSystemTimePreciseAsFileTime():
@@ -129,7 +130,8 @@ def GetVersionEx(lpVersionInformation, unicode: bool = True, errcheck: bool = Tr
 def GetVersion() -> int:
     GetVersion = kernel32.GetVersion
     GetVersion.restype = DWORD
-    return GetVersion()
+    res = GetVersion()
+    return res
 
 
 ComputerNameNetBIOS = 0
@@ -281,9 +283,10 @@ FIRM = b'FIRM'
 PCAF = b'PCAF'
 
 class _SMBIOS_HEADER(Structure):
-    _fields_ = [('Type', BYTE),
-                ('Length', BYTE),
-                ('Handle', WORD)
+    _fields_ = [
+        ('Type', BYTE),
+        ('Length', BYTE),
+        ('Handle', WORD)
     ]
 
 SMBIOS_HEADER = _SMBIOS_HEADER
@@ -321,7 +324,7 @@ def GetSystemFirmwareTable(
     return win32_to_errcheck(res, errcheck)
 
 
-def GetProductInfo(dwOSMajorVersion, dwOSMinorVersion, dwSpMajorVersion, dwSpMinorVersion, pdwReturnedProductType, errcheck: bool = True):
+def GetProductInfo(dwOSMajorVersion: int, dwOSMinorVersion: int, dwSpMajorVersion: int, dwSpMinorVersion: int, pdwReturnedProductType, errcheck: bool = True):
     GetProductInfo = kernel32.GetProductInfo
     GetProductInfo.argtypes = [DWORD, DWORD, DWORD, DWORD, PDWORD]
     GetProductInfo.restype = WINBOOL

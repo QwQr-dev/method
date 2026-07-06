@@ -5,14 +5,10 @@ import platform
 from typing import Any
 import winreg as _winreg
 from struct import calcsize
-from method.System.winbase import *
-from method.System.sdkddkver import *
 from method.System.winusutypes import *
-from method.System.shellapi import CloseHandle
+from method.System import windows as _ws
 from method.System.sddl import ConvertSidToStringSid
 from method.System.winnt import TOKEN_QUERY, TokenUser, PTOKEN_USER, PSID
-from method.System.processthreadsapi import OpenProcessToken, GetCurrentProcess
-from method.System.sysinfoapi import GetSystemFirmwareTable, RSMB, SMBIOS_HEADER
 
 
 def enum_reg_value(root: int, path: str) -> dict[str, Any]:
@@ -29,16 +25,16 @@ class GetUserInfo:
         token = HANDLE()
         return_length = DWORD()
         self._SystemName = SystemName
-        OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, byref(token))
-        GetTokenInformation(token, TokenUser, 0, 0, byref(return_length), False)
+        _ws.OpenProcessToken(_ws.GetCurrentProcess(), TOKEN_QUERY, byref(token))
+        _ws.GetTokenInformation(token, TokenUser, 0, 0, byref(return_length), False)
         buffer = (CHAR * return_length.value)()
-        GetTokenInformation(token, TokenUser, buffer, return_length, byref(return_length), False)
+        _ws.GetTokenInformation(token, TokenUser, buffer, return_length, byref(return_length), False)
         token_user = cast(buffer, PTOKEN_USER).contents
         self.user_sid = token_user.User.Sid
-        CloseHandle(token, False)
+        _ws.CloseHandle(token, False)
 
     def _get_username_and_domain(self):
-        if not IsValidSid(self.user_sid):
+        if not _ws.IsValidSid(self.user_sid):
             return None, None
 
         username_buffer = (WCHAR * 256)()
@@ -48,7 +44,7 @@ class GetUserInfo:
         sid_name_use = DWORD()
         user_sid = self.user_sid
         try:
-            LookupAccountSid(
+            _ws.LookupAccountSid(
                 self._SystemName,
                 PSID(user_sid),
                 username_buffer,
@@ -66,12 +62,12 @@ class GetUserInfo:
 
     @property
     def sid(self) -> (str | None):
-        if not IsValidSid(self.user_sid):
+        if not _ws.IsValidSid(self.user_sid):
             return None
         sid_string_ptr = LPWSTR()
         ConvertSidToStringSid(self.user_sid, byref(sid_string_ptr))
         sid_string = sid_string_ptr.value
-        LocalFree(sid_string_ptr)
+        _ws.LocalFree(sid_string_ptr)
         return sid_string
     
     @property
@@ -106,7 +102,7 @@ class GetSystemInfo:
     @property
     def display_version(self) -> (int | None):
         DisplayVersion = 'DisplayVersion'
-        if WIN32_WINNT < WIN32_WINNT_WIN8:
+        if _ws.WIN32_WINNT < _ws.WIN32_WINNT_WIN8:
             return None
         else:
             return self._get_key_value(_winreg.HKEY_LOCAL_MACHINE, self._reg_key, DisplayVersion)
@@ -168,17 +164,17 @@ class GetSystemInfo:
 
     @property
     def uuid(self) -> (str | None):
-        smbiosSize = GetSystemFirmwareTable(RSMB, NULL, NULL, NULL, errcheck=False)
+        smbiosSize = _ws.GetSystemFirmwareTable(_ws.RSMB, NULL, NULL, NULL, errcheck=False)
         pSmbios = (UBYTE * smbiosSize)()
 
-        if GetSystemFirmwareTable(RSMB, NULL, smbiosSize, pSmbios, errcheck=False) != smbiosSize:
+        if _ws.GetSystemFirmwareTable(_ws.RSMB, NULL, smbiosSize, pSmbios, errcheck=False) != smbiosSize:
             return None
         
         smbios_data = bytes(pSmbios)
         offset = 8
 
         while offset < len(smbios_data):
-            header = SMBIOS_HEADER.from_buffer_copy(smbios_data, offset)
+            header = _ws.SMBIOS_HEADER.from_buffer_copy(smbios_data, offset)
 
             # 检查结束标记
             if header.Type == 127 and header.Length == 4:

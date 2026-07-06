@@ -763,3 +763,10 @@ def NtQuerySystemInformation(
 
     return ntstatus_to_errcheck(res, errcheck)
 
+
+def RtlGetExePath(DosPathName, Path, errcheck: bool = True):
+    RtlGetExePath = ntdll.RtlGetExePath
+    RtlGetExePath.argtypes = [PCWSTR, POINTER(PCWSTR)]
+    RtlGetExePath.restype = NTSTATUS
+    res = RtlGetExePath(DosPathName, Path)
+    return ntstatus_to_errcheck(res, errcheck)

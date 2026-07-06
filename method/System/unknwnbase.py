@@ -116,7 +116,7 @@ class AsyncIUnknown(IUnknown):
 class AsyncIUnknownVtbl(AsyncIUnknown): pass
 
 
-def IClassFactory_QueryInterface(This,riid,ppvObject, errcheck: bool = True): return IUnknown_QueryInterface(This, riid, ppvObject, errcheck)
+def IClassFactory_QueryInterface(This, riid, ppvObject, errcheck: bool = True): return IUnknown_QueryInterface(This, riid, ppvObject, errcheck)
 def IClassFactory_AddRef(This, errcheck: bool = True): return IUnknown_AddRef(This, errcheck)
 def IClassFactory_Release(This, errcheck: bool = True): return IUnknown_Release(This, errcheck)
 def IClassFactory_CreateInstance(This, pUnkOuter, riid, ppvObject, errcheck: bool = True) -> int:

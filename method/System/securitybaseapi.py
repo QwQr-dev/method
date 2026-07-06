@@ -208,11 +208,11 @@ def CreateRestrictedToken(ExistingTokenHandle, Flags, DisableSidCount, SidsToDis
     return win32_to_errcheck(res, errcheck)
 
 
-def DestroyPrivateObjectSecurity(errcheck: bool = True):
+def DestroyPrivateObjectSecurity():
     DestroyPrivateObjectSecurity = advapi32.DestroyPrivateObjectSecurity
     DestroyPrivateObjectSecurity.restype = WINBOOL
     res = DestroyPrivateObjectSecurity()
-    return win32_to_errcheck(res, errcheck)
+    return res
 
 
 def EqualPrefixSid(pSid1, pSid2, errcheck: bool = True):
@@ -255,26 +255,26 @@ def GetPrivateObjectSecurity(ObjectDescriptor, SecurityInformation, ResultantDes
     return win32_to_errcheck(res, errcheck)
 
 
-def ImpersonateAnonymousToken(errcheck: bool = True):
+def ImpersonateAnonymousToken():
     ImpersonateAnonymousToken = advapi32.ImpersonateAnonymousToken
     ImpersonateAnonymousToken.restype = WINBOOL
     res = ImpersonateAnonymousToken()
-    return win32_to_errcheck(res, errcheck)
+    return res
 
 
 def ImpersonateLoggedOnUser(hToken: int, errcheck: bool = True):
     ImpersonateLoggedOnUser = advapi32.ImpersonateLoggedOnUser
     ImpersonateLoggedOnUser.argtypes = [HANDLE]
     ImpersonateLoggedOnUser.restype = WINBOOL
-    res = ImpersonateLoggedOnUser()
+    res = ImpersonateLoggedOnUser(hToken)
     return win32_to_errcheck(res, errcheck)
 
 
-def ImpersonateSelf(errcheck: bool = True):
+def ImpersonateSelf():
     ImpersonateSelf = advapi32.ImpersonateSelf
     ImpersonateSelf.restype = WINBOOL
     res = ImpersonateSelf()
-    return win32_to_errcheck(res, errcheck)
+    return res
 
 
 def IsTokenRestricted():
@@ -348,11 +348,11 @@ def QuerySecurityAccessMask(SecurityInformation, DesiredAccess):
     return res
 
 
-def RevertToSelf(errcheck: bool = True):
+def RevertToSelf():
     RevertToSelf = advapi32.RevertToSelf
     RevertToSelf.restype = WINBOOL
     res = RevertToSelf()
-    return win32_to_errcheck(res, errcheck)
+    return res
 
 
 def SetAclInformation(pAcl, pAclInformation, nAclInformationLength, dwAclInformationClass, errcheck: bool = True):
@@ -506,11 +506,11 @@ def AllocateAndInitializeSid(pIdentifierAuthority, nSubAuthorityCount, nSubAutho
     return win32_to_errcheck(res, errcheck)
 
 
-def AllocateLocallyUniqueId(errcheck: bool = True):
+def AllocateLocallyUniqueId():
     AllocateLocallyUniqueId = advapi32.AllocateLocallyUniqueId
     AllocateLocallyUniqueId.restype = WINBOOL
     res = AllocateLocallyUniqueId()
-    return win32_to_errcheck(res, errcheck)
+    return res
 
 
 def CopySid(nDestinationSidLength, pDestinationSid, pSourceSid, errcheck: bool = True):
@@ -609,10 +609,11 @@ def GetKernelObjectSecurity(Handle, RequestedInformation, pSecurityDescriptor, n
     return win32_to_errcheck(res, errcheck)
 
 
-def GetLengthSid():
+def GetLengthSid(pSid):
     GetLengthSid = advapi32.GetLengthSid
+    GetLengthSid.argtypes = [PSID]
     GetLengthSid.restype = DWORD
-    res = GetLengthSid()
+    res = GetLengthSid(pSid)
     return res
 
 
