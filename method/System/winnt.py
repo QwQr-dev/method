@@ -13,18 +13,20 @@ from method.System.wchar import memcpy, memcmp, memset, memmove
 
 
 class _OBJECT_ATTRIBUTES(Structure):
-    _fields_ = [('Length', ULONG),
-                ('RootDirectory', HANDLE),
-                ('ObjectName', PUNICODE_STRING),
-                ('Attributes', ULONG),
-                ('SecurityDescriptor', PVOID),
-                ('SecurityQualityOfService', PVOID)
+    _fields_ = [
+        ('Length', ULONG),
+        ('RootDirectory', HANDLE),
+        ('ObjectName', PUNICODE_STRING),
+        ('Attributes', ULONG),
+        ('SecurityDescriptor', PVOID),
+        ('SecurityQualityOfService', PVOID)
     ]
 
 
 class _CLIENT_ID(Structure):
-    _fields_ = [('UniqueProcess', HANDLE),
-                ('UniqueThread', HANDLE)
+    _fields_ = [
+        ('UniqueProcess', HANDLE),
+        ('UniqueThread', HANDLE)
     ]
 
 

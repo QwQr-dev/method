@@ -544,21 +544,101 @@ FXPT2DOT30 = __LONG32
 LPFXPT2DOT30 = POINTER(FXPT2DOT30)
 
 class tagCIEXYZ(Structure):
-    _fields_ = [('ciexyzX', FXPT2DOT30),
-                ('ciexyzY', FXPT2DOT30),
-                ('ciexyzZ', FXPT2DOT30),
+    _fields_ = [
+        ('ciexyzX', FXPT2DOT30),
+        ('ciexyzY', FXPT2DOT30),
+        ('ciexyzZ', FXPT2DOT30)
     ]
 
 CIEXYZ = tagCIEXYZ
 LPCIEXYZ = POINTER(CIEXYZ)
 
 class tagICEXYZTRIPLE(Structure):
-    _fields_ = [('ciexyzRed', CIEXYZ),
-                ('ciexyzGreen', CIEXYZ),
-                ('ciexyzBlue', CIEXYZ),
+    _fields_ = [
+        ('ciexyzRed', CIEXYZ),
+        ('ciexyzGreen', CIEXYZ),
+        ('ciexyzBlue', CIEXYZ)
     ]
 
 CIEXYZTRIPLE = tagICEXYZTRIPLE
 LPCIEXYZTRIPLE = POINTER(CIEXYZTRIPLE)
 
-LF_FACESIZE         = 32
+LF_FACESIZE = 32
+
+class tagLOGFONTA(Structure):
+    _fields_ = [
+        ('lfHeight', LONG),
+        ('lfWidth', LONG),
+        ('lfEscapement', LONG),
+        ('lfOrientation', LONG),
+        ('lfWeight', LONG),
+        ('lfItalic', BYTE),
+        ('lfUnderline', BYTE),
+        ('lfStrikeOut', BYTE),
+        ('lfCharSet', BYTE),
+        ('lfOutPrecision', BYTE),
+        ('lfClipPrecision', BYTE),
+        ('lfQuality', BYTE),
+        ('lfPitchAndFamily', BYTE),
+        ('lfFaceName', CHAR * LF_FACESIZE)
+    ]
+
+LOGFONTA = tagLOGFONTA
+PLOGFONTA = POINTER(LOGFONTA)
+NPLOGFONTA = PLOGFONTA
+LPLOGFONTA = PLOGFONTA
+
+class tagLOGFONTW(Structure):
+    _fields_ = [
+        ('lfHeight', LONG),
+        ('lfWidth', LONG),
+        ('lfEscapement', LONG),
+        ('lfOrientation', LONG),
+        ('lfWeight', LONG),
+        ('lfItalic', BYTE),
+        ('lfUnderline', BYTE),
+        ('lfStrikeOut', BYTE),
+        ('lfCharSet', BYTE),
+        ('lfOutPrecision', BYTE),
+        ('lfClipPrecision', BYTE),
+        ('lfQuality', BYTE),
+        ('lfPitchAndFamily', BYTE),
+        ('lfFaceName', WCHAR * LF_FACESIZE)
+    ]
+
+LOGFONTW = tagLOGFONTW
+PLOGFONTW = POINTER(LOGFONTW)
+NPLOGFONTW = PLOGFONTW
+LPLOGFONTW = PLOGFONTW
+
+class _devicemodeA(Structure):
+    pass
+
+DEVMODEA = _devicemodeA
+PDEVMODEA = POINTER(DEVMODEA)
+NPDEVMODEA = PDEVMODEA
+LPDEVMODEA = PDEVMODEA
+
+class _devicemodeW(Structure):
+    pass
+
+DEVMODEW = _devicemodeW
+PDEVMODEW = POINTER(DEVMODEW)
+NPDEVMODEW = PDEVMODEW
+LPDEVMODEW = PDEVMODEW
+
+DEVMODE = DEVMODEW if UNICODE else DEVMODEA
+PDEVMODE = PDEVMODEW if UNICODE else PDEVMODEA
+NPDEVMODE = NPDEVMODEW if UNICODE else NPDEVMODEA
+LPDEVMODE = LPDEVMODEW if UNICODE else LPDEVMODEA
+
+class _BLENDFUNCTION(Structure):
+    _fields_ = [
+        ('BlendOp', BYTE),
+        ('BlendFlags', BYTE),
+        ('SourceConstantAlpha', BYTE),
+        ('AlphaFormat', BYTE)
+    ]
+
+BLENDFUNCTION = _BLENDFUNCTION
+PBLENDFUNCTION = POINTER(BLENDFUNCTION)

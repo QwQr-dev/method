@@ -9,10 +9,11 @@ TRUE = True
 FALSE = False
 
 class tagRECT(Structure):
-    _fields_ = [('left', LONG), 
-                ('top', LONG),
-                ('right', LONG),
-                ('bottom', LONG)
+    _fields_ = [
+        ('left', LONG), 
+        ('top', LONG),
+        ('right', LONG),
+        ('bottom', LONG)
     ]
 
 RECT = tagRECT
@@ -25,8 +26,10 @@ PRECTL = PRECT
 LPRECTL = PRECT
 
 class tagPOINT(Structure):
-    _fields_ = [("x", LONG),
-                ("y", LONG)]
+    _fields_ = [
+        ("x", LONG),
+        ("y", LONG)
+    ]
     
 POINT = tagPOINT
 PPOINT = POINTER(POINT)
@@ -37,8 +40,9 @@ POINTL = tagPOINT
 PPOINTL = PPOINT
 
 class tagSIZE(Structure):
-    _fields_ = [('cx', LONG),
-                ('cy', LONG)
+    _fields_ = [
+        ('cx', LONG),
+        ('cy', LONG)
     ]
 
 SIZE = tagSIZE
@@ -50,8 +54,9 @@ PSIZEL = PSIZE
 LPSIZEL = PSIZE
 
 class tagPOINTS(Structure):
-    _fields_ = [('x', SHORT),
-                ('y', SHORT)
+    _fields_ = [
+        ('x', SHORT),
+        ('y', SHORT)
     ]
 
 POINTS = tagPOINTS

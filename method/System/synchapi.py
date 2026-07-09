@@ -1,7 +1,6 @@
 # coding = 'utf-8'
 # synchapi.h
 
-import time as _time
 from method.System.winnt import *
 from method.System.sdkddkver import *
 from method.System.minwinbase import *
@@ -167,7 +166,7 @@ CREATE_EVENT_MANUAL_RESET = 0x1
 CREATE_EVENT_INITIAL_SET = 0x2
 
 
-def Sleep(dwMilliseconds: int):     # 该函数无法使用，请使用time.sleep()替代
+def Sleep(dwMilliseconds: int): 
     Sleep = kernel32.Sleep
     Sleep.argtypes = [DWORD]
     Sleep.restype = VOID

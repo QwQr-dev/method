@@ -188,3 +188,20 @@ def OpenTerminateProcess(pid: int) -> None:
     windows.CloseHandle(handle)
 
 
+def GetDesktopWindowHandle() -> (int | None):
+    def EnumWindowsProc(hwnd, lParam):
+        buffer = 256
+        classname = (WCHAR * buffer)()
+        windows.GetClassName(hwnd, classname, buffer)
+        hProgman = windows.FindWindow("Progman", NULL)
+        if hProgman:
+            windows.SendMessageTimeout(hProgman, 0x052C, 0, 0, windows.SMTO_NORMAL, 1000, nullptr)
+            
+        if classname.value == 'WorkerW' and windows.IsWindowVisible(hwnd):
+            if hwnd == windows.GetAncestor(hwnd, windows.GA_ROOTOWNER):
+                hDesktop.value = hwnd
+        return True
+
+    hDesktop = HWND()
+    windows.EnumWindows(windows.EnumWindowsProc(EnumWindowsProc), 0)
+    return hDesktop.value

@@ -139,7 +139,6 @@ def IClassFactory_LockServer(This, fLock, errcheck: bool = True) -> int:
         4,
         'LockServer',
         argtypes=[(_In_, 'fLock', WINBOOL)]
-
     )
 
     res = IClassFactory_LockServer(This, fLock)

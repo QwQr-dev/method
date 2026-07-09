@@ -4,6 +4,7 @@ from method.System.winusutypes import *
 from method.System.public_dll import Psapi
 from method.System.errcheck import win32_to_errcheck
 
+
 def GetModuleBaseName(
     hProcess, 
     hModule, 

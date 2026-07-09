@@ -4,16 +4,16 @@
 from method.System.wchar import memcmp
 from method.System.winusutypes import *
 
-_LONG32 = ULONG
-
 class _GUID(Structure):
-    _fields_ = [('Data1', _LONG32),
-                ('Data2', USHORT),
-                ('Data3', USHORT),
-                ('Data4', UCHAR * 8)
+    _fields_ = [
+        ('Data1', ULONG),
+        ('Data2', USHORT),
+        ('Data3', USHORT),
+        ('Data4', UCHAR * 8)
     ]
 
 GUID = _GUID
+
 
 def DEFINE_GUID(
     l: int,
